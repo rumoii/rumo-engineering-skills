@@ -237,17 +237,18 @@ def validate_repository(repo_root: Path) -> list[str]:
                     errors.append(f"{metadata_path}: unresolved template marker")
                 validate_openai_metadata(metadata_path, metadata_text, skill_name, errors)
 
-    for readme_path in (repo_root / "README.md", skills_root / "README.md"):
+    readme_paths = (
+        repo_root / "README.md",
+        repo_root / "README.zh-CN.md",
+        skills_root / "README.md",
+    )
+    for readme_path in readme_paths:
         if not readme_path.is_file():
             errors.append(f"{readme_path}: required catalog inventory not found")
         else:
             validate_readme_inventory(readme_path, skill_names, errors)
 
-    markdown_files = sorted(
-        path
-        for path in (repo_root / "README.md", skills_root / "README.md")
-        if path.is_file()
-    )
+    markdown_files = sorted(path for path in readme_paths if path.is_file())
     markdown_files.extend(iter_skill_markdown(skills_root))
     validate_markdown_links(repo_root, markdown_files, errors)
 

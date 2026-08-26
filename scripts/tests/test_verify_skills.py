@@ -14,7 +14,14 @@ class VerifySkillsTest(unittest.TestCase):
         skill_dir = self.repo_root / "skills" / "rumo-example"
         (skill_dir / "agents").mkdir(parents=True)
         (self.repo_root / "README.md").write_text(
-            "# Catalog\n\n- `rumo-example`: example.\n", encoding="utf-8"
+            "# Catalog\n\nEnglish | [简体中文](README.zh-CN.md)\n\n"
+            "- `rumo-example`: example.\n",
+            encoding="utf-8",
+        )
+        (self.repo_root / "README.zh-CN.md").write_text(
+            "# 中文清单\n\n[English](README.md) | 简体中文\n\n"
+            "- `rumo-example`: 示例。\n",
+            encoding="utf-8",
         )
         (self.repo_root / "skills" / "README.md").write_text(
             "# Skills\n\n| Skill | Purpose |\n| --- | --- |\n"
@@ -94,6 +101,15 @@ class VerifySkillsTest(unittest.TestCase):
         readme_path.write_text(
             readme_path.read_text(encoding="utf-8")
             + "| `rumo-missing` | Missing |\n",
+            encoding="utf-8",
+        )
+        self.assert_error_contains("lists nonexistent skills")
+
+    def test_rejects_stale_chinese_readme_inventory(self) -> None:
+        readme_path = self.repo_root / "README.zh-CN.md"
+        readme_path.write_text(
+            readme_path.read_text(encoding="utf-8")
+            + "- `rumo-missing`: 不存在的技能。\n",
             encoding="utf-8",
         )
         self.assert_error_contains("lists nonexistent skills")

@@ -1,5 +1,7 @@
 # Rumo Engineering Skills
 
+English | [简体中文](README.zh-CN.md)
+
 Reusable Codex, Claude Code, and agent skills that are independent of a specific company, product, repository layout, host, or deployment environment.
 
 This is the public upstream repository for the `rumo-*` skill namespace. The
