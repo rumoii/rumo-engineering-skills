@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Find Simplifications"
+  short_description: "用生产调用与兼容性证据发现可安全删除、合并或收缩的工程复杂度"
+  default_prompt: "Use $rumo-find-simplifications to identify evidence-backed simplification candidates in the specified scope."

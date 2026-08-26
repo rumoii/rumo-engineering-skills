@@ -1,0 +1,10 @@
+{
+  "id": "example-project",
+  "description": "Project-specific profile created from the generic template.",
+  "repositories": [],
+  "languages": [],
+  "frameworks": [],
+  "default_output_language": "zh-CN"
+}
+: "zh-CN"
+}

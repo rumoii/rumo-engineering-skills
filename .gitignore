@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+
+# Local project configuration and credentials
+.env
+.env.*
+!.env.example
+credentials.md
+credentials.env
+secrets.md
+secrets.env
+pwd.md
+*.pem
+*.key

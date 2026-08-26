@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Frontend UI"
+  short_description: "面向现有应用的前端页面开发、组件复用与视觉一致性规范"
+  default_prompt: "Use $rumo-frontend-ui to build or refactor the specified page with consistent layout, component reuse, and visual behavior."

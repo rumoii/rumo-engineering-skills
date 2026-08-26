@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Code Review"
+  short_description: "一次性只读审查 Rumo 软件代码正确性、安全风险、兼容性与测试缺口"
+  default_prompt: "Use $rumo-code-review to review the specified change and report evidence-backed findings without modifying code."

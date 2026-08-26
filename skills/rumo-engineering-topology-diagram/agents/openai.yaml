@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Engineering Topology Diagram"
+  short_description: "先确认结构、完整业务闭环与现状规划口径，再生成清晰主图和技术附图"
+  default_prompt: "Use $rumo-engineering-topology-diagram to confirm structure, complete outbound and return paths, and current/planned semantics before generating and validating the overview and technical details."

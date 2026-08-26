@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Linux Hardware Inventory"
+  short_description: "只读采集 Linux 硬件原始证据并生成可直接发送的中文设备配置"
+  default_prompt: "Use $rumo-linux-hardware-inventory to collect read-only Linux hardware evidence, generate the two required TXT files, and return the concise device configuration verbatim in chat."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Bug Root Cause"
+  short_description: "跨前后端、运行环境、日志和数据边界定位软件缺陷根因"
+  default_prompt: "Use $rumo-bug-root-cause to trace the reported defect through source, runtime, logs, data, and client evidence, then report the root cause."

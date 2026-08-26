@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Git Commit"
+  short_description: "精确提交本次变更，并按明确授权完成推送、标签或发布交付"
+  default_prompt: "Use $rumo-git-commit to commit the current changes and perform only the explicitly requested push or release actions."

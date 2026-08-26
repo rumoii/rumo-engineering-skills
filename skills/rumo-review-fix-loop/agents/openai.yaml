@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Review Fix Loop"
+  short_description: "用 app-server 循环审查并修复 P0/P1/P2 阻断问题"
+  default_prompt: "Use $rumo-review-fix-loop to run app-server review passes, fix P0/P1/P2 findings, and stop only when no blocking review output remains."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Test Evidence"
+  short_description: "按风险设计单元、集成、浏览器、产物、部署和现场测试证据"
+  default_prompt: "Use $rumo-test-evidence to design the smallest sufficient evidence plan for this Rumo behavior."

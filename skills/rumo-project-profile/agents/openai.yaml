@@ -1,0 +1,6 @@
+interface:
+  display_name: "Rumo Project Profile"
+  short_description: "统一解析并校验私有项目配置、技术栈、运行环境与凭据入口"
+  default_prompt: "Use $rumo-project-profile to resolve and validate the project-specific configuration required by this workflow."
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,8 @@
+{
+  "ssh": {
+    "user_env": "",
+    "host_env": ""
+  },
+  "products": {},
+  "references": "references/"
+}

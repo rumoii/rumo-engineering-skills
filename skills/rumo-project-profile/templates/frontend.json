@@ -1,0 +1,12 @@
+{
+  "repository_discovery": {
+    "workspace_env": [],
+    "repository_env": {}
+  },
+  "framework": "",
+  "references": "references/",
+  "dev_commands": [],
+  "browser_validation": {
+    "requires_authentication": false
+  }
+}

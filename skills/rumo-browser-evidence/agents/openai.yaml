@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Browser Evidence"
+  short_description: "为 Rumo 界面变更采集可追溯的截图、DOM 状态和交互过程证据"
+  default_prompt: "Use $rumo-browser-evidence to capture truthful browser evidence for the specified UI workflow."

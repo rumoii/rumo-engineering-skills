@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>业务流程图 · 预览与导出</title>
+<style>
+  :root { --bg: #f7f9fc; --fg: #1f2328; --bar: #eef2f7; --border: #d0d7e2; }
+  html.dark { --bg: #1b1d21; --fg: #e6e6e6; --bar: #26292f; --border: #3a3f47; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  #toolbar { position: fixed; top: 0; left: 0; right: 0; z-index: 10; display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: var(--bar); border-bottom: 1px solid var(--border); }
+  #toolbar b { margin-right: auto; font-size: 14px; font-weight: 600; }
+  button, select { background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; font-size: 13px; cursor: pointer; }
+  button:hover { border-color: #6b7280; }
+  #stage { position: absolute; inset: 45px 0 0 0; overflow: hidden; }
+  #stage svg { width: 100%; height: 100%; }
+  #hint { position: fixed; bottom: 10px; left: 12px; font-size: 12px; opacity: 0.55; }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <b id="title">业务流程图</b>
+  <button id="fit">适应窗口</button>
+  <button id="theme">切换浅色或深色</button>
+  <select id="scale" title="图片导出倍率">
+    <option value="2">图片二倍</option>
+    <option value="3" selected>图片三倍</option>
+    <option value="4">图片四倍</option>
+  </select>
+  <button id="png">导出图片</button>
+  <button id="svg">导出矢量图</button>
+</div>
+<div id="stage"></div>
+<div id="hint">明亮色系默认 ｜ 导出图片比例为四比三</div>
+
+<!--
+  用法：
+  1. 将下方 fallback-source 换成实际 Mermaid。
+  2. 若与 .md 同目录 HTTP 服务，设置 window.__FLOW_MD__ = "./xxx.md" 或改 loadSource 中的路径。
+  3. 可用查询参数：?title=标题&md=./flow.md&basename=my-flow&scale=3
+-->
+<script type="text/plain" id="fallback-source">
+flowchart LR
+    A["开始"] --> B["处理"]
+    B --> C{"是否通过"}
+    C -->|"通过"| D["成功归档"]
+    C -->|"未通过"| E["驳回重做"]
+
+    classDef passStyle fill:#e8f8ef,stroke:#2f9e62,color:#14532d
+    classDef failStyle fill:#fdecec,stroke:#d45454,color:#7f1d1d
+    class D passStyle
+    class E failStyle
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.2/dist/svg-pan-zoom.min.js"></script>
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+const params = new URLSearchParams(location.search);
+const stage = document.getElementById("stage");
+const exportWidth = 1600;
+const exportHeight = 1200;
+const exportPadding = 64;
+let dark = false;
+let rawSvg = "";
+let panZoom = null;
+let source = "";
+const basename = params.get("basename") || "business-flow";
+const mdPath = params.get("md") || window.__FLOW_MD__ || "";
+
+if (params.get("title")) {
+  document.getElementById("title").textContent = params.get("title");
+  document.title = params.get("title") + " · 预览与导出";
+}
+if (params.get("hint")) {
+  document.getElementById("hint").textContent = params.get("hint");
+}
+if (params.get("scale")) {
+  document.getElementById("scale").value = params.get("scale");
+}
+
+async function loadSource() {
+  if (mdPath && location.protocol !== "file:") {
+    try {
+      const res = await fetch(mdPath);
+      if (res.ok) {
+        const md = await res.text();
+        const match = md.match(/```mermaid\r?\n([\s\S]*?)```/);
+        if (match) return match[1];
+      }
+    } catch (_) {
+      // 文档读取失败时使用内置图源。
+    }
+  }
+  return document.getElementById("fallback-source").textContent;
+}
+
+function withThemeStyles(diagramSource) {
+  const pass = dark
+    ? "fill:#1f3d2f,stroke:#3d9a6a,color:#e8fff1"
+    : "fill:#e8f8ef,stroke:#2f9e62,color:#14532d";
+  const fail = dark
+    ? "fill:#3d1f1f,stroke:#c45c5c,color:#ffecec"
+    : "fill:#fdecec,stroke:#d45454,color:#7f1d1d";
+  const engine = dark
+    ? "fill:#1f2a3d,stroke:#5b8def,color:#e8f0ff"
+    : "fill:#e8f1ff,stroke:#3b82f6,color:#1e3a8a";
+  const compare = dark
+    ? "fill:#3d2f1f,stroke:#d97706,color:#fff7e6"
+    : "fill:#fff7e6,stroke:#d97706,color:#7c2d12";
+  return diagramSource
+    .replace(/classDef passStyle[^\n]*/g, `classDef passStyle ${pass}`)
+    .replace(/classDef failStyle[^\n]*/g, `classDef failStyle ${fail}`)
+    .replace(/classDef engineStyle[^\n]*/g, `classDef engineStyle ${engine}`)
+    .replace(/classDef compareStyle[^\n]*/g, `classDef compareStyle ${compare}`);
+}
+
+async function render() {
+  document.documentElement.classList.toggle("dark", dark);
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: dark ? "dark" : "default",
+    themeVariables: dark
+      ? undefined
+      : {
+          background: "#f7f9fc",
+          primaryColor: "#ffffff",
+          primaryTextColor: "#1f2328",
+          primaryBorderColor: "#94a3b8",
+          lineColor: "#64748b",
+          secondaryColor: "#eef2f7",
+          tertiaryColor: "#f8fafc",
+          clusterBkg: "#f1f5f9",
+          clusterBorder: "#cbd5e1",
+          titleColor: "#0f172a",
+          edgeLabelBackground: "#ffffff",
+        },
+    htmlLabels: false,
+    flowchart: {
+      htmlLabels: false,
+      curve: "basis",
+      nodeSpacing: 38,
+      rankSpacing: 48,
+    },
+  });
+  if (panZoom) {
+    panZoom.destroy();
+    panZoom = null;
+  }
+  const { svg } = await mermaid.render("flow-" + Date.now(), withThemeStyles(source));
+  rawSvg = svg;
+  stage.innerHTML = svg;
+  const element = stage.querySelector("svg");
+  element.style.maxWidth = "none";
+  element.setAttribute("width", "100%");
+  element.setAttribute("height", "100%");
+  panZoom = svgPanZoom(element, {
+    controlIconsEnabled: true,
+    fit: true,
+    center: true,
+    minZoom: 0.2,
+    maxZoom: 20,
+    zoomScaleSensitivity: 0.3,
+    dblClickZoomEnabled: true,
+  });
+}
+
+function download(blob, name) {
+  const anchor = document.createElement("a");
+  anchor.href = URL.createObjectURL(blob);
+  anchor.download = name;
+  anchor.click();
+  setTimeout(() => URL.revokeObjectURL(anchor.href), 5000);
+}
+
+function exportSvgElement() {
+  const holder = document.createElement("div");
+  holder.innerHTML = rawSvg;
+  const element = holder.querySelector("svg");
+  element.removeAttribute("style");
+  return element;
+}
+
+document.getElementById("fit").onclick = () => {
+  panZoom.resetZoom();
+  panZoom.fit();
+  panZoom.center();
+};
+
+document.getElementById("theme").onclick = async () => {
+  dark = !dark;
+  await render();
+};
+
+document.getElementById("svg").onclick = () => {
+  const xml = new XMLSerializer().serializeToString(exportSvgElement());
+  download(new Blob([xml], { type: "image/svg+xml;charset=utf-8" }), basename + ".svg");
+};
+
+document.getElementById("png").onclick = () => {
+  const scale = Number(document.getElementById("scale").value);
+  const svgElement = exportSvgElement();
+  const viewBox = svgElement.viewBox.baseVal;
+  const sourceWidth = Math.ceil(viewBox.width);
+  const sourceHeight = Math.ceil(viewBox.height);
+  svgElement.setAttribute("width", sourceWidth);
+  svgElement.setAttribute("height", sourceHeight);
+
+  const url = URL.createObjectURL(new Blob(
+    [new XMLSerializer().serializeToString(svgElement)],
+    { type: "image/svg+xml;charset=utf-8" },
+  ));
+  const image = new Image();
+  image.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = exportWidth * scale;
+    canvas.height = exportHeight * scale;
+    const context = canvas.getContext("2d");
+    context.fillStyle = dark ? "#1b1d21" : "#f7f9fc";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    const availableWidth = (exportWidth - exportPadding * 2) * scale;
+    const availableHeight = (exportHeight - exportPadding * 2) * scale;
+    const fitScale = Math.min(
+      availableWidth / sourceWidth,
+      availableHeight / sourceHeight,
+    );
+    const drawWidth = Math.round(sourceWidth * fitScale);
+    const drawHeight = Math.round(sourceHeight * fitScale);
+    const offsetX = Math.round((canvas.width - drawWidth) / 2);
+    const offsetY = Math.round((canvas.height - drawHeight) / 2);
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+    URL.revokeObjectURL(url);
+    canvas.toBlob((blob) => {
+      if (blob) download(blob, basename + ".png");
+    }, "image/png");
+  };
+  image.onerror = () => {
+    URL.revokeObjectURL(url);
+    alert("图片导出失败，请改用导出矢量图");
+  };
+  image.src = url;
+};
+
+source = await loadSource();
+await render();
+</script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+# name	host	user	enabled	window_minutes	root	log_dir	note
+development-app	192.0.2.10	root	false	30	/opt/example-app	/opt/example-app/logs	replace with an explicitly authorized target

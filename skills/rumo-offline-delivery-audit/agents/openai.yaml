@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Offline Delivery Audit"
+  short_description: "审计 Rumo 离线交付包的完整性、可安装性、来源和现场验证边界"
+  default_prompt: "Use $rumo-offline-delivery-audit to build or audit the requested Rumo offline delivery package and report evidence and field-validation limits."

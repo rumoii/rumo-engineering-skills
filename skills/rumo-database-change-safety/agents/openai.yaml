@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Database Change Safety"
+  short_description: "安全规划和执行 Rumo 数据库迁移、修复、清理、备份与回滚"
+  default_prompt: "Use $rumo-database-change-safety to plan or execute this Rumo database change with read-only preflight, explicit write authorization, verified backup, bounded effects, and rollback evidence."

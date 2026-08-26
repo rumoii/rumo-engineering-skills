@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo ImageGen"
+  short_description: "通过用户配置的兼容图像接口生成单张图片并安全保存到本地"
+  default_prompt: "Use $rumo-imagegen to generate one image from my prompt through the configured image endpoint and save it locally."

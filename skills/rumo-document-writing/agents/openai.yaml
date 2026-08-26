@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Document Writing"
+  short_description: "编写、修订并质量检查 Rumo 正式交付类 Word 技术文档"
+  default_prompt: "Use $rumo-document-writing to draft, revise, or quality-check delivery Word documents with consistent formatting, wording, and source-document preservation."

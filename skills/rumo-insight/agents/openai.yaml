@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Insight"
+  short_description: "基于任务闭环、质量验收与复用证据评估员工 AI 能力"
+  default_prompt: "Use $rumo-insight to evaluate my employee AI capability across task input, execution, quality control, and reusable know-how."

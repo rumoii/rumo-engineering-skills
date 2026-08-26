@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Interface Evolution"
+  short_description: "安全演进 API、消息、配置和持久化格式并验证生产者消费者兼容性"
+  default_prompt: "Use $rumo-interface-evolution to plan and verify a compatible Rumo interface or format change."

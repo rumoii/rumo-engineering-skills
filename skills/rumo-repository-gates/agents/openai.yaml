@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Repository Gates"
+  short_description: "设计可执行、低误报且由仓库拥有的 CI 与静态工程质量门禁"
+  default_prompt: "Use $rumo-repository-gates to add or review a repository-owned quality gate for this Rumo project."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Engineering Decision"
+  short_description: "记录跨模块工程决策、替代方案、验证证据、兼容影响和回滚条件"
+  default_prompt: "Use $rumo-engineering-decision to create or update a durable engineering decision for the specified change."

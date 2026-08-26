@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Mermaid Diagram"
+  short_description: "编写/修订 Mermaid 业务流程图并导出明亮色系 PNG"
+  default_prompt: "Use $rumo-mermaid-diagram to create or revise a Mermaid business flowchart with Markdown source, HTML preview, light-theme PNG export, and clear pass/fail or dual-branch outcomes."

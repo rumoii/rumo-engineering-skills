@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Coding Guidelines"
+  short_description: "约束 Rumo 代码修改保持真实路径、最小改动和验证闭环"
+  default_prompt: "Use $rumo-coding-guidelines before writing, reviewing, or refactoring Rumo code so the change stays path-grounded, minimal, assumption-aware, and verified."

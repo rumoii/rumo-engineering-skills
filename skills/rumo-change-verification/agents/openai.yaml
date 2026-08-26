@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Change Verification"
+  short_description: "按真实变更范围选择最小充分验证并安全保护现有脏工作区内容"
+  default_prompt: "Use $rumo-change-verification to identify the exact change scope and run the smallest sufficient verification."

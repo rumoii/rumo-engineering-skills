@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Lifecycle Safety"
+  short_description: "审查并实现并发任务、取消超时、重试幂等、资源释放和停机安全"
+  default_prompt: "Use $rumo-lifecycle-safety to design or review lifecycle-safe behavior for this change."

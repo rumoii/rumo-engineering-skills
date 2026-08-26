@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 2,
+  "meta": {
+    "title": "Engineering Topology Starter",
+    "diagramType": "single-feature-technical",
+    "overviewMode": "business-technical-closure",
+    "purpose": "Show system structure first, then overlay complete current and planned business paths from entry to visible outcome.",
+    "audience": "Engineering and leadership review participants",
+    "useCase": "Reusable neutral multi-view starter",
+    "scope": {
+      "include": ["Request preparation", "Current and planned exchange paths", "Execution", "Result return", "Business outcome"],
+      "exclude": ["Product-specific names", "Product-specific ports", "Vendor-specific devices"]
+    },
+    "viewpoint": "comparison",
+    "evidenceSources": ["User-confirmed neutral example model"],
+    "deliverables": ["model-json", "generator", "markdown", "html-preview", "svg-per-view", "png-per-view"]
+  },
+  "confirmation": {
+    "positioning": {
+      "confirmed": true,
+      "basis": "Single-feature technical architecture, review audience, comparison viewpoint, and grayscale style confirmed for starter verification"
+    },
+    "businessModel": {
+      "confirmed": true,
+      "basis": "Complete current and planned paths, decision policy, result return, structural boundaries, and visual grammar confirmed for starter verification",
+      "visualBlueprint": {
+        "overviewForm": "structure-flow-overlay",
+        "firstRead": "See the local application, exchange boundary, target environment, and final business outcome before reading implementation detail.",
+        "structureBoundaries": ["Local application", "Exchange boundary", "Target environment"],
+        "visualHierarchy": ["Structural boundaries", "Main business path", "Supporting context"],
+        "readingDirection": "Outbound left to right, result return right to left",
+        "startRef": "workflow-entry",
+        "outcomeRefs": ["business-outcome"],
+        "currentPlannedPolicy": "comparison",
+        "branches": [
+          {
+            "id": "channel-choice",
+            "decisionOwner": "Runtime mode policy",
+            "condition": "Current configuration uses the baseline route; the approved target design may enable the controlled route",
+            "selectionType": "system-configuration",
+            "selectionEvidence": {"source": "Confirmed current configuration behavior", "observedType": "system-configuration", "resolution": "none"},
+            "splitRef": "processing-service",
+            "mergeRef": "target-execution",
+            "pathIds": ["baseline-path", "controlled-path"]
+          }
+        ],
+        "asciiWireframe": "[Actor] -> [Local application: prepare -> coordinate] -> {current medium | planned controlled medium} -> [Target]\n                                                            <- result <- [validate -> outcome]",
+        "viewEstimates": [
+          {"viewId": "overview", "placements": 9, "connectors": 9},
+          {"viewId": "implementation-detail", "placements": 7, "connectors": 6}
+        ]
+      }
+    }
+  },
+  "style": {
+    "mode": "grayscale",
+    "accent": null,
+    "typography": {"title": 34, "purpose": 18, "zoneTitle": 21, "zoneSubtitle": 15, "nodeTitle": 19, "nodeSubtitle": 14, "deviceLabel": 16, "connectorLabel": 15, "footer": 15}
+  },
+  "nodes": [
+    {"id": "workflow-entry", "label": "Workflow entry", "subtitle": "User starts the capability", "role": "actor", "visualType": "actor", "status": "shared"},
+    {"id": "request-preparation", "label": "Request preparation", "subtitle": "Select target and inputs", "role": "client", "visualType": "application", "status": "shared"},
+    {"id": "processing-service", "label": "Processing service", "subtitle": "Build and coordinate work", "role": "service", "visualType": "service", "status": "shared"},
+    {"id": "standard-medium", "label": "Baseline medium", "subtitle": "Current exchange route", "role": "medium", "visualType": "physical-media", "status": "current"},
+    {"id": "controlled-gateway", "label": "Controlled adapter", "subtitle": "Planned access boundary", "role": "adapter", "visualType": "service", "status": "planned"},
+    {"id": "controlled-medium", "label": "Controlled medium", "subtitle": "Planned protected exchange", "role": "medium", "visualType": "physical-media", "status": "planned"},
+    {"id": "target-execution", "label": "Target executor", "subtitle": "Runs work and produces result", "role": "external", "visualType": "external-system", "status": "shared"},
+    {"id": "result-validation", "label": "Result validation", "subtitle": "Read, validate, and bind", "role": "service", "visualType": "service", "status": "shared"},
+    {"id": "business-outcome", "label": "Business outcome", "subtitle": "Visible task and report", "role": "result", "visualType": "outcome", "status": "shared"},
+    {"id": "persistence-store", "label": "Local persistence", "subtitle": "Task, result, and source records", "role": "storage", "visualType": "storage", "status": "shared"}
+  ],
+  "devices": [],
+  "groups": [],
+  "relationships": [
+    {"id": "rel-entry-prepare", "from": "workflow-entry", "to": "request-preparation", "initiator": "workflow-entry", "method": "user action", "direction": "forward", "narrativeRole": "main", "status": "shared", "viaDevices": []},
+    {"id": "rel-prepare-service", "from": "request-preparation", "to": "processing-service", "initiator": "request-preparation", "method": "submit request", "direction": "forward", "narrativeRole": "main", "status": "shared", "viaDevices": []},
+    {"id": "rel-service-standard", "from": "processing-service", "to": "standard-medium", "initiator": "processing-service", "method": "baseline exchange", "direction": "forward", "narrativeRole": "main", "status": "current", "viaDevices": []},
+    {"id": "rel-standard-target", "from": "standard-medium", "to": "target-execution", "initiator": "processing-service", "method": "deliver current work package", "direction": "forward", "narrativeRole": "main", "status": "current", "viaDevices": []},
+    {"id": "rel-service-controlled", "from": "processing-service", "to": "controlled-gateway", "initiator": "processing-service", "method": "planned controlled adapter call", "direction": "forward", "narrativeRole": "main", "status": "planned", "viaDevices": []},
+    {"id": "rel-controlled-medium", "from": "controlled-gateway", "to": "controlled-medium", "initiator": "controlled-gateway", "method": "planned protected file operation", "direction": "forward", "narrativeRole": "main", "status": "planned", "viaDevices": []},
+    {"id": "rel-controlled-target", "from": "controlled-medium", "to": "target-execution", "initiator": "processing-service", "method": "deliver planned work package", "direction": "forward", "narrativeRole": "main", "status": "planned", "viaDevices": []},
+    {"id": "rel-target-result", "from": "target-execution", "to": "result-validation", "initiator": "target-execution", "method": "return result", "direction": "forward", "narrativeRole": "main", "status": "shared", "viaDevices": []},
+    {"id": "rel-result-outcome", "from": "result-validation", "to": "business-outcome", "initiator": "result-validation", "method": "publish outcome", "direction": "forward", "narrativeRole": "main", "status": "shared", "viaDevices": []},
+    {"id": "rel-result-store", "from": "result-validation", "to": "persistence-store", "initiator": "result-validation", "method": "persist records", "direction": "forward", "narrativeRole": "supporting", "status": "shared", "viaDevices": []}
+  ],
+  "forbiddenRelationships": [{"from": "workflow-entry", "to": "persistence-store", "reason": "The entry cannot bypass preparation, execution, and validation."}],
+  "views": [
+    {
+      "id": "overview",
+      "kind": "overview",
+      "audienceLevel": "business-technical",
+      "title": "Engineering Topology Starter - Structure And Complete Closure",
+      "purpose": "Read system structure first, then trace either route through execution and result return to one visible outcome.",
+      "canvas": {"width": 1600, "height": 900},
+      "reviewViewport": {"width": 1600, "height": 900, "toolbarHeight": 54, "statusHeight": 26, "padding": 20},
+      "layout": {"primaryAxis": "left-to-right", "pattern": "structure-flow-overlay"},
+      "narrative": {
+        "question": "How does the capability use the confirmed current or planned exchange route and still finish at the same visible business outcome?",
+        "audience": "Leadership and engineering reviewers",
+        "startRef": "workflow-entry",
+        "endRefs": ["business-outcome"],
+        "branchPoints": [{"id": "channel-choice", "decisionOwner": "Runtime mode policy", "condition": "Current configuration uses the baseline route; the approved target design may enable the controlled route", "selectionType": "system-configuration", "splitRef": "processing-service", "mergeRef": "target-execution", "pathIds": ["baseline-path", "controlled-path"]}]
+      },
+      "zones": [
+        {"id": "local-application", "label": "Local application", "subtitle": "Request, coordination, validation, and visible outcome", "boundaryType": "system", "status": "shared", "memberRefs": ["request-preparation", "processing-service", "result-validation", "business-outcome"], "x": 250, "y": 130, "width": 670, "height": 540},
+        {"id": "exchange-boundary", "label": "Exchange boundary", "subtitle": "Current and planned routes", "boundaryType": "deployment", "status": "shared", "memberRefs": ["standard-medium", "controlled-gateway", "controlled-medium"], "x": 950, "y": 130, "width": 300, "height": 540},
+        {"id": "target-environment", "label": "Target environment", "subtitle": "Offline execution boundary", "boundaryType": "deployment", "status": "shared", "memberRefs": ["target-execution"], "x": 1270, "y": 230, "width": 280, "height": 190}
+      ],
+      "stageGuides": [],
+      "placements": [
+        {"ref": "workflow-entry", "displayLevel": "business", "displayLabel": "Start", "displaySubtitle": "User action", "x": 40, "y": 300, "width": 170, "height": 100},
+        {"ref": "request-preparation", "displayLevel": "business", "displayLabel": "Prepare", "displaySubtitle": "Select inputs", "x": 290, "y": 220, "width": 190, "height": 90},
+        {"ref": "processing-service", "displayLevel": "business", "displayLabel": "Coordinate", "displaySubtitle": "Build and route", "x": 540, "y": 220, "width": 190, "height": 90},
+        {"ref": "standard-medium", "displayLevel": "business", "displayLabel": "Current route", "displaySubtitle": "Baseline exchange", "x": 980, "y": 210, "width": 240, "height": 90},
+        {"ref": "controlled-gateway", "displayLevel": "business", "displayLabel": "Adapter", "displaySubtitle": "Planned", "x": 965, "y": 430, "width": 125, "height": 90},
+        {"ref": "controlled-medium", "displayLevel": "business", "displayLabel": "Medium", "displaySubtitle": "Planned", "x": 1110, "y": 430, "width": 125, "height": 90},
+        {"ref": "target-execution", "displayLevel": "business", "displayLabel": "Execute", "displaySubtitle": "Produce result", "x": 1315, "y": 315, "width": 190, "height": 100},
+        {"ref": "result-validation", "displayLevel": "business", "displayLabel": "Validate", "displaySubtitle": "Read and bind", "x": 540, "y": 480, "width": 190, "height": 90},
+        {"ref": "business-outcome", "displayLevel": "business", "displayLabel": "Outcome", "displaySubtitle": "Task and report", "x": 290, "y": 480, "width": 190, "height": 90}
+      ],
+      "connectors": [
+        {"id": "ov-entry-prepare", "relationshipIds": ["rel-entry-prepare"], "from": "workflow-entry", "to": "request-preparation", "direction": "forward", "status": "shared", "flowPhase": "outbound", "viaDevices": [], "route": {"type": "polyline", "points": [{"x": 210, "y": 350}, {"x": 250, "y": 350}, {"x": 250, "y": 265}, {"x": 290, "y": 265}]}, "emphasis": false},
+        {"id": "ov-prepare-service", "relationshipIds": ["rel-prepare-service"], "from": "request-preparation", "to": "processing-service", "direction": "forward", "status": "shared", "flowPhase": "outbound", "viaDevices": [], "route": {"type": "polyline", "points": [{"x": 480, "y": 265}, {"x": 540, "y": 265}]}, "emphasis": false},
+        {"id": "ov-service-standard", "relationshipIds": ["rel-service-standard"], "from": "processing-service", "to": "standard-medium", "direction": "forward", "status": "current", "flowPhase": "outbound", "viaDevices": [], "route": {"type": "polyline", "points": [{"x": 730, "y": 255}, {"x": 980, "y": 255}]}, "label": "Current configuration", "labelBox": {"x": 740, "y": 218, "width": 230, "height": 28}, "emphasis": false},
+        {"id": "ov-standard-target", "relationshipIds": ["rel-standard-target"], "from": "standard-medium", "to": "target-execution", "direction": "forward", "status": "current", "flowPhase": "outbound", "viaDevices": [], "route": {"type": "polyline", "points": [{"x": 1220, "y": 255}, {"x": 1260, "y": 255}, {"x": 1260, "y": 355}, {"x": 1315, "y": 355}]}, "emphasis": false},
+        {"id": "ov-service-controlled", "relationshipIds": ["rel-service-controlled"], "from": "processing-service", "to": "controlled-gateway", "direction": "forward", "status": "planned", "flowPhase": "outbound", "viaDevices": [], "route": {"type": "polyline", "points": [{"x": 730, "y": 285}, {"x": 930, "y": 285}, {"x": 930, "y": 475}, {"x": 965, "y": 475}]}, "label": "Approved target design", "labelBox": {"x": 710, "y": 330, "width": 250, "height": 28}, "emphasis": false},
+        {"id": "ov-controlled-medium", "relationshipIds": ["rel-controlled-medium"], "from": "controlled-gateway", "to": "controlled-medium", "direction": "forward", "status": "planned", "flowPhase": "outbound", "viaDevices": [], "route": {"type": "polyline", "points": [{"x": 1090, "y": 475}, {"x": 1110, "y": 475}]}, "emphasis": false},
+        {"id": "ov-controlled-target", "relationshipIds": ["rel-controlled-target"], "from": "controlled-medium", "to": "target-execution", "direction": "forward", "status": "planned", "flowPhase": "outbound", "viaDevices": [], "route": {"type": "polyline", "points": [{"x": 1235, "y": 475}, {"x": 1260, "y": 475}, {"x": 1260, "y": 395}, {"x": 1315, "y": 395}]}, "emphasis": false},
+        {"id": "ov-target-result", "relationshipIds": ["rel-target-result"], "from": "target-execution", "to": "result-validation", "direction": "forward", "status": "shared", "flowPhase": "return", "viaDevices": [], "route": {"type": "polyline", "points": [{"x": 1315, "y": 405}, {"x": 1270, "y": 405}, {"x": 1270, "y": 610}, {"x": 760, "y": 610}, {"x": 760, "y": 525}, {"x": 730, "y": 525}]}, "label": "Result return", "labelBox": {"x": 940, "y": 574, "width": 160, "height": 28}, "emphasis": false},
+        {"id": "ov-result-outcome", "relationshipIds": ["rel-result-outcome"], "from": "result-validation", "to": "business-outcome", "direction": "forward", "status": "shared", "flowPhase": "outcome", "viaDevices": [], "route": {"type": "polyline", "points": [{"x": 540, "y": 525}, {"x": 480, "y": 525}]}, "emphasis": false}
+      ],
+      "mainPaths": [
+        {"id": "baseline-path", "label": "Current baseline closure", "status": "current", "startRef": "workflow-entry", "endRef": "business-outcome", "connectorIds": ["ov-entry-prepare", "ov-prepare-service", "ov-service-standard", "ov-standard-target", "ov-target-result", "ov-result-outcome"]},
+        {"id": "controlled-path", "label": "Planned controlled closure", "status": "planned", "startRef": "workflow-entry", "endRef": "business-outcome", "connectorIds": ["ov-entry-prepare", "ov-prepare-service", "ov-service-controlled", "ov-controlled-medium", "ov-controlled-target", "ov-target-result", "ov-result-outcome"]}
+      ],
+      "statusLegend": {"visible": true, "currentLabel": "Current capability", "plannedLabel": "Planned capability", "x": 40, "y": 140, "width": 185, "height": 82},
+      "allowedCrossings": [],
+      "mainFlow": [
+        {"id": "flow-request", "text": "The user prepares a request and the local application coordinates the work.", "placementRefs": ["workflow-entry", "request-preparation", "processing-service"], "connectorIds": ["ov-entry-prepare", "ov-prepare-service"]},
+        {"id": "flow-exchange", "text": "The confirmed runtime policy selects the current route or the approved planned route, and either route reaches the same target.", "placementRefs": ["processing-service", "standard-medium", "controlled-gateway", "controlled-medium", "target-execution"], "connectorIds": ["ov-service-standard", "ov-standard-target", "ov-service-controlled", "ov-controlled-medium", "ov-controlled-target"]},
+        {"id": "flow-outcome", "text": "The result returns to the local application, is validated, and becomes a visible business outcome.", "placementRefs": ["target-execution", "result-validation", "business-outcome"], "connectorIds": ["ov-target-result", "ov-result-outcome"]}
+      ]
+    },
+    {
+      "id": "implementation-detail",
+      "kind": "detail",
+      "audienceLevel": "implementation",
+      "title": "Engineering Topology Starter - Planned Controlled Route Detail",
+      "purpose": "Expand the planned adapter, controlled medium, target execution, result return, persistence, and business outcome.",
+      "canvas": {"width": 1600, "height": 800},
+      "reviewViewport": {"width": 1600, "height": 800, "toolbarHeight": 54, "statusHeight": 26, "padding": 20},
+      "layout": {"primaryAxis": "left-to-right", "pattern": "stage-columns"},
+      "narrative": {"question": "How does the planned controlled implementation route carry work to the target and return a persisted business result?", "audience": "Engineering reviewers", "startRef": "processing-service", "endRefs": ["business-outcome"], "branchPoints": []},
+      "zones": [],
+      "stageGuides": [
+        {"id": "detail-application", "label": "Application", "subtitle": "Coordination and adapter", "x": 40, "width": 500},
+        {"id": "detail-exchange", "label": "Controlled exchange", "subtitle": "Planned protected medium", "x": 540, "width": 260},
+        {"id": "detail-execution", "label": "Execution", "subtitle": "Target-side processing", "x": 800, "width": 260},
+        {"id": "detail-result", "label": "Result handling", "subtitle": "Validation, storage, and outcome", "x": 1060, "width": 500}
+      ],
+      "placements": [
+        {"ref": "processing-service", "displayLevel": "implementation", "displayLabel": "Processor", "displaySubtitle": "Coordinates work", "x": 70, "y": 300, "width": 190, "height": 100},
+        {"ref": "controlled-gateway", "displayLevel": "implementation", "displayLabel": "Adapter", "displaySubtitle": "Planned boundary", "x": 310, "y": 300, "width": 190, "height": 100},
+        {"ref": "controlled-medium", "displayLevel": "implementation", "displayLabel": "Medium", "displaySubtitle": "Planned exchange", "x": 575, "y": 300, "width": 190, "height": 100},
+        {"ref": "target-execution", "displayLevel": "implementation", "displayLabel": "Executor", "displaySubtitle": "Produces result", "x": 830, "y": 300, "width": 190, "height": 100},
+        {"ref": "result-validation", "displayLevel": "implementation", "displayLabel": "Validator", "displaySubtitle": "Reads and binds", "x": 1090, "y": 300, "width": 190, "height": 100},
+        {"ref": "persistence-store", "displayLevel": "implementation", "displayLabel": "Local store", "displaySubtitle": "Task records", "x": 1350, "y": 190, "width": 190, "height": 90},
+        {"ref": "business-outcome", "displayLevel": "business", "displayLabel": "Outcome", "displaySubtitle": "Task and report", "x": 1350, "y": 430, "width": 190, "height": 90}
+      ],
+      "connectors": [
+        {"id": "detail-service-gateway", "relationshipIds": ["rel-service-controlled"], "from": "processing-service", "to": "controlled-gateway", "direction": "forward", "status": "planned", "flowPhase": "outbound", "viaDevices": [], "route": {"type": "polyline", "points": [{"x": 260, "y": 350}, {"x": 310, "y": 350}]}, "emphasis": false},
+        {"id": "detail-gateway-medium", "relationshipIds": ["rel-controlled-medium"], "from": "controlled-gateway", "to": "controlled-medium", "direction": "forward", "status": "planned", "flowPhase": "outbound", "viaDevices": [], "route": {"type": "polyline", "points": [{"x": 500, "y": 350}, {"x": 575, "y": 350}]}, "emphasis": false},
+        {"id": "detail-medium-target", "relationshipIds": ["rel-controlled-target"], "from": "controlled-medium", "to": "target-execution", "direction": "forward", "status": "planned", "flowPhase": "outbound", "viaDevices": [], "route": {"type": "polyline", "points": [{"x": 765, "y": 350}, {"x": 830, "y": 350}]}, "emphasis": false},
+        {"id": "detail-target-result", "relationshipIds": ["rel-target-result"], "from": "target-execution", "to": "result-validation", "direction": "forward", "status": "shared", "flowPhase": "return", "viaDevices": [], "route": {"type": "polyline", "points": [{"x": 1020, "y": 350}, {"x": 1090, "y": 350}]}, "emphasis": false},
+        {"id": "detail-result-outcome", "relationshipIds": ["rel-result-outcome"], "from": "result-validation", "to": "business-outcome", "direction": "forward", "status": "shared", "flowPhase": "outcome", "viaDevices": [], "route": {"type": "polyline", "points": [{"x": 1280, "y": 370}, {"x": 1315, "y": 370}, {"x": 1315, "y": 475}, {"x": 1350, "y": 475}]}, "emphasis": false},
+        {"id": "detail-result-store", "relationshipIds": ["rel-result-store"], "from": "result-validation", "to": "persistence-store", "direction": "forward", "status": "shared", "flowPhase": "supporting", "viaDevices": [], "route": {"type": "polyline", "points": [{"x": 1280, "y": 330}, {"x": 1315, "y": 330}, {"x": 1315, "y": 235}, {"x": 1350, "y": 235}]}, "emphasis": false}
+      ],
+      "mainPaths": [{"id": "controlled-detail-path", "label": "Planned controlled implementation closure", "status": "planned", "startRef": "processing-service", "endRef": "business-outcome", "connectorIds": ["detail-service-gateway", "detail-gateway-medium", "detail-medium-target", "detail-target-result", "detail-result-outcome"]}],
+      "statusLegend": null,
+      "allowedCrossings": [],
+      "mainFlow": [
+        {"id": "detail-outbound-flow", "text": "The application uses the planned adapter and controlled medium to deliver work to the target.", "placementRefs": ["processing-service", "controlled-gateway", "controlled-medium", "target-execution"], "connectorIds": ["detail-service-gateway", "detail-gateway-medium", "detail-medium-target"]},
+        {"id": "detail-result-flow", "text": "The target result returns to validation and becomes the visible business outcome.", "placementRefs": ["target-execution", "result-validation", "business-outcome"], "connectorIds": ["detail-target-result", "detail-result-outcome"]}
+      ]
+    }
+  ],
+  "notes": ["Example names and relationships are neutral adaptation inputs, not product facts.", "The overview shows structure and complete current/planned closure; the detail expands implementation evidence."],
+  "acceptance": {"requiredText": ["Structure And Complete Closure", "Current capability", "Planned capability", "业务主线", "Local persistence"], "forbiddenText": ["TODO", "TBD", "Main flow"]}
+}
