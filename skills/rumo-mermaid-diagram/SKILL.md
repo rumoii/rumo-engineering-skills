@@ -5,7 +5,7 @@ description: >
   (流程图、业务链路图、校验/审核分支图) as Markdown + HTML preview + PNG/SVG assets.
   Covers light-theme defaults, pass/fail/engine branch styling, layout hygiene, and headless PNG export.
   Triggers: 流程图, mermaid 图, 导出 png, 业务流程图, flow diagram, process diagram,
-  /rumo-mermaid-diagram, "生图", "画流程图", "导出流程图".
+  /rumo-mermaid-diagram, "画流程图", "导出流程图".
 ---
 
 # Rumo Mermaid Diagram

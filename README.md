@@ -38,6 +38,11 @@ cd rumo-engineering-skills
 ./install.sh --no-pull
 ```
 
+If a client already has a same-name `rumo-*` link from another checkout, the
+installer stops before changing any client. Use `-ReplaceForeignLinks` or
+`--replace-foreign-links` only when you intentionally want to switch that
+client to this public checkout.
+
 The installers manage only `rumo-*` links and preserve skills from other
 namespaces and sources. Start a new agent session after installation so the
 skill catalog is reloaded.
@@ -62,7 +67,7 @@ skill catalog is reloaded.
 - `rumo-frontend-dev`: local frontend startup, proxy, port, certificate, and runtime troubleshooting.
 - `rumo-frontend-ui`: page development, component reuse, layout consistency, and browser QA.
 - `rumo-browser-evidence`: traceable screenshots, DOM evidence, state sequences, and optional GIFs.
-- `rumo-incremental-deploy`: profile-driven bounded artifact deployment with backup, verification, and rollback.
+- `rumo-incremental-deploy`: profile-driven bounded deployment planning and guidance with backup, verification, and rollback.
 - `rumo-offline-delivery-audit`: offline artifact integrity, provenance, install, rollback, and acceptance limits.
 - `rumo-remote-memory-inspection`: read-only remote Linux memory and performance evidence.
 - `rumo-linux-hardware-inventory`: read-only Linux hardware inventory and concise handoff.
@@ -84,7 +89,17 @@ python3 scripts/verify_skills.py
 python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 ```
 
-The validator checks naming, frontmatter, UI metadata, relative links, catalog inventories, forbidden project-specific terms, and tracked credential files.
+Run the focused helper-script suite before contributing or releasing:
+
+```powershell
+py -3 scripts\run_auxiliary_tests.py
+```
+
+```bash
+python3 scripts/run_auxiliary_tests.py
+```
+
+The validator checks naming, frontmatter, UI metadata, relative links, JSON syntax, catalog inventories, forbidden project-specific terms, and tracked credential files.
 
 ## Install
 

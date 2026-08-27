@@ -251,6 +251,7 @@ def validate_repository(repo_root: Path) -> list[str]:
     markdown_files = sorted(path for path in readme_paths if path.is_file())
     markdown_files.extend(iter_skill_markdown(skills_root))
     validate_markdown_links(repo_root, markdown_files, errors)
+    validate_json_files(repo_root, errors)
 
     for path in sorted(repo_root.rglob("*")):
         if not path.is_file() or ".git" in path.parts or "node_modules" in path.parts:
@@ -275,6 +276,17 @@ def validate_repository(repo_root: Path) -> list[str]:
                 errors.append(f"{path}: contains a possible private key or access token")
                 break
     return list(dict.fromkeys(errors))
+
+
+def validate_json_files(repo_root: Path, errors: list[str]) -> None:
+    """Validate repository-owned JSON files, including profile templates."""
+    for path in sorted(repo_root.rglob("*.json")):
+        if ".git" in path.parts or "node_modules" in path.parts:
+            continue
+        try:
+            json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            errors.append(f"{path}: invalid UTF-8 JSON: {exc}")
 
 
 def main() -> int:

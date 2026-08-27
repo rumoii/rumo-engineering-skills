@@ -1,6 +1,6 @@
 ---
 name: rumo-incremental-deploy
-description: Use when planning or performing a bounded deployment of selected application artifacts to an existing development or test environment. Resolve build, artifact, destination, service, backup, restart, verification, and rollback commands from an explicit project profile.
+description: Use when planning or guiding a bounded deployment of selected application artifacts to an existing development or test environment. Resolve build, artifact, destination, service, backup, restart, verification, and rollback commands from an explicit project profile.
 ---
 
 # Incremental Deploy
@@ -26,6 +26,6 @@ Use [`rumo-project-profile`](../rumo-project-profile/SKILL.md) and require a `ba
 - Restart only the services that consume the changed artifact.
 - Stop on ambiguous module ownership, target paths, service names, failed backup, failed copy, failed restart, or failed health verification.
 
-Run `scripts/incremental_deploy_plan.py --profile <profile-dir> --artifact <file> --host <host> --destination <path> --service <name>` to generate a non-executing plan. The script never connects to a remote host or changes files.
+Run `scripts/incremental_deploy_plan.py --profile <profile-dir> --artifact <file> --host <host> --destination <path> --service <name>` to generate a non-executing plan. The script never connects to a remote host or changes files. Any live deployment remains a separately authorized workflow carried out with the verified commands from the plan and profile.
 
 Report source commit, build command, artifact hashes, destination, backup, restarted services, verification, rollback readiness, and any field behavior not exercised.

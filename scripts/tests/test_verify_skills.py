@@ -152,6 +152,11 @@ class VerifySkillsTest(unittest.TestCase):
         (self.repo_root / "credentials.md").write_text("redacted\n", encoding="utf-8")
         self.assert_error_contains("plaintext credential file must not be tracked")
 
+    def test_rejects_invalid_json_file(self) -> None:
+        invalid = self.repo_root / "skills" / "rumo-example" / "settings.json"
+        invalid.write_text('{"broken":\n', encoding="utf-8")
+        self.assert_error_contains("invalid UTF-8 JSON")
+
 
 if __name__ == "__main__":
     unittest.main()

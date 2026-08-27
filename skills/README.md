@@ -18,7 +18,7 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | `rumo-frontend-ui` | Frontend page development, component reuse, layout consistency, and visual QA |
 | `rumo-git-commit` | Commit, branch landing, history cleanup, release, and push workflow |
 | `rumo-imagegen` | One-image generation through a configured OpenAI-compatible endpoint |
-| `rumo-incremental-deploy` | Profile-driven bounded artifact deployment with verification and rollback |
+| `rumo-incremental-deploy` | Profile-driven bounded deployment planning and guidance with verification and rollback |
 | `rumo-insight` | Evidence-backed local Codex work analysis |
 | `rumo-interface-evolution` | Compatible producer-consumer interface and persisted-format evolution |
 | `rumo-lifecycle-safety` | Safe ownership, retry, cancellation, timeout, shutdown, and cleanup |

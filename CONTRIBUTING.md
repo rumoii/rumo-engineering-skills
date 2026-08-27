@@ -21,6 +21,7 @@ Windows:
 ```powershell
 py -3 scripts\verify_skills.py
 py -3 -m unittest discover -s scripts\tests -p "test_*.py"
+py -3 scripts\run_auxiliary_tests.py
 git diff --check
 ```
 
@@ -29,6 +30,7 @@ Linux and macOS:
 ```bash
 python3 scripts/verify_skills.py
 python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+python3 scripts/run_auxiliary_tests.py
 git diff --check
 ```
 

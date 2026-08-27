@@ -6,7 +6,8 @@ param(
   [string]$AgentsHome = $env:AGENTS_HOME,
   [string]$Remote = $(if ($env:RUMO_SKILLS_REMOTE) { $env:RUMO_SKILLS_REMOTE } else { "https://github.com/rumoii/rumo-engineering-skills.git" }),
   [switch]$NoPull,
-  [switch]$DryRun
+  [switch]$DryRun,
+  [switch]$ReplaceForeignLinks
 )
 
 Set-StrictMode -Version Latest
@@ -39,6 +40,45 @@ function Remove-SkillLink {
   else { [System.IO.File]::Delete($Item.FullName) }
 }
 
+function Get-LinkTarget {
+  param([Parameter(Mandatory = $true)][System.IO.FileSystemInfo]$Item)
+  $Target = if ($Item.Target -is [array]) { $Item.Target[0] } else { $Item.Target }
+  if (-not $Target) { return "" }
+  try {
+    if ([IO.Path]::IsPathRooted([string]$Target)) { return [IO.Path]::GetFullPath([string]$Target) }
+    return [IO.Path]::GetFullPath((Join-Path $Item.DirectoryName ([string]$Target)))
+  }
+  catch { return [string]$Target }
+}
+
+function Assert-SkillLinksSafe {
+  param(
+    [Parameter(Mandatory = $true)][string]$RepoSkillsPath,
+    [Parameter(Mandatory = $true)][string[]]$TargetSkillsPaths
+  )
+  $Issues = [System.Collections.Generic.List[string]]::new()
+  $SkillDirs = Get-ChildItem -Path $RepoSkillsPath -Directory | Where-Object { $_.Name -like "rumo-*" }
+  foreach ($TargetSkillsPath in $TargetSkillsPaths) {
+    foreach ($SkillDir in $SkillDirs) {
+      $LinkPath = Join-Path $TargetSkillsPath $SkillDir.Name
+      $Existing = Get-Item -LiteralPath $LinkPath -Force -ErrorAction SilentlyContinue
+      if (-not $Existing) { continue }
+      if ($Existing.LinkType -notin @("SymbolicLink", "Junction")) {
+        $Issues.Add("$LinkPath exists as a real file or directory")
+        continue
+      }
+      $Expected = [IO.Path]::GetFullPath($SkillDir.FullName)
+      $Actual = Get-LinkTarget $Existing
+      if ($Actual -and -not [StringComparer]::OrdinalIgnoreCase.Equals($Actual, $Expected) -and -not $ReplaceForeignLinks) {
+        $Issues.Add("$LinkPath points to $Actual (expected $Expected); use -ReplaceForeignLinks to replace it")
+      }
+    }
+  }
+  if ($Issues.Count -gt 0) {
+    throw "Skill link preflight failed; no links were changed:`n- $($Issues -join "`n- ")"
+  }
+}
+
 function Sync-SkillLinks {
   param([Parameter(Mandatory = $true)][string]$RepoSkillsPath, [Parameter(Mandatory = $true)][string]$TargetSkillsPath)
   Invoke-Step "New-Item -ItemType Directory -Force -Path `"$TargetSkillsPath`"" {
@@ -50,8 +90,7 @@ function Sync-SkillLinks {
     $Existing = Get-Item -LiteralPath $LinkPath -Force -ErrorAction SilentlyContinue
     if ($Existing) {
       if ($Existing.LinkType -notin @("SymbolicLink", "Junction")) {
-        Write-Warning "Skipping $LinkPath because it exists and is not a link."
-        continue
+        throw "Refusing to replace non-link skill path: $LinkPath"
       }
       Invoke-Step "Remove link `"$LinkPath`"" { Remove-SkillLink $Existing }
     }
@@ -62,8 +101,9 @@ function Sync-SkillLinks {
   Get-ChildItem -Path $TargetSkillsPath -Force -ErrorAction SilentlyContinue |
     Where-Object { $_.Name -like "rumo-*" -and $_.LinkType -in @("SymbolicLink", "Junction") } |
     ForEach-Object {
-      $Target = if ($_.Target -is [array]) { $_.Target[0] } else { $_.Target }
-      if ($Target -and $Target.StartsWith($RepoSkillsPath, [StringComparison]::OrdinalIgnoreCase) -and -not (Test-Path $Target)) {
+      $Target = Get-LinkTarget $_
+      $RepoPrefix = ([IO.Path]::GetFullPath($RepoSkillsPath)).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+      if ($Target -and $Target.StartsWith($RepoPrefix, [StringComparison]::OrdinalIgnoreCase) -and -not (Test-Path $Target)) {
         $StaleLink = $_
         Invoke-Step "Remove stale link `"$($StaleLink.FullName)`"" { Remove-SkillLink $StaleLink }
       }
@@ -72,7 +112,7 @@ function Sync-SkillLinks {
 
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw "Git is required." }
 $ScriptRoot = $PSScriptRoot
-if (-not $Repo) { $Repo = if (Test-Path (Join-Path $ScriptRoot "skills")) { $ScriptRoot } else { Join-Path $HOME ".rumo-skills" } }
+if (-not $Repo) { $Repo = if (Test-Path (Join-Path $ScriptRoot "skills")) { $ScriptRoot } else { Join-Path $HOME ".rumo-engineering-skills" } }
 $Repo = [IO.Path]::GetFullPath($Repo)
 $CodexHome = if ($CodexHome) { $CodexHome } else { Join-Path $HOME ".codex" }
 $ClaudeHome = if ($ClaudeHome) { $ClaudeHome } else { Join-Path $HOME ".claude" }
@@ -98,15 +138,19 @@ if (Test-Path (Join-Path $Repo ".git")) {
 $RepoSkills = Join-Path $Repo "skills"
 if (-not (Test-Path $RepoSkills)) { throw "Skills directory not found: $RepoSkills" }
 Invoke-SkillValidation $Repo
-Sync-SkillLinks $RepoSkills (Join-Path $CodexHome "skills")
 
 $SyncClaude = $ClaudeHomeExplicit -or (Get-Command claude -ErrorAction SilentlyContinue) -or (Test-Path $ClaudeHome)
-if ($SyncClaude) { Sync-SkillLinks $RepoSkills (Join-Path $ClaudeHome "skills") }
-else { Write-Host "Claude Code was not detected; skipping." }
-
 $SyncAgents = $AgentsHomeExplicit -or (Get-Command grok -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME ".grok"))
-if ($SyncAgents) { Sync-SkillLinks $RepoSkills (Join-Path $AgentsHome "skills") }
-else { Write-Host "A shared agent client was not detected; skipping." }
+$TargetSkillsPaths = [System.Collections.Generic.List[string]]::new()
+$TargetSkillsPaths.Add((Join-Path $CodexHome "skills"))
+if ($SyncClaude) { $TargetSkillsPaths.Add((Join-Path $ClaudeHome "skills")) }
+if ($SyncAgents) { $TargetSkillsPaths.Add((Join-Path $AgentsHome "skills")) }
+Assert-SkillLinksSafe $RepoSkills $TargetSkillsPaths
+foreach ($TargetSkillsPath in $TargetSkillsPaths) {
+  Sync-SkillLinks $RepoSkills $TargetSkillsPath
+}
+if (-not $SyncClaude) { Write-Host "Claude Code was not detected; skipping." }
+if (-not $SyncAgents) { Write-Host "A shared agent client was not detected; skipping." }
 
 Write-Host "Rumo skills installation completed."
 Write-Host "Repository: $Repo"

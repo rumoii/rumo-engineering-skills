@@ -1,4 +1,4 @@
 interface:
   display_name: "Rumo Remote Memory Inspection"
-  short_description: "定时巡检 Rumo 远端内存、JVM、日志并定位性能风险"
-  default_prompt: "Use $rumo-remote-memory-inspection to run a read-only scheduled inspection of a selected applications remote host, classify memory risk, and report evidence-backed optimization guidance."
+  short_description: "手动或外部调度只读巡检 Rumo 远端内存、JVM 和日志风险"
+  default_prompt: "Use $rumo-remote-memory-inspection to run a read-only inspection, manually or from an external scheduler, classify memory risk, and report evidence-backed guidance."

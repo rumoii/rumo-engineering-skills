@@ -7,6 +7,8 @@ description: Use for scheduled or manual read-only inspection of remote Linux ho
 
 Collect read-only Linux evidence and classify risk without changing services or configuration. The target must be explicitly identified as development or test, or separately authorized for production read-only access.
 
+Run this workflow manually or invoke it from an external scheduler. The skill does not create or manage cron jobs, operating-system tasks, or agent automations.
+
 Use [`rumo-project-profile`](../rumo-project-profile/SKILL.md) for install roots, log directories, service patterns, runtime type, and private credentials. The skill itself has no default host, product, path, or password.
 
 ## Evidence

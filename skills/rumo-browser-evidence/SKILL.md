@@ -29,7 +29,9 @@ Do not claim that a screenshot proves source, backend, deployment, or permission
 5. Cover empty, loading, success, error, disabled, or permission-limited states only when they are part of the requested claim.
 6. Capture no passwords, tokens, personal data, customer identifiers, or unrelated environment details.
 
-Use the available in-app browser for isolated local targets. Use the user's Chrome only when its existing authenticated state is required or explicitly requested. If browser automation is unavailable, report the limitation rather than presenting source inspection as visual verification.
+Use a dedicated Playwright or other isolated automation browser profile by default. When an existing authenticated state is genuinely required, or the user explicitly requests it, an existing user browser profile may be reused as a recorded exception. Limit access to the requested target and state: do not inspect unrelated tabs, history, password stores, extension data, or other origins. If browser automation is unavailable, report the limitation rather than presenting source inspection as visual verification.
+
+Operate only localhost or an environment the user has explicitly identified as development or test. Ask before accessing an environment whose purpose is unclear. Production requires authorization for the exact scope and remains read-only unless the user separately authorizes a state-changing action. Let the user enter passwords, one-time codes, and other credentials in the visible browser window; never extract them from a browser profile.
 
 ## Store Artifacts Safely
 

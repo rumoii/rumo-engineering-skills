@@ -34,6 +34,8 @@ cd rumo-engineering-skills
 ./install.sh --no-pull
 ```
 
+如果客户端中已有同名 `rumo-*` 链接指向其他仓库，安装程序会在修改任何客户端前停止。只有明确要切换到本公共仓库时，才使用 `-ReplaceForeignLinks` 或 `--replace-foreign-links`。
+
 安装程序只管理 `rumo-*` 链接，会保留其他命名空间和来源的 Skill。安装完成后，请新建一个智能体会话，让客户端重新加载 Skill 列表。
 
 ## Skill 清单
@@ -56,7 +58,7 @@ cd rumo-engineering-skills
 - `rumo-frontend-dev`: 排查本地前端启动、代理、端口、证书和运行时配置。
 - `rumo-frontend-ui`: 开发前端页面、复用组件、统一布局并执行视觉质量检查。
 - `rumo-browser-evidence`: 生成可追溯的截图、页面状态、DOM 证据和可选 GIF。
-- `rumo-incremental-deploy`: 依据 Profile 执行有边界的制品部署、备份、验证和回滚。
+- `rumo-incremental-deploy`: 依据 Profile 规划并指导有边界的制品部署、备份、验证和回滚。
 - `rumo-offline-delivery-audit`: 审计离线制品完整性、来源、安装、回滚和验收边界。
 - `rumo-remote-memory-inspection`: 对远程 Linux 内存和性能问题进行只读检查。
 - `rumo-linux-hardware-inventory`: 只读采集 Linux 硬件信息并生成简洁交付结果。
@@ -82,7 +84,17 @@ python3 scripts/verify_skills.py
 python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 ```
 
-校验器会检查 Skill 命名、Frontmatter、界面元数据、相对链接、清单一致性、禁止出现的项目专属内容和被跟踪的凭据文件。
+贡献或发布前还应执行各 Skill 自带的辅助测试：
+
+```powershell
+py -3 scripts\run_auxiliary_tests.py
+```
+
+```bash
+python3 scripts/run_auxiliary_tests.py
+```
+
+校验器会检查 Skill 命名、Frontmatter、界面元数据、相对链接、JSON 语法、清单一致性、禁止出现的项目专属内容和被跟踪的凭据文件。
 
 ## 安装
 
