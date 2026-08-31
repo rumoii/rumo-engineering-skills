@@ -87,5 +87,3 @@ The aggregate entry point must:
 6. leave unrelated user files and configuration untouched.
 
 EVIDENCE cites this entry point. Scratch commands that no longer exist, developer-specific absolute paths, and cached reports cannot be required to reproduce the result.
-
-

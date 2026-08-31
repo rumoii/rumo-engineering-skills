@@ -37,5 +37,3 @@ The adaptation retains the upstream decisions that materially improve HTTP/JSON 
 ## Known Boundary
 
 This skill is not a full application-security review and does not replace protocol-specific guidance for gRPC/protobuf, GraphQL, WebSockets, terminal messages, Kafka, database formats, or persisted files. It also does not prove deployed gateway, identity-provider, rate-limit, or field behavior unless those components are exercised.
-
-

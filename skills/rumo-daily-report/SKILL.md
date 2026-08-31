@@ -63,5 +63,3 @@ py -3 scripts\daily_report.py append --session-id "<current-thread-id>" --items-
 ```
 
 Use `--date YYYY-MM-DD` only for deterministic tests or an explicitly requested date; normal use derives the machine's local date.
-
-

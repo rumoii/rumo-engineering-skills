@@ -50,5 +50,3 @@ Cap at two rounds unless the user explicitly approves more. The cap controls cos
 A verdict belongs to one exact source state. Any later implementation or checker edit makes independent verification `not performed` for the new state until it is verified again. Record earlier rounds as history without inheriting their verdict.
 
 The verifier fixes nothing. SPEC gaps return to the user; implementation findings return to the normal SPEC, RED, GREEN, gauntlet, and evidence loop.
-
-

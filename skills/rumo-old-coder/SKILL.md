@@ -120,5 +120,3 @@ Cap verification at two rounds unless the user explicitly approves more. Report 
 ## Maintenance And Provenance
 
 This skill adapts the MIT-licensed `old-coder` workflow. Read [references/upstream-review.md](references/upstream-review.md) when maintaining the adaptation or comparing it with upstream. The original license is preserved in [LICENSE.upstream](LICENSE.upstream).
-
-

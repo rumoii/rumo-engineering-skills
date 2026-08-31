@@ -81,5 +81,3 @@ Use a job resource only when work genuinely cannot complete within the supported
 - recovery after worker restart and cleanup after expiry.
 
 Do not expose internal worker state or require consumers to understand queue partitions, database rows, or process topology.
-
-

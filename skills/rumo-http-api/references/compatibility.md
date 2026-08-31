@@ -59,5 +59,3 @@ When removal is authorized and necessary:
 6. remove only after the approved support window and observed usage criteria are satisfied.
 
 Calendar age alone does not prove a surface is safe to remove.
-
-

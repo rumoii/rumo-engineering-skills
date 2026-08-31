@@ -34,5 +34,3 @@ This adaptation retains the upstream principles that materially change agent beh
 ## Known Boundary
 
 This repository distributes instructions, not a universal gauntlet executable. Each product repository owns its actual test tools, aggregate command, CI integration, platform requirements, and retained evidence artifacts. The skill must inspect those owners instead of copying example commands blindly.
-
-

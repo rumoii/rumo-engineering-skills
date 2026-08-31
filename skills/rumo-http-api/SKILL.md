@@ -144,5 +144,3 @@ Cite repository file and line evidence. End with a gate summary using `PASS`, `F
 ## Maintenance And Provenance
 
 This skill adapts the MIT-licensed `old-coder-api` workflow. Read [references/upstream-review.md](references/upstream-review.md) when maintaining the adaptation or comparing it with upstream. The original license is preserved in [LICENSE.upstream](LICENSE.upstream).
-
-

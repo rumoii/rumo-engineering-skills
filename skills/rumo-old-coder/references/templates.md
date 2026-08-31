@@ -112,5 +112,3 @@ Scenario: <concrete failure or boundary behavior>
 ```
 
 Use `pass` only for an executed check that can falsify the mapped claim. A skipped row is `unverified` or `n-a`, never `pass`. Results from before the final edit do not belong in the final gauntlet table.
-
-
