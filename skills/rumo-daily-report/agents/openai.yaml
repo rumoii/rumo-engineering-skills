@@ -1,0 +1,6 @@
+interface:
+  display_name: "Rumo Daily Report"
+  short_description: "跨会话追加通俗易懂且真实准确的中文个人工程日报到本地TXT文件"
+  default_prompt: "Use $rumo-daily-report to extract this conversation's new work and append a clear Chinese daily report to today's configured TXT file."
+
+

@@ -52,6 +52,7 @@ skill catalog is reloaded.
 - `rumo-project-profile`: resolves and validates private project configuration for other skills.
 - `rumo-bug-root-cause`: evidence-led defect diagnosis across source, runtime, data, middleware, deployment, and clients.
 - `rumo-coding-guidelines`: baseline constraints for minimal, path-grounded, verified code changes.
+- `rumo-http-api`: compatible, secure, retry-safe, bounded, and operable HTTP/JSON API design and review.
 - `rumo-code-review`: one-pass read-only engineering review.
 - `rumo-review-fix-loop`: explicit iterative review, repair, verification, and re-review.
 - `rumo-change-verification`: exact change-scope inspection and smallest sufficient checks.
@@ -63,12 +64,14 @@ skill catalog is reloaded.
 - `rumo-engineering-decision`: durable records for material engineering decisions.
 - `rumo-find-simplifications`: evidence-led discovery of removable engineering complexity.
 - `rumo-prose-standard`: prose quality for code, diagnostics, logs, repository docs, prompts, and UI strings.
+- `rumo-daily-report`: cross-session incremental Chinese daily reports in a date-based TXT file.
 - `rumo-git-commit`: commit, branch landing, history cleanup, release, and push workflow following repository conventions.
 - `rumo-frontend-dev`: local frontend startup, proxy, port, certificate, and runtime troubleshooting.
 - `rumo-frontend-ui`: page development, component reuse, layout consistency, and browser QA.
 - `rumo-browser-evidence`: traceable screenshots, DOM evidence, state sequences, and optional GIFs.
 - `rumo-incremental-deploy`: profile-driven bounded deployment planning and guidance with backup, verification, and rollback.
 - `rumo-offline-delivery-audit`: offline artifact integrity, provenance, install, rollback, and acceptance limits.
+- `rumo-old-coder`: evidence-first high-assurance development through an approved specification and reproducible gauntlet.
 - `rumo-remote-memory-inspection`: read-only remote Linux memory and performance evidence.
 - `rumo-linux-hardware-inventory`: read-only Linux hardware inventory and concise handoff.
 - `rumo-document-writing`: formal Word-document authoring and quality control.

@@ -9,6 +9,8 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | `rumo-change-verification` | Exact change-scope inspection and smallest-sufficient verification |
 | `rumo-code-review` | One-pass read-only engineering review |
 | `rumo-coding-guidelines` | Minimal, path-grounded, assumption-aware, verified code changes |
+| `rumo-http-api` | Compatible, secure, retry-safe, bounded, and operable HTTP/JSON API design and review |
+| `rumo-daily-report` | Cross-session incremental Chinese daily reports in a date-based TXT file |
 | `rumo-database-change-safety` | Safe database migration, repair, cleanup, backup, authorization, and rollback |
 | `rumo-document-writing` | Formal delivery DOCX authoring, revision, formatting, and quality control |
 | `rumo-engineering-decision` | Durable engineering decisions, alternatives, compatibility, and rollback |
@@ -25,6 +27,7 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | `rumo-linux-hardware-inventory` | Read-only Linux hardware evidence and concise handoff |
 | `rumo-mermaid-diagram` | Mermaid business flowcharts with preview and PNG/SVG export |
 | `rumo-offline-delivery-audit` | Offline artifact integrity, provenance, installation, rollback, and acceptance limits |
+| `rumo-old-coder` | Evidence-first high-assurance development through an approved specification and reproducible gauntlet |
 | `rumo-project-profile` | Private project profile resolution and validation for other skills |
 | `rumo-prose-standard` | Prose quality for comments, diagnostics, logs, docs, prompts, and UI strings |
 | `rumo-remote-memory-inspection` | Read-only remote Linux memory and performance inspection |

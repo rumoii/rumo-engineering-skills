@@ -43,6 +43,7 @@ cd rumo-engineering-skills
 - `rumo-project-profile`: 为其他 Skill 解析和校验私密项目配置。
 - `rumo-bug-root-cause`: 基于证据排查源码、运行时、数据、中间件、部署和客户端问题。
 - `rumo-coding-guidelines`: 约束代码修改保持范围明确、改动最小并经过验证。
+- `rumo-http-api`: 设计和审查兼容、安全、可重试、成本受控且可运维的 HTTP/JSON 接口。
 - `rumo-code-review`: 执行一次只读的工程代码审查。
 - `rumo-review-fix-loop`: 按需循环执行审查、修复、验证和复审。
 - `rumo-change-verification`: 核对准确变更范围并选择最小充分验证。
@@ -54,12 +55,14 @@ cd rumo-engineering-skills
 - `rumo-engineering-decision`: 记录需要长期保留的重要工程决策。
 - `rumo-find-simplifications`: 基于使用方和兼容性证据寻找可移除的工程复杂度。
 - `rumo-prose-standard`: 规范注释、诊断、日志、仓库文档、提示词和界面文字。
+- `rumo-daily-report`: 跨会话增量生成按日期保存的中文工程日报。
 - `rumo-git-commit`: 按仓库约定完成提交、分支落地、历史整理、发布和推送。
 - `rumo-frontend-dev`: 排查本地前端启动、代理、端口、证书和运行时配置。
 - `rumo-frontend-ui`: 开发前端页面、复用组件、统一布局并执行视觉质量检查。
 - `rumo-browser-evidence`: 生成可追溯的截图、页面状态、DOM 证据和可选 GIF。
 - `rumo-incremental-deploy`: 依据 Profile 规划并指导有边界的制品部署、备份、验证和回滚。
 - `rumo-offline-delivery-audit`: 审计离线制品完整性、来源、安装、回滚和验收边界。
+- `rumo-old-coder`: 通过已批准的可执行规格和可复现验证链完成高可靠开发。
 - `rumo-remote-memory-inspection`: 对远程 Linux 内存和性能问题进行只读检查。
 - `rumo-linux-hardware-inventory`: 只读采集 Linux 硬件信息并生成简洁交付结果。
 - `rumo-document-writing`: 编写和检查正式 Word 交付文档。

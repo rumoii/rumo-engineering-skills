@@ -21,6 +21,7 @@ def main() -> int:
     commands = (
         (node, "skills/rumo-engineering-topology-diagram/scripts/test-topology-skill.mjs"),
         (node, "skills/rumo-imagegen/scripts/generate.test.mjs"),
+        (sys.executable, "skills/rumo-daily-report/scripts/test_daily_report.py"),
         (sys.executable, "skills/rumo-insight/scripts/test_analyze_sessions.py"),
         (sys.executable, "skills/rumo-insight/scripts/test_summarize_evidence.py"),
         (sys.executable, "skills/rumo-review-fix-loop/scripts/test_app_server_review.py"),
