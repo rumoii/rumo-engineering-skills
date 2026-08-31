@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
+import re
 import shlex
 import subprocess
 from pathlib import Path
@@ -30,6 +32,19 @@ echo "===== containers ====="
 docker ps 2>/dev/null || true
 docker stats --no-stream 2>/dev/null || true
 '''
+
+
+def output_path(output_dir: Path, host: str, stamp: str) -> Path:
+    """Build a host-labelled evidence directory that cannot escape output_dir."""
+    root = output_dir.expanduser().resolve()
+    label = (re.sub(r"[^A-Za-z0-9_-]+", "_", host).strip("_") or "host")[:80]
+    digest = hashlib.sha256(host.encode("utf-8")).hexdigest()[:10]
+    candidate = root / f"{label}-{digest}-{stamp}"
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("Evidence output path escaped the output directory") from exc
+    return candidate
 
 
 def main() -> int:
@@ -58,7 +73,7 @@ def main() -> int:
         print(json.dumps({"command": command, "root": args.root, "log_dir": args.log_dir, "window_minutes": args.window_minutes, "writes_remote": False}, indent=2))
         return 0
     stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
-    output = args.output_dir.expanduser() / f"{args.host}-{stamp}"
+    output = output_path(args.output_dir, args.host, stamp)
     output.mkdir(parents=True, exist_ok=False)
     completed = subprocess.run(command, input=script, text=True, capture_output=True, timeout=args.timeout, check=False)
     (output / "remote-output.txt").write_text(completed.stdout, encoding="utf-8", errors="replace")
