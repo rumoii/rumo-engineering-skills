@@ -191,7 +191,10 @@ def append_report(items_json: str, session_id: str, forced_date: str | None) -> 
             original = ""
         maximum, file_fingerprints = parse_existing(original)
         state = load_state()
-        date_prefix = f"{report_date.isoformat()}:"
+        report_scope = hashlib.sha256(
+            os.path.normcase(str(report_dir.resolve())).encode("utf-8")
+        ).hexdigest()
+        date_prefix = f"{report_scope}:{report_date.isoformat()}:"
         known = {
             key[len(date_prefix) :]
             for key in state["fingerprints"]

@@ -85,6 +85,19 @@ class DailyReportScriptTest(unittest.TestCase):
         configured = json.loads(daily_report.config_path().read_text(encoding="utf-8"))
         self.assertEqual(Path(configured["report_dir"]), replacement.resolve())
 
+    def test_replaced_directory_has_an_independent_deduplication_scope(self) -> None:
+        item = "完成了需要在两个目录分别记录的工作。"
+        self.append([item], "thread-a", "2026-08-27")
+        replacement = Path(self.temp.name) / "replacement"
+        with redirect_stdout(io.StringIO()):
+            daily_report.configure(str(replacement), replace=True)
+
+        self.append([item], "thread-b", "2026-08-27")
+
+        report = replacement / "2026-08-27-日报.txt"
+        self.assertTrue(report.is_file())
+        self.assertIn(item, report.read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()
