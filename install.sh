@@ -4,6 +4,7 @@ set -eu
 REMOTE_URL="${RUMO_SKILLS_REMOTE:-https://github.com/rumoii/rumo-engineering-skills.git}"
 REPO_PATH="${RUMO_SKILLS_REPO:-}"
 PROFILES_REPO="${RUMO_SKILL_PROFILES_REPO:-}"
+PROFILES_REPO_EXPLICIT=0
 CODEX_HOME_DIR="${CODEX_HOME:-$HOME/.codex}"
 CLAUDE_HOME_DIR="${CLAUDE_HOME:-$HOME/.claude}"
 AGENTS_HOME_DIR="${AGENTS_HOME:-$HOME/.agents}"
@@ -32,7 +33,7 @@ usage() {
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --repo) REPO_PATH="$2"; shift 2 ;;
-    --profiles-repo) PROFILES_REPO="$2"; shift 2 ;;
+    --profiles-repo) PROFILES_REPO="$2"; PROFILES_REPO_EXPLICIT=1; shift 2 ;;
     --codex-home) CODEX_HOME_DIR="$2"; shift 2 ;;
     --claude-home) CLAUDE_HOME_DIR="$2"; CLAUDE_HOME_EXPLICIT=1; shift 2 ;;
     --agents-home) AGENTS_HOME_DIR="$2"; AGENTS_HOME_EXPLICIT=1; shift 2 ;;
@@ -146,6 +147,19 @@ else
   SYNC_AGENTS=0
 fi
 [ "$PREFLIGHT_STATUS" -eq 0 ] || { echo 'Skill link preflight failed; no links were changed.' >&2; exit 1; }
+
+if [ "$PROFILES_REPO_EXPLICIT" -eq 1 ]; then
+  config_script="$REPO_PATH/skills/rumo-project-profile/scripts/profile_config.py"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    if command -v python3 >/dev/null 2>&1; then python3 "$config_script" --profiles-repo "$PROFILES_REPO" --dry-run
+    elif command -v python >/dev/null 2>&1; then python "$config_script" --profiles-repo "$PROFILES_REPO" --dry-run
+    else echo 'Python 3 is required to configure the profiles repository.' >&2; exit 1
+    fi
+  elif command -v python3 >/dev/null 2>&1; then python3 "$config_script" --profiles-repo "$PROFILES_REPO"
+  elif command -v python >/dev/null 2>&1; then python "$config_script" --profiles-repo "$PROFILES_REPO"
+  else echo 'Python 3 is required to configure the profiles repository.' >&2; exit 1
+  fi
+fi
 
 sync_links "$CODEX_HOME_DIR/skills"
 if [ "$SYNC_CLAUDE" -eq 1 ]; then sync_links "$CLAUDE_HOME_DIR/skills"

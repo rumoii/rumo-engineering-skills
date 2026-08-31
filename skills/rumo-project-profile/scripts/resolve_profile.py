@@ -6,12 +6,16 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
 
+from profile_config import read_profiles_repo
+
 
 SECTIONS = ("project", "frontend", "backend", "runtime", "data", "documents")
+PROFILE_ID_RE = re.compile(r"^[a-z0-9]+(?:[-_][a-z0-9]+)*$")
 
 
 def repository_root(start: Path) -> Path | None:
@@ -32,16 +36,29 @@ def git_value(repo: Path | None, *args: str) -> str:
 
 
 def profiles_root(explicit: Path | None) -> Path:
-    candidates: list[Path] = []
     if explicit:
-        candidates.append(explicit)
+        resolved = explicit.expanduser().resolve()
+        if not (resolved / "profiles").is_dir():
+            raise FileNotFoundError(
+                f"Profiles repository must contain a profiles directory: {resolved}"
+            )
+        return resolved
     configured = os.environ.get("RUMO_SKILL_PROFILES_REPO")
     if configured:
-        candidates.append(Path(configured))
+        resolved = Path(configured).expanduser().resolve()
+        if not (resolved / "profiles").is_dir():
+            raise FileNotFoundError(
+                f"Profiles repository must contain a profiles directory: {resolved}"
+            )
+        return resolved
+    persisted = read_profiles_repo()
+    if persisted:
+        return persisted
     skill_repo = Path(__file__).resolve().parents[3]
-    candidates.append(skill_repo.parent / "rumo-skill-profiles")
-    candidates.append(Path.home() / ".rumo-skill-profiles")
-    for candidate in candidates:
+    for candidate in (
+        skill_repo.parent / "rumo-skill-profiles",
+        Path.home() / ".rumo-skill-profiles",
+    ):
         resolved = candidate.expanduser().resolve()
         if (resolved / "profiles").is_dir():
             return resolved
@@ -53,6 +70,20 @@ def read_object(path: Path) -> dict[str, object]:
     if not isinstance(data, dict):
         raise ValueError(f"{path}: top-level JSON value must be an object")
     return data
+
+
+def safe_profile_path(profiles: Path, profile_id: str) -> Path:
+    """Resolve one valid profile ID without following it outside profiles/."""
+    if not PROFILE_ID_RE.fullmatch(profile_id):
+        raise ValueError(
+            "Profile id must contain only lowercase letters, digits, hyphens, and underscores"
+        )
+    profile = (profiles / profile_id).resolve()
+    try:
+        profile.relative_to(profiles.resolve())
+    except ValueError as exc:
+        raise ValueError("Profile must remain inside the profiles directory") from exc
+    return profile
 
 
 def profile_matches(profile: Path, repo_name: str, remote: str) -> bool:
@@ -80,14 +111,20 @@ def resolve(args: argparse.Namespace) -> dict[str, object]:
     profiles = root / "profiles"
     requested = args.profile or os.environ.get("RUMO_PROJECT_PROFILE")
     if requested:
-        profile = profiles / requested
+        profile = safe_profile_path(profiles, requested)
         if not profile.is_dir():
             raise FileNotFoundError(f"Profile not found: {requested}")
     else:
         repo = repository_root(args.cwd)
         repo_name = repo.name if repo else args.cwd.resolve().name
         remote = git_value(repo, "remote", "get-url", "origin")
-        matches = [path for path in profiles.iterdir() if path.is_dir() and profile_matches(path, repo_name, remote)]
+        matches = [
+            safe_profile_path(profiles, path.name)
+            for path in profiles.iterdir()
+            if path.is_dir()
+            and PROFILE_ID_RE.fullmatch(path.name)
+            and profile_matches(safe_profile_path(profiles, path.name), repo_name, remote)
+        ]
         if not matches:
             raise LookupError("No project profile matched the current repository")
         if len(matches) > 1:
@@ -131,7 +168,7 @@ def main() -> int:
     args = parser.parse_args()
     try:
         print(json.dumps(resolve(args), ensure_ascii=False, indent=2))
-    except (FileNotFoundError, LookupError, ValueError, OSError, json.JSONDecodeError) as exc:
+    except (FileNotFoundError, LookupError, ValueError, OSError, RuntimeError, json.JSONDecodeError) as exc:
         print(str(exc), file=sys.stderr)
         return 2
     return 0

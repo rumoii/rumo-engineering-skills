@@ -31,8 +31,9 @@ Run `scripts/resolve_profile.py` from this skill directory. The resolver checks,
 
 1. `--profiles-root`.
 2. `RUMO_SKILL_PROFILES_REPO`.
-3. A sibling `rumo-skill-profiles` checkout next to the skills repository.
-4. `$HOME/.rumo-skill-profiles`.
+3. The profiles repository persisted by the installer in `$HOME/.rumo-engineering-skills/config.json`.
+4. A sibling `rumo-skill-profiles` checkout next to the skills repository.
+5. `$HOME/.rumo-skill-profiles`.
 
 Select a profile with `--profile`, `RUMO_PROJECT_PROFILE`, or a unique match against the current Git repository name or remote URL. Never guess when multiple profiles match.
 

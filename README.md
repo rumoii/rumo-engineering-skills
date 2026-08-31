@@ -124,6 +124,12 @@ Optional environment variables:
 - `RUMO_PROJECT_PROFILE`: explicit profile ID when automatic matching is ambiguous.
 - `CODEX_HOME`, `CLAUDE_HOME`, `AGENTS_HOME`: custom client homes.
 
+To persist a private Profiles checkout for future resolver calls, pass
+`-ProfilesRepo <path>` to the PowerShell installer or
+`--profiles-repo <path>` to the shell installer. The path is stored in the
+user-level Rumo configuration file; credentials remain outside this repository.
+The configuration file is `~/.rumo-engineering-skills/config.json`.
+
 Default remote: `https://github.com/rumoii/rumo-engineering-skills.git`.
 
 The PowerShell installer creates junctions on native Windows. The shell installer creates symbolic links on macOS, Linux, and WSL. Re-run the installer after adding, removing, or renaming skills.

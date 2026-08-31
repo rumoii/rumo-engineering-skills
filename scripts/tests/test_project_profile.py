@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -17,6 +19,7 @@ RESOLVER = (
 )
 INITIALIZER = RESOLVER.with_name("init_profile.py")
 VALIDATOR = RESOLVER.with_name("verify_profile.py")
+PROFILE_CONFIG = RESOLVER.with_name("profile_config.py")
 
 
 class ProjectProfileResolverTests(unittest.TestCase):
@@ -94,6 +97,204 @@ class ProjectProfileResolverTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 2)
         self.assertIn("No project profile matched", result.stderr)
+
+    def test_rejects_profile_path_outside_profiles_directory(self) -> None:
+        outside = self.root / "outside"
+        outside.mkdir()
+        (outside / "project.json").write_text(
+            json.dumps({"id": "outside"}), encoding="utf-8"
+        )
+
+        result = self.run_resolver("--profile", "../outside")
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("Profile id must contain", result.stderr)
+
+    def test_rejects_profile_symlink_outside_profiles_directory(self) -> None:
+        outside = self.root / "outside"
+        outside.mkdir()
+        (outside / "project.json").write_text(
+            json.dumps({"id": "linked"}), encoding="utf-8"
+        )
+        link = self.profiles / "linked"
+        if os.name == "nt":
+            powershell = shutil.which("powershell") or shutil.which("pwsh")
+            if not powershell:
+                self.skipTest("PowerShell is required to create a junction")
+            link_arg = str(link).replace("'", "''")
+            outside_arg = str(outside).replace("'", "''")
+            completed = subprocess.run(
+                [
+                    powershell,
+                    "-NoProfile",
+                    "-Command",
+                    f"New-Item -ItemType Junction -Path '{link_arg}' -Target '{outside_arg}' | Out-Null",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+        else:
+            link.symlink_to(outside, target_is_directory=True)
+
+        result = self.run_resolver("--profile", "linked")
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("inside the profiles directory", result.stderr)
+
+    def test_automatic_matching_rejects_symlink_outside_profiles_directory(self) -> None:
+        outside = self.root / "outside"
+        outside.mkdir()
+        (outside / "project.json").write_text(
+            json.dumps(
+                {
+                    "id": "linked",
+                    "match": {"repository_names": ["matched-repository"]},
+                }
+            ),
+            encoding="utf-8",
+        )
+        link = self.profiles / "linked"
+        if os.name == "nt":
+            powershell = shutil.which("powershell") or shutil.which("pwsh")
+            if not powershell:
+                self.skipTest("PowerShell is required to create a junction")
+            link_arg = str(link).replace("'", "''")
+            outside_arg = str(outside).replace("'", "''")
+            completed = subprocess.run(
+                [
+                    powershell,
+                    "-NoProfile",
+                    "-Command",
+                    f"New-Item -ItemType Junction -Path '{link_arg}' -Target '{outside_arg}' | Out-Null",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+        else:
+            link.symlink_to(outside, target_is_directory=True)
+        project = self.root / "matched-repository"
+        project.mkdir()
+
+        result = self.run_resolver("--cwd", str(project))
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("inside the profiles directory", result.stderr)
+
+
+class ProjectProfileConfigurationTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        self.home = self.root / "home"
+        self.profiles_root = self.root / "private-profiles"
+        profile = self.profiles_root / "profiles" / "configured"
+        profile.mkdir(parents=True)
+        (profile / "project.json").write_text(
+            json.dumps({"id": "configured"}), encoding="utf-8"
+        )
+        self.environment = {
+            **os.environ,
+            "HOME": str(self.home),
+            "USERPROFILE": str(self.home),
+        }
+        self.environment.pop("RUMO_SKILL_PROFILES_REPO", None)
+        self.environment.pop("RUMO_PROJECT_PROFILE", None)
+
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    def test_persisted_profiles_repository_is_used_by_resolver(self) -> None:
+        configured = subprocess.run(
+            [
+                sys.executable,
+                str(PROFILE_CONFIG),
+                "--profiles-repo",
+                str(self.profiles_root),
+            ],
+            env=self.environment,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        resolved = subprocess.run(
+            [sys.executable, str(RESOLVER), "--profile", "configured"],
+            env=self.environment,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(configured.returncode, 0, configured.stderr)
+        self.assertEqual(resolved.returncode, 0, resolved.stderr)
+        payload = json.loads(resolved.stdout)
+        self.assertEqual(Path(payload["profiles_root"]), self.profiles_root.resolve())
+        config = json.loads(
+            (self.home / ".rumo-engineering-skills" / "config.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(Path(config["profiles_repo"]), self.profiles_root.resolve())
+
+    def test_corrupt_persisted_configuration_fails_without_fallback(self) -> None:
+        config = self.home / ".rumo-engineering-skills" / "config.json"
+        config.parent.mkdir(parents=True)
+        config.write_text("{broken\n", encoding="utf-8")
+
+        result = subprocess.run(
+            [sys.executable, str(RESOLVER), "--profile", "configured"],
+            env=self.environment,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("configuration is invalid", result.stderr)
+
+    def test_explicit_profiles_root_takes_precedence_over_persisted_config(self) -> None:
+        persisted = subprocess.run(
+            [
+                sys.executable,
+                str(PROFILE_CONFIG),
+                "--profiles-repo",
+                str(self.profiles_root),
+            ],
+            env=self.environment,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        explicit_root = self.root / "explicit-profiles"
+        explicit_profile = explicit_root / "profiles" / "explicit"
+        explicit_profile.mkdir(parents=True)
+        (explicit_profile / "project.json").write_text(
+            json.dumps({"id": "explicit"}), encoding="utf-8"
+        )
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(RESOLVER),
+                "--profiles-root",
+                str(explicit_root),
+                "--profile",
+                "explicit",
+            ],
+            env=self.environment,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(persisted.returncode, 0, persisted.stderr)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            Path(json.loads(result.stdout)["profiles_root"]), explicit_root.resolve()
+        )
 
 
 class ProjectProfileInitializerTests(unittest.TestCase):

@@ -30,6 +30,9 @@ cd /path/to/rumo-engineering-skills
 
 如果发现同名 `rumo-*` Skill 已由其他仓库提供，安装程序会先停止并保持现状。确认要切换来源后，Windows 使用 `-ReplaceForeignLinks`，Linux/macOS/WSL 使用 `--replace-foreign-links`。
 
+如团队使用私有 Profile 仓库，可在安装时增加 `-ProfilesRepo <path>` 或
+`--profiles-repo <path>`。安装器只保存该仓库路径，Profile 凭据不会被复制到公共仓库。
+
 安装脚本会把每个 `rumo-*` 技能链接到 Codex 的 skills 目录。它只管理
 `rumo-*`，不会删除其他来源的技能。安装完成后，重新开始一个 Codex 会话，
 让技能列表重新加载。

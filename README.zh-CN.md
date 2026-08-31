@@ -119,6 +119,11 @@ python3 scripts/run_auxiliary_tests.py
 - `RUMO_PROJECT_PROFILE`：自动匹配存在歧义时明确指定的 Profile ID。
 - `CODEX_HOME`、`CLAUDE_HOME`、`AGENTS_HOME`：自定义客户端主目录。
 
+如需让 Profile 解析器长期使用私有 Profile 仓库，可在安装时传入
+`-ProfilesRepo <path>` 或 `--profiles-repo <path>`。该路径会保存到用户级
+Rumo 配置文件中，凭据仍必须保存在公共仓库之外。
+配置文件路径为 `~/.rumo-engineering-skills/config.json`。
+
 默认远程仓库：`https://github.com/rumoii/rumo-engineering-skills.git`。
 
 PowerShell 安装程序在原生 Windows 上创建 Junction；Shell 安装程序在 macOS、Linux 和 WSL 上创建符号链接。增加、删除或重命名 Skill 后，需要重新运行安装程序。

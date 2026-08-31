@@ -1,6 +1,6 @@
 param(
   [string]$Repo = $env:RUMO_SKILLS_REPO,
-  [string]$ProfilesRepo = $env:RUMO_SKILL_PROFILES_REPO,
+  [string]$ProfilesRepo = "",
   [string]$CodexHome = $env:CODEX_HOME,
   [string]$ClaudeHome = $env:CLAUDE_HOME,
   [string]$AgentsHome = $env:AGENTS_HOME,
@@ -14,6 +14,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $ClaudeHomeExplicit = -not [string]::IsNullOrWhiteSpace($ClaudeHome)
 $AgentsHomeExplicit = -not [string]::IsNullOrWhiteSpace($AgentsHome)
+$ProfilesRepoExplicit = -not [string]::IsNullOrWhiteSpace($ProfilesRepo)
+if (-not $ProfilesRepo) { $ProfilesRepo = $env:RUMO_SKILL_PROFILES_REPO }
 
 function Invoke-Step {
   param([Parameter(Mandatory = $true)][string]$Display, [Parameter(Mandatory = $true)][scriptblock]$Command)
@@ -139,6 +141,16 @@ $RepoSkills = Join-Path $Repo "skills"
 if (-not (Test-Path $RepoSkills)) { throw "Skills directory not found: $RepoSkills" }
 Invoke-SkillValidation $Repo
 
+if ($ProfilesRepoExplicit) {
+  $ProfileConfig = Join-Path $Repo "skills\rumo-project-profile\scripts\profile_config.py"
+  $ProfileArgs = @("--profiles-repo", $ProfilesRepo, "--dry-run")
+  if (Get-Command py -ErrorAction SilentlyContinue) { & py -3 $ProfileConfig @ProfileArgs }
+  elseif (Get-Command python3 -ErrorAction SilentlyContinue) { & python3 $ProfileConfig @ProfileArgs }
+  elseif (Get-Command python -ErrorAction SilentlyContinue) { & python $ProfileConfig @ProfileArgs }
+  else { throw "Python 3 is required to configure the profiles repository." }
+  if ($LASTEXITCODE -ne 0) { throw "Profiles repository configuration failed; no skill links were changed." }
+}
+
 $SyncClaude = $ClaudeHomeExplicit -or (Get-Command claude -ErrorAction SilentlyContinue) -or (Test-Path $ClaudeHome)
 $SyncAgents = $AgentsHomeExplicit -or (Get-Command grok -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME ".grok"))
 $TargetSkillsPaths = [System.Collections.Generic.List[string]]::new()
@@ -146,6 +158,12 @@ $TargetSkillsPaths.Add((Join-Path $CodexHome "skills"))
 if ($SyncClaude) { $TargetSkillsPaths.Add((Join-Path $ClaudeHome "skills")) }
 if ($SyncAgents) { $TargetSkillsPaths.Add((Join-Path $AgentsHome "skills")) }
 Assert-SkillLinksSafe $RepoSkills $TargetSkillsPaths
+if ($ProfilesRepoExplicit -and -not $DryRun) {
+  if (Get-Command py -ErrorAction SilentlyContinue) { & py -3 $ProfileConfig --profiles-repo $ProfilesRepo }
+  elseif (Get-Command python3 -ErrorAction SilentlyContinue) { & python3 $ProfileConfig --profiles-repo $ProfilesRepo }
+  else { & python $ProfileConfig --profiles-repo $ProfilesRepo }
+  if ($LASTEXITCODE -ne 0) { throw "Profiles repository configuration failed; no skill links were changed." }
+}
 foreach ($TargetSkillsPath in $TargetSkillsPaths) {
   Sync-SkillLinks $RepoSkills $TargetSkillsPath
 }

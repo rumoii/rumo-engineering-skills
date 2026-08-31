@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 import shutil
@@ -15,7 +16,10 @@ POWERSHELL = shutil.which("powershell") or shutil.which("pwsh")
 @unittest.skipUnless(os.name == "nt" and POWERSHELL, "PowerShell is not available")
 class InstallPowerShellTests(unittest.TestCase):
     def run_installer(
-        self, homes: dict[str, Path], *extra: str
+        self,
+        homes: dict[str, Path],
+        *extra: str,
+        environment: dict[str, str] | None = None,
     ) -> subprocess.CompletedProcess[str]:
         command = [
             POWERSHELL,
@@ -38,6 +42,7 @@ class InstallPowerShellTests(unittest.TestCase):
             text=True,
             encoding="utf-8",
             errors="replace",
+            env=environment,
             check=False,
         )
 
@@ -153,6 +158,91 @@ class InstallPowerShellTests(unittest.TestCase):
             self.assertEqual(marker.read_text(encoding="utf-8"), "keep\n")
             self.assertFalse(
                 (homes["ClaudeHome"] / "skills" / "rumo-coding-guidelines").exists()
+            )
+
+    def test_profiles_repo_parameter_persists_configuration(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            homes = {"CodexHome": temp_root / "codex"}
+            profiles_repo = temp_root / "private-profiles"
+            (profiles_repo / "profiles").mkdir(parents=True)
+            user_home = temp_root / "user-home"
+            environment = {
+                **os.environ,
+                "HOME": str(user_home),
+                "USERPROFILE": str(user_home),
+            }
+
+            result = self.run_installer(
+                homes,
+                "-ProfilesRepo",
+                str(profiles_repo),
+                environment=environment,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            config = json.loads(
+                (user_home / ".rumo-engineering-skills" / "config.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(Path(config["profiles_repo"]), profiles_repo.resolve())
+
+    def test_invalid_profiles_repo_stops_before_link_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            homes = {
+                "CodexHome": temp_root / "codex",
+                "ClaudeHome": temp_root / "claude",
+                "AgentsHome": temp_root / "agents",
+            }
+            invalid = temp_root / "missing-profiles"
+            invalid.mkdir()
+            user_home = temp_root / "user-home"
+            environment = {
+                **os.environ,
+                "HOME": str(user_home),
+                "USERPROFILE": str(user_home),
+            }
+
+            result = self.run_installer(
+                homes,
+                "-ProfilesRepo",
+                str(invalid),
+                environment=environment,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("must contain a profiles directory", result.stdout + result.stderr)
+            self.assertFalse((homes["CodexHome"] / "skills").exists())
+            self.assertFalse(
+                (user_home / ".rumo-engineering-skills" / "config.json").exists()
+            )
+
+    def test_dry_run_does_not_persist_profiles_configuration(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            homes = {"CodexHome": temp_root / "codex"}
+            profiles_repo = temp_root / "private-profiles"
+            (profiles_repo / "profiles").mkdir(parents=True)
+            user_home = temp_root / "user-home"
+            environment = {
+                **os.environ,
+                "HOME": str(user_home),
+                "USERPROFILE": str(user_home),
+            }
+
+            result = self.run_installer(
+                homes,
+                "-ProfilesRepo",
+                str(profiles_repo),
+                "-DryRun",
+                environment=environment,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertFalse(
+                (user_home / ".rumo-engineering-skills" / "config.json").exists()
             )
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 import shutil
@@ -237,6 +238,70 @@ class InstallShellTests(unittest.TestCase):
                     if path.is_dir() and path.name.startswith("rumo-")
                 ],
             )
+
+    def test_profiles_repo_option_persists_configuration(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            profiles_repo = temp_root / "private-profiles"
+            (profiles_repo / "profiles").mkdir(parents=True)
+
+            result = self.run_installer(
+                temp_root,
+                temp_root / "codex",
+                temp_root / "claude",
+                temp_root / "agents",
+                "--profiles-repo",
+                str(profiles_repo),
+            )
+
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            config = json.loads(
+                (temp_root / ".rumo-engineering-skills" / "config.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(Path(config["profiles_repo"]), profiles_repo.resolve())
+
+    def test_profiles_repo_dry_run_does_not_persist_configuration(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            profiles_repo = temp_root / "private-profiles"
+            (profiles_repo / "profiles").mkdir(parents=True)
+
+            result = self.run_installer(
+                temp_root,
+                temp_root / "codex",
+                temp_root / "claude",
+                temp_root / "agents",
+                "--profiles-repo",
+                str(profiles_repo),
+                "--dry-run",
+            )
+
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertFalse(
+                (temp_root / ".rumo-engineering-skills" / "config.json").exists()
+            )
+
+    def test_invalid_profiles_repo_stops_before_link_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            invalid = temp_root / "missing-profiles"
+            invalid.mkdir()
+            codex_home = temp_root / "codex"
+
+            result = self.run_installer(
+                temp_root,
+                codex_home,
+                temp_root / "claude",
+                temp_root / "agents",
+                "--profiles-repo",
+                str(invalid),
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("must contain a profiles directory", result.stderr)
+            self.assertFalse((codex_home / "skills").exists())
 
     def assert_link_targets(self, skills_dir: Path, expected_names: list[str]) -> None:
         for name in expected_names:
