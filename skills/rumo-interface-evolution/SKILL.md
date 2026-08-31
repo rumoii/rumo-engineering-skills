@@ -67,6 +67,7 @@ Exercise the pairs that the rollout can create:
 
 Include invalid type, missing required value, unknown enum, boundary values, duplicate delivery, serialization round-trip, persisted-data reload, and rollback cases that apply. Verify the assembled route or artifact when generation, packaging, proxying, or deployment can differ from source tests.
 
+Use `rumo-http-api` for HTTP/JSON authentication, authorization, idempotency, rate limits, pagination, response cost, and operability.
 Use `rumo-test-evidence` to plan coverage, `rumo-change-verification` to validate the final diff, and `rumo-engineering-decision` when the compatibility or versioning policy is material.
 
 ## Report

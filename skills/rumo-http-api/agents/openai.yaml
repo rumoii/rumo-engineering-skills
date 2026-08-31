@@ -1,0 +1,6 @@
+interface:
+  display_name: "Rumo HTTP API"
+  short_description: "设计并审查兼容、安全、可限流且可运维的 HTTP JSON 接口"
+  default_prompt: "Use $rumo-http-api to design or review this HTTP JSON surface for compatibility, security boundaries, retry safety, bounded cost, and operability."
+
+

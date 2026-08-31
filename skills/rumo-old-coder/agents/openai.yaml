@@ -1,0 +1,6 @@
+interface:
+  display_name: "Rumo Old Coder"
+  short_description: "用可执行规格、测试约束和证据报告完成高可靠开发闭环"
+  default_prompt: "Use $rumo-old-coder to define an executable specification and prove this high-assurance change with a reproducible evidence gauntlet."
+
+
