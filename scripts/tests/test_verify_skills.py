@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tempfile
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -150,6 +151,20 @@ class VerifySkillsTest(unittest.TestCase):
 
     def test_rejects_plaintext_credential_filename(self) -> None:
         (self.repo_root / "credentials.md").write_text("redacted\n", encoding="utf-8")
+        self.assert_error_contains("plaintext credential file must not be tracked")
+
+    def test_ignores_ignored_plaintext_credential_filename(self) -> None:
+        (self.repo_root / ".gitignore").write_text("credentials.md\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(self.repo_root), "init", "--quiet"], check=True)
+        subprocess.run(["git", "-C", str(self.repo_root), "add", "."], check=True)
+        (self.repo_root / "credentials.md").write_text("local-only\n", encoding="utf-8")
+
+        self.assertEqual(validate_repository(self.repo_root), [])
+
+        subprocess.run(
+            ["git", "-C", str(self.repo_root), "add", "-f", "credentials.md"],
+            check=True,
+        )
         self.assert_error_contains("plaintext credential file must not be tracked")
 
     def test_rejects_invalid_json_file(self) -> None:

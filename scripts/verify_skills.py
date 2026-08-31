@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -201,6 +203,7 @@ def validate_repository(repo_root: Path) -> list[str]:
         return [f"{skills_root}: no skill directories found"]
 
     skill_names = {path.name for path in skill_dirs}
+    candidate_files, tracked_files = repository_files(repo_root)
     for skill_dir in skill_dirs:
         skill_name = skill_dir.name
         if not SKILL_NAME_RE.fullmatch(skill_name):
@@ -251,12 +254,13 @@ def validate_repository(repo_root: Path) -> list[str]:
     markdown_files = sorted(path for path in readme_paths if path.is_file())
     markdown_files.extend(iter_skill_markdown(skills_root))
     validate_markdown_links(repo_root, markdown_files, errors)
-    validate_json_files(repo_root, errors)
+    validate_json_files(candidate_files, errors)
 
-    for path in sorted(repo_root.rglob("*")):
+    for path in candidate_files:
         if not path.is_file() or ".git" in path.parts or "node_modules" in path.parts:
             continue
-        if path.name.lower() in FORBIDDEN_TRACKED_NAMES:
+        relative = path.relative_to(repo_root).as_posix().lower()
+        if path.name.lower() in FORBIDDEN_TRACKED_NAMES and relative in tracked_files:
             errors.append(f"{path}: plaintext credential file must not be tracked")
         try:
             text = path.read_text(encoding="utf-8")
@@ -278,9 +282,57 @@ def validate_repository(repo_root: Path) -> list[str]:
     return list(dict.fromkeys(errors))
 
 
-def validate_json_files(repo_root: Path, errors: list[str]) -> None:
+def repository_files(repo_root: Path) -> tuple[list[Path], set[str]]:
+    """Return tracked and non-ignored files, plus normalized tracked paths."""
+    try:
+        tracked = subprocess.run(
+            ["git", "-C", str(repo_root), "ls-files", "-z"],
+            capture_output=True,
+            check=False,
+        )
+        candidates = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repo_root),
+                "ls-files",
+                "--cached",
+                "--others",
+                "--exclude-standard",
+                "-z",
+            ],
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        tracked = candidates = None
+    if (
+        tracked is not None
+        and candidates is not None
+        and tracked.returncode == 0
+        and candidates.returncode == 0
+    ):
+        tracked_paths = {
+            os.fsdecode(value).replace("\\", "/").lower()
+            for value in tracked.stdout.split(b"\0")
+            if value
+        }
+        candidate_paths = [
+            repo_root / os.fsdecode(value)
+            for value in candidates.stdout.split(b"\0")
+            if value
+        ]
+        return sorted(candidate_paths), tracked_paths
+
+    fallback = [path for path in sorted(repo_root.rglob("*")) if path.is_file()]
+    return fallback, {
+        path.relative_to(repo_root).as_posix().lower() for path in fallback
+    }
+
+
+def validate_json_files(candidate_files: list[Path], errors: list[str]) -> None:
     """Validate repository-owned JSON files, including profile templates."""
-    for path in sorted(repo_root.rglob("*.json")):
+    for path in sorted(path for path in candidate_files if path.suffix.lower() == ".json"):
         if ".git" in path.parts or "node_modules" in path.parts:
             continue
         try:
