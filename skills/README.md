@@ -12,7 +12,7 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | `rumo-http-api` | Compatible, secure, retry-safe, bounded, and operable HTTP/JSON API design and review |
 | `rumo-daily-report` | Cross-session incremental Chinese daily reports in a date-based TXT file |
 | `rumo-database-change-safety` | Safe database migration, repair, cleanup, backup, authorization, and rollback |
-| `rumo-filesystem-safety` | Bounded file and directory cleanup with path, link, and recovery checks |
+| `rumo-filesystem-safety` | Tiered file and directory deletion with boundary checks and no ad hoc backups |
 | `rumo-document-writing` | Formal delivery DOCX authoring, revision, formatting, and quality control |
 | `rumo-engineering-decision` | Durable engineering decisions, alternatives, compatibility, and rollback |
 | `rumo-engineering-topology-diagram` | Architecture and topology modeling, preview, export, and validation |

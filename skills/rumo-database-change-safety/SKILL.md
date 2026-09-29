@@ -165,3 +165,4 @@ For plan-only work, label every command as proposed and state that no database w
 - Use [`rumo-change-verification`](../rumo-change-verification/SKILL.md) to select source, migration, compatibility, and service checks for a database-code change.
 - Use [`rumo-engineering-decision`](../rumo-engineering-decision/SKILL.md) when the schema transition or compatibility strategy needs a durable decision record.
 - Use [`rumo-offline-delivery-audit`](../rumo-offline-delivery-audit/SKILL.md) when migration and rollback assets are embedded in an offline package.
+- Use [`rumo-filesystem-safety`](../rumo-filesystem-safety/SKILL.md) for deleting or cleaning files, build outputs, or caches; this skill covers persisted database data.

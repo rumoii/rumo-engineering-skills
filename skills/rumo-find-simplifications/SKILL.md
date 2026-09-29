@@ -55,3 +55,7 @@ Reject a candidate when it moves complexity behind a wrapper, preserves most bes
 Report a short ranked list. For each candidate include exact paths and symbols, consumer evidence, deletable surface, affected products and versions, risk, verification plan, and confidence. Separate confirmed candidates from leads requiring runtime, database, deployment, or owner confirmation.
 
 Do not modify code during a simplification audit. When implementation is requested, apply `rumo-coding-guidelines`, make one candidate a bounded change, and verify it through `rumo-change-verification`.
+
+## Related Skills
+
+- Use [`rumo-filesystem-safety`](../rumo-filesystem-safety/SKILL.md) when implementing a candidate requires deleting files or bulk-cleaning directories.

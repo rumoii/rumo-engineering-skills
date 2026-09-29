@@ -60,7 +60,7 @@ skill catalog is reloaded.
 - `rumo-lifecycle-safety`: safe ownership, retry, cancellation, timeout, shutdown, and cleanup.
 - `rumo-interface-evolution`: compatible API, message, configuration, and persisted-format evolution.
 - `rumo-database-change-safety`: bounded database change planning, authorization, backup, verification, and rollback.
-- `rumo-filesystem-safety`: bounded file and directory cleanup with path, link, and recovery checks.
+- `rumo-filesystem-safety`: tiered file and directory deletion with boundary checks and no ad hoc backups.
 - `rumo-repository-gates`: deterministic repository-owned CI and static checks.
 - `rumo-engineering-decision`: durable records for material engineering decisions.
 - `rumo-find-simplifications`: evidence-led discovery of removable engineering complexity.
