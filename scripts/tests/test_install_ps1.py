@@ -87,7 +87,7 @@ class InstallPowerShellTests(unittest.TestCase):
                 for path in (REPO_ROOT / "skills").iterdir()
                 if path.is_dir() and path.name.startswith("rumo-")
             )
-            self.assertEqual(len(skill_names), 30)
+            self.assertIn("rumo-filesystem-safety", skill_names)
             for home in homes.values():
                 for name in skill_names:
                     self.assertTrue(

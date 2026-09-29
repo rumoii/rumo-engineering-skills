@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Filesystem Safety"
+  short_description: "在删除文件或清理目录前核对路径边界与链接目标，预览影响并优先采用可恢复操作"
+  default_prompt: "Use $rumo-filesystem-safety to check the exact deletion target and choose a recoverable cleanup method."
