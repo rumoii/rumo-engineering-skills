@@ -19,6 +19,9 @@ OPENAI_STRING_RE = re.compile(
     r'^  (display_name|short_description|default_prompt):\s*("(?:[^"\\]|\\.)*")\s*$',
     re.MULTILINE,
 )
+OPENAI_MANUAL_ONLY_RE = re.compile(
+    r"^policy:\n(?:  .*\n)*?  allow_implicit_invocation:\s*false\s*$", re.MULTILINE
+)
 MARKDOWN_EXCLUDED_DIRS = {"node_modules"}
 MAX_NAME_LENGTH = 64
 MAX_DESCRIPTION_LENGTH = 1024
@@ -274,6 +277,8 @@ def validate_repository(
                 f"{skill_path}: description must contain at most {MAX_DESCRIPTION_LENGTH} characters"
             )
 
+        manual_in_frontmatter = frontmatter.get("disable-model-invocation", "").lower() == "true"
+        manual_in_metadata = False
         metadata_path = skill_dir / "agents" / "openai.yaml"
         if metadata_path.exists():
             metadata_text = read_text(metadata_path, errors)
@@ -281,6 +286,13 @@ def validate_repository(
                 if "[TODO" in metadata_text or "TODO:" in metadata_text:
                     errors.append(f"{metadata_path}: unresolved template marker")
                 validate_openai_metadata(metadata_path, metadata_text, skill_name, errors)
+                manual_in_metadata = bool(OPENAI_MANUAL_ONLY_RE.search(metadata_text))
+        if manual_in_frontmatter != manual_in_metadata:
+            errors.append(
+                f"{skill_path}: manual-only invocation must be set in both SKILL.md "
+                "(disable-model-invocation: true) and agents/openai.yaml "
+                "(policy.allow_implicit_invocation: false)"
+            )
 
     readme_paths = (
         repo_root / "README.md",

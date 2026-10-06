@@ -191,6 +191,37 @@ class VerifySkillsTest(unittest.TestCase):
         )
         self.assert_error_contains("description must contain at most 1024 characters")
 
+    def set_manual_only(self, *, frontmatter: bool, metadata: bool) -> None:
+        skill_dir = self.repo_root / "skills" / "rumo-example"
+        if frontmatter:
+            skill_path = skill_dir / "SKILL.md"
+            skill_path.write_text(
+                skill_path.read_text(encoding="utf-8").replace(
+                    "name: rumo-example\n",
+                    "name: rumo-example\ndisable-model-invocation: true\n",
+                ),
+                encoding="utf-8",
+            )
+        if metadata:
+            metadata_path = skill_dir / "agents" / "openai.yaml"
+            metadata_path.write_text(
+                metadata_path.read_text(encoding="utf-8")
+                + "policy:\n  allow_implicit_invocation: false\n",
+                encoding="utf-8",
+            )
+
+    def test_accepts_manual_only_in_both_clients(self) -> None:
+        self.set_manual_only(frontmatter=True, metadata=True)
+        self.assertEqual(validate_repository(self.repo_root), [])
+
+    def test_rejects_manual_only_only_in_frontmatter(self) -> None:
+        self.set_manual_only(frontmatter=True, metadata=False)
+        self.assert_error_contains("manual-only invocation must be set in both")
+
+    def test_rejects_manual_only_only_in_metadata(self) -> None:
+        self.set_manual_only(frontmatter=False, metadata=True)
+        self.assert_error_contains("manual-only invocation must be set in both")
+
     def test_rejects_private_key_material(self) -> None:
         private_key_marker = "-----BEGIN " + "PRIVATE KEY-----"
         (self.repo_root / "leaked.txt").write_text(
