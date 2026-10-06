@@ -12,7 +12,7 @@ git clone https://github.com/rumoii/rumo-engineering-skills.git
 git clone https://github.com/rumoii/rumo-engineering-skills.git
 ```
 
-## 1. 安装到 Codex
+## 1. 安装
 
 先进入 clone 后的目录。Windows PowerShell：
 
@@ -33,8 +33,16 @@ cd /path/to/rumo-engineering-skills
 如团队使用私有 Profile 仓库，可在安装时增加 `-ProfilesRepo <path>` 或
 `--profiles-repo <path>`。安装器只保存该仓库路径，Profile 凭据不会被复制到公共仓库。
 
-安装脚本会把每个 `rumo-*` 技能链接到 Codex 的 skills 目录。它只管理
-`rumo-*`，不会删除其他来源的技能。安装完成后，重新开始一个 Codex 会话，
+安装脚本会检测本机已安装的客户端，把每个 `rumo-*` 技能链接到对应的 skills 目录：
+
+| 客户端 | 检测条件 | 技能目录 |
+|--------|----------|----------|
+| Codex | `codex` 命令、`~/.codex` 或显式 `CODEX_HOME` / `-CodexHome` / `--codex-home` | `~/.codex/skills` |
+| Claude Code | `claude` 命令、`~/.claude` 或显式 `CLAUDE_HOME` / `-ClaudeHome` / `--claude-home` | `~/.claude/skills` |
+| 共享 agents 目录 | `grok` 命令、`~/.grok` 或显式 `AGENTS_HOME` / `-AgentsHome` / `--agents-home` | `~/.agents/skills` |
+
+未检测到的客户端会被跳过；一个都没检测到时安装器直接失败，不做任何改动。
+安装器只管理 `rumo-*`，不会删除其他来源的技能。安装完成后，重新开始一个客户端会话，
 让技能列表重新加载。
 
 ## 2. 先验证安装
@@ -49,11 +57,15 @@ py -3 scripts\verify_skills.py
 python3 scripts/verify_skills.py
 ```
 
+Windows 没有 `py` 启动器时，把 `py -3` 换成 `python`。下文的 Python 命令同理。
+
 看到 `Rumo skill validation passed` 后，说明仓库内的技能结构有效。
 
 ## 3. 不需要项目配置时，直接使用技能
 
-Profile 不是使用技能的前置条件。可以直接在 Codex 中提出任务，例如：
+Profile 不是使用技能的前置条件。可以直接在客户端中提出任务。显式点名技能时，
+Codex 用 `$rumo-code-review`，Claude Code 用 `/rumo-code-review`；也可以只用自然语言描述，
+由客户端根据技能描述自动选择。下面的示例按 Codex 写法：
 
 ```text
 请使用 $rumo-code-review，检查当前分支的未提交修改。
@@ -126,7 +138,7 @@ cd E:\path\to\rumo-engineering-skills
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -NoPull
 ```
 
-然后在 Codex 中直接说：
+然后在客户端中直接说（Claude Code 中把 `$` 换成 `/`）：
 
 ```text
 请使用 $rumo-coding-guidelines，帮我实现这个需求，并保持最小改动。

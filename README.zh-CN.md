@@ -109,7 +109,7 @@ Windows 没有 `py` 启动器时，把 `py -3` 换成 `python`。
 
 ## 安装
 
-请在一个稳定的本地仓库目录中运行安装程序。安装前会先执行校验，并且只替换 `rumo-*` 链接，不会影响其他 Skill。
+请在一个稳定的本地仓库目录中运行安装程序。安装前会先执行校验，并且只替换 `rumo-*` 链接，不会影响其他 Skill。安装程序只同步检测到的客户端（Codex、Claude Code、共享 `~/.agents`），检测规则见 [GETTING_STARTED.md](GETTING_STARTED.md)；一个客户端都没检测到时会直接失败，不做任何改动。
 
 ```powershell
 .\install.ps1 -NoPull

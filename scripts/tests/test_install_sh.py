@@ -153,22 +153,7 @@ class InstallShellTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_root = Path(temp_dir)
             codex_home = temp_root / "codex"
-            bin_dir = temp_root / "bin"
-            bin_dir.mkdir()
-            for command in (
-                "basename",
-                "dirname",
-                "git",
-                "ln",
-                "mkdir",
-                "python3",
-                "readlink",
-                "rm",
-                "sh",
-            ):
-                source = shutil.which(command)
-                self.assertIsNotNone(source, command)
-                (bin_dir / command).symlink_to(source)
+            bin_dir = self.minimal_bin(temp_root)
 
             result = subprocess.run(
                 [
@@ -238,6 +223,72 @@ class InstallShellTests(unittest.TestCase):
                     if path.is_dir() and path.name.startswith("rumo-")
                 ],
             )
+
+    def minimal_bin(self, temp_root: Path) -> Path:
+        """Expose only the tools the installer needs, hiding installed clients."""
+        bin_dir = temp_root / "bin"
+        bin_dir.mkdir()
+        for command in (
+            "basename",
+            "dirname",
+            "git",
+            "ln",
+            "mkdir",
+            "python3",
+            "readlink",
+            "rm",
+            "sh",
+        ):
+            source = shutil.which(command)
+            self.assertIsNotNone(source, command)
+            (bin_dir / command).symlink_to(source)
+        return bin_dir
+
+    def test_skips_undetected_codex(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            claude_home = temp_root / "claude"
+            bin_dir = self.minimal_bin(temp_root)
+
+            result = subprocess.run(
+                [
+                    SH,
+                    str(REPO_ROOT / "install.sh"),
+                    "--repo",
+                    str(REPO_ROOT),
+                    "--claude-home",
+                    str(claude_home),
+                    "--no-pull",
+                ],
+                cwd=REPO_ROOT,
+                env={"HOME": str(temp_root), "PATH": str(bin_dir)},
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("Codex was not detected; skipping.", result.stdout)
+            self.assertFalse((temp_root / ".codex").exists())
+            self.assert_link_targets(claude_home / "skills", ["rumo-code-review"])
+
+    def test_no_detected_client_stops_without_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            bin_dir = self.minimal_bin(temp_root)
+
+            result = subprocess.run(
+                [SH, str(REPO_ROOT / "install.sh"), "--repo", str(REPO_ROOT), "--no-pull"],
+                cwd=REPO_ROOT,
+                env={"HOME": str(temp_root), "PATH": str(bin_dir)},
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("No supported agent client was detected", result.stderr)
+            self.assertEqual(sorted(path.name for path in temp_root.iterdir()), ["bin"])
 
     def test_profiles_repo_option_persists_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

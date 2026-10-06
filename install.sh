@@ -8,8 +8,10 @@ PROFILES_REPO_EXPLICIT=0
 CODEX_HOME_DIR="${CODEX_HOME:-$HOME/.codex}"
 CLAUDE_HOME_DIR="${CLAUDE_HOME:-$HOME/.claude}"
 AGENTS_HOME_DIR="${AGENTS_HOME:-$HOME/.agents}"
+CODEX_HOME_EXPLICIT=0
 CLAUDE_HOME_EXPLICIT=0
 AGENTS_HOME_EXPLICIT=0
+[ -n "${CODEX_HOME:-}" ] && CODEX_HOME_EXPLICIT=1
 [ -n "${CLAUDE_HOME:-}" ] && CLAUDE_HOME_EXPLICIT=1
 [ -n "${AGENTS_HOME:-}" ] && AGENTS_HOME_EXPLICIT=1
 RUN_PULL=1
@@ -34,7 +36,7 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     --repo) REPO_PATH="$2"; shift 2 ;;
     --profiles-repo) PROFILES_REPO="$2"; PROFILES_REPO_EXPLICIT=1; shift 2 ;;
-    --codex-home) CODEX_HOME_DIR="$2"; shift 2 ;;
+    --codex-home) CODEX_HOME_DIR="$2"; CODEX_HOME_EXPLICIT=1; shift 2 ;;
     --claude-home) CLAUDE_HOME_DIR="$2"; CLAUDE_HOME_EXPLICIT=1; shift 2 ;;
     --agents-home) AGENTS_HOME_DIR="$2"; AGENTS_HOME_EXPLICIT=1; shift 2 ;;
     --remote) REMOTE_URL="$2"; shift 2 ;;
@@ -133,7 +135,12 @@ sync_links() {
 }
 
 PREFLIGHT_STATUS=0
-preflight_links "$CODEX_HOME_DIR/skills" || PREFLIGHT_STATUS=1
+if [ "$CODEX_HOME_EXPLICIT" -eq 1 ] || command -v codex >/dev/null 2>&1 || [ -d "$CODEX_HOME_DIR" ]; then
+  SYNC_CODEX=1
+  preflight_links "$CODEX_HOME_DIR/skills" || PREFLIGHT_STATUS=1
+else
+  SYNC_CODEX=0
+fi
 if [ "$CLAUDE_HOME_EXPLICIT" -eq 1 ] || command -v claude >/dev/null 2>&1 || [ -d "$CLAUDE_HOME_DIR" ]; then
   SYNC_CLAUDE=1
   preflight_links "$CLAUDE_HOME_DIR/skills" || PREFLIGHT_STATUS=1
@@ -145,6 +152,11 @@ if [ "$AGENTS_HOME_EXPLICIT" -eq 1 ] || command -v grok >/dev/null 2>&1 || [ -d 
   preflight_links "$AGENTS_HOME_DIR/skills" || PREFLIGHT_STATUS=1
 else
   SYNC_AGENTS=0
+fi
+if [ "$SYNC_CODEX" -eq 0 ] && [ "$SYNC_CLAUDE" -eq 0 ] && [ "$SYNC_AGENTS" -eq 0 ]; then
+  echo 'No supported agent client was detected; no links were changed.' >&2
+  echo 'Pass --codex-home, --claude-home, or --agents-home to choose a target explicitly.' >&2
+  exit 1
 fi
 [ "$PREFLIGHT_STATUS" -eq 0 ] || { echo 'Skill link preflight failed; no links were changed.' >&2; exit 1; }
 
@@ -161,7 +173,9 @@ if [ "$PROFILES_REPO_EXPLICIT" -eq 1 ]; then
   fi
 fi
 
-sync_links "$CODEX_HOME_DIR/skills"
+if [ "$SYNC_CODEX" -eq 1 ]; then sync_links "$CODEX_HOME_DIR/skills"
+else echo 'Codex was not detected; skipping.'
+fi
 if [ "$SYNC_CLAUDE" -eq 1 ]; then sync_links "$CLAUDE_HOME_DIR/skills"
 else echo 'Claude Code was not detected; skipping.'
 fi

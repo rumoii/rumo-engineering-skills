@@ -12,6 +12,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+$CodexHomeExplicit = -not [string]::IsNullOrWhiteSpace($CodexHome)
 $ClaudeHomeExplicit = -not [string]::IsNullOrWhiteSpace($ClaudeHome)
 $AgentsHomeExplicit = -not [string]::IsNullOrWhiteSpace($AgentsHome)
 $ProfilesRepoExplicit = -not [string]::IsNullOrWhiteSpace($ProfilesRepo)
@@ -151,12 +152,16 @@ if ($ProfilesRepoExplicit) {
   if ($LASTEXITCODE -ne 0) { throw "Profiles repository configuration failed; no skill links were changed." }
 }
 
+$SyncCodex = $CodexHomeExplicit -or (Get-Command codex -ErrorAction SilentlyContinue) -or (Test-Path $CodexHome)
 $SyncClaude = $ClaudeHomeExplicit -or (Get-Command claude -ErrorAction SilentlyContinue) -or (Test-Path $ClaudeHome)
 $SyncAgents = $AgentsHomeExplicit -or (Get-Command grok -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME ".grok"))
 $TargetSkillsPaths = [System.Collections.Generic.List[string]]::new()
-$TargetSkillsPaths.Add((Join-Path $CodexHome "skills"))
+if ($SyncCodex) { $TargetSkillsPaths.Add((Join-Path $CodexHome "skills")) }
 if ($SyncClaude) { $TargetSkillsPaths.Add((Join-Path $ClaudeHome "skills")) }
 if ($SyncAgents) { $TargetSkillsPaths.Add((Join-Path $AgentsHome "skills")) }
+if ($TargetSkillsPaths.Count -eq 0) {
+  throw "No supported agent client was detected; no links were changed. Pass -CodexHome, -ClaudeHome, or -AgentsHome to choose a target explicitly."
+}
 Assert-SkillLinksSafe $RepoSkills $TargetSkillsPaths
 if ($ProfilesRepoExplicit -and -not $DryRun) {
   if (Get-Command py -ErrorAction SilentlyContinue) { & py -3 $ProfileConfig --profiles-repo $ProfilesRepo }
@@ -167,6 +172,7 @@ if ($ProfilesRepoExplicit -and -not $DryRun) {
 foreach ($TargetSkillsPath in $TargetSkillsPaths) {
   Sync-SkillLinks $RepoSkills $TargetSkillsPath
 }
+if (-not $SyncCodex) { Write-Host "Codex was not detected; skipping." }
 if (-not $SyncClaude) { Write-Host "Claude Code was not detected; skipping." }
 if (-not $SyncAgents) { Write-Host "A shared agent client was not detected; skipping." }
 

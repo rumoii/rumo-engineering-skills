@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -159,6 +160,64 @@ class InstallPowerShellTests(unittest.TestCase):
             self.assertFalse(
                 (homes["ClaudeHome"] / "skills" / "rumo-coding-guidelines").exists()
             )
+
+    def isolated_environment(self, user_home: Path) -> dict[str, str]:
+        """Hide installed clients so detection depends only on the test inputs."""
+        environment = {
+            key: value
+            for key, value in os.environ.items()
+            if key.upper() not in {"CODEX_HOME", "CLAUDE_HOME", "AGENTS_HOME", "PATH"}
+        }
+        tool_dirs = {
+            str(Path(shutil.which("git")).parent),
+            str(Path(sys.executable).parent),
+            str(Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32"),
+        }
+        environment.update(
+            {
+                "HOME": str(user_home),
+                "USERPROFILE": str(user_home),
+                "PATH": os.pathsep.join(sorted(tool_dirs)),
+            }
+        )
+        return environment
+
+    def test_skips_undetected_codex(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            user_home = temp_root / "user-home"
+            user_home.mkdir()
+            homes = {"ClaudeHome": temp_root / "claude"}
+
+            result = self.run_installer(
+                homes, environment=self.isolated_environment(user_home)
+            )
+
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("Codex was not detected; skipping.", result.stdout)
+            self.assertFalse((user_home / ".codex").exists())
+            self.assertTrue(
+                os.path.samefile(
+                    homes["ClaudeHome"] / "skills" / "rumo-code-review",
+                    REPO_ROOT / "skills" / "rumo-code-review",
+                )
+            )
+
+    def test_no_detected_client_stops_without_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            user_home = Path(temp_dir) / "user-home"
+            user_home.mkdir()
+
+            result = self.run_installer(
+                {}, environment=self.isolated_environment(user_home)
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(
+                "No supported agent client was detected", result.stdout + result.stderr
+            )
+            for client_home in (".codex", ".claude", ".agents"):
+                self.assertFalse((user_home / client_home).exists(), client_home)
 
     def test_profiles_repo_parameter_persists_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

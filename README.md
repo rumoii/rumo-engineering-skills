@@ -114,7 +114,7 @@ Clients select skills from `SKILL.md` `name` and `description` only. `agents/ope
 
 ## Install
 
-Run the installer from a stable checkout. It validates before replacing links and manages only `rumo-*` entries, preserving unrelated skills.
+Run the installer from a stable checkout. It validates before replacing links and manages only `rumo-*` entries, preserving unrelated skills. It syncs only detected clients (Codex, Claude Code, and the shared `~/.agents` directory); see [GETTING_STARTED.md](GETTING_STARTED.md) for detection rules. If no client is detected, it fails without changing anything.
 
 ```powershell
 .\install.ps1 -NoPull
