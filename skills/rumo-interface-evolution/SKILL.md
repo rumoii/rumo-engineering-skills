@@ -1,6 +1,6 @@
 ---
 name: rumo-interface-evolution
-description: Use when adding, changing, deprecating, or reviewing a Rumo API, DTO, event, Kafka message, terminal protocol, configuration field, database representation, persisted file, export, or other producer-consumer format. Trace every reader and writer, define old/new compatibility and rollout order, reject ambiguous defaults, and verify migration and rollback behavior.
+description: Use when adding, changing, deprecating, or reviewing an API, DTO, event, Kafka message, terminal protocol, configuration field, database representation, persisted file, export, or other producer-consumer format. Trace every reader and writer, define old/new compatibility and rollout order, reject ambiguous defaults, and verify migration and rollback behavior.
 ---
 
 # Rumo Interface Evolution

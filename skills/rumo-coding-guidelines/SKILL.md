@@ -1,12 +1,12 @@
 ---
 name: rumo-coding-guidelines
-description: Use when writing, fixing, reviewing, or refactoring code in Rumo product repositories or shared skill repositories. This is a general baseline coding constraint that may be used alongside more specific Rumo skills; confirm real paths and success criteria, keep work requested and necessary, preserve proven consequences, and avoid overengineering, unrelated edits, and unverified conclusions.
+description: Use when writing, fixing, reviewing, or refactoring code in software repositories, including shared skill repositories. This is a general baseline coding constraint that may be used alongside more specific skills; confirm real paths and success criteria, keep work requested and necessary, preserve proven consequences, and avoid overengineering, unrelated edits, and unverified conclusions.
 license: MIT
 ---
 
 # Rumo Coding Guidelines
 
-Use this skill first when writing code in Rumo product repositories or shared skill repositories. Every change should be traceable to the user request, the real code path, and concrete verification evidence.
+Use this skill first when writing code in software repositories, including shared skill repositories. Every change should be traceable to the user request, the real code path, and concrete verification evidence.
 
 ## Core Principles
 
@@ -59,6 +59,7 @@ interpreted or used.
 - Remove obsolete routes, fields, branches, adapters, fallback paths, migrations, and compatibility layers instead of adding indirection that keeps dead behavior alive.
 - Do not invent a deprecation period, dual-write path, feature flag, shim, or fallback to avoid making the required current-state change.
 - Before deleting a path, verify its current callers, owners, generated outputs, and deployment references. Preserve only behavior that the current requirements or an identified supported consumer still require.
+- When an API, message, configuration field, persisted format, or other contract has external, persisted, or already deployed consumers, follow [`rumo-interface-evolution`](../rumo-interface-evolution/SKILL.md) for compatibility and rollout order instead of removing the old shape directly.
 
 ### Grow In Working Layers
 

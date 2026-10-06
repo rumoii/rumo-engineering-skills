@@ -10,7 +10,7 @@
 | Text | `#1f2328` | Default labels |
 | Pass | fill `#e8f8ef`, stroke `#2f9e62`, text `#14532d` | Success path |
 | Fail | fill `#fdecec`, stroke `#d45454`, text `#7f1d1d` | Reject / fail path |
-| Engine | fill `#e8f1ff`, stroke `#3b82f6`, text `#1e3a8a` | External simulators / tools |
+| Engine | fill `#e8f1ff`, stroke `#3b82f6`, text `#1e3a8a` | External engines / tools |
 | Compare | fill `#fff7e6`, stroke `#d97706`, text `#7c2d12` | Verification / comparison |
 
 Dark theme is optional for preview only; delivery PNG should stay light unless the user asks otherwise.
@@ -20,7 +20,7 @@ Dark theme is optional for preview only; delivery PNG should stay light unless t
 ### A. Three-stage business flow
 
 ```text
-一、入口/上传  →  二、处理/仿真/检验  →  三、结果双分支
+1. Intake  →  2. Processing / verification  →  3. Dual outcome branches
 ```
 
 - Outer: `flowchart LR`
@@ -30,8 +30,8 @@ Dark theme is optional for preview only; delivery PNG should stay light unless t
 ### B. Dual engines after a type decision
 
 ```text
-暂态/类型决策 ──电磁──► Engine A
-              ──机电──► Engine B
+Request type decision ──type X──► Engine A
+                      ──type Y──► Engine B
 Both ──► normalize outputs ──► validator
 ```
 
@@ -39,16 +39,16 @@ Both ──► normalize outputs ──► validator
 
 Separate subgraphs:
 
-1. **如何检验**: what is compared (e.g. sim vs HIL; equivalent vs detailed)
-2. **如何判定**: item pass criteria, whole-order pass criteria (green/red boxes)
+1. **How to verify**: what is compared (for example, produced output versus a reference baseline)
+2. **How to judge**: item pass criteria and whole-request pass criteria (green/red boxes)
 
-Do not collapse both into a single vague node like “对比仿真与基准数据” when the user needs judgment detail.
+Do not collapse both into a single vague node like "compare output with baseline" when the user needs judgment detail.
 
 ## Layout hygiene
 
-1. **No reverse rank edges** from late stages back to early stages if they scramble column order. Use text “回到第 X 步” instead.
-2. Prefer **edge labels** on decisions: `符合要求` / `不符合要求` / `通过` / `未通过`.
-3. Keep subgraph titles short: `一、…` `二、…` `三、…`.
+1. **No reverse rank edges** from late stages back to early stages if they scramble column order. Use a terminal node such as "return to step X" instead.
+2. Prefer **edge labels** on decisions, such as `meets requirements` / `does not meet` or `pass` / `fail`, in the diagram's label language.
+3. Keep subgraph titles short and numbered by stage.
 4. If Mermaid places fail left of success, add `passBranch ~~~ failBranch` after both subgraphs.
 5. Export frame is 4:3 (1600×1200 logical). Very tall TB-only graphs shrink hard; prefer LR stages for dense content.
 
@@ -70,8 +70,8 @@ Preview HTML rewrites these classDefs when toggling dark mode so one source work
 ## Naming
 
 - Product terms over internal package names on the diagram.
-- One tool name per engine node when the user asked to drop aliases (e.g. `PSModel` only).
-- Chinese body labels for business steps; English only for product/tool proper names.
+- One tool name per engine node when the user asked to drop aliases.
+- Write business-step labels in the diagram's label language; keep product and tool proper names as written.
 
 ## Markdown companion tables
 
@@ -79,6 +79,6 @@ Use tables under the diagram for:
 
 - Engine role matrix
 - Pass / fail criteria
-- Comparison object matrix (single-machine vs station)
+- Comparison object matrix (what is compared at each level)
 
 Keep tables in sync when node text changes.

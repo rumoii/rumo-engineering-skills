@@ -1,6 +1,6 @@
 ---
 name: rumo-lifecycle-safety
-description: Use when implementing, fixing, or reviewing asynchronous or long-lived Rumo behavior involving background tasks, thread pools, scheduled jobs, Kafka consumers, terminal sessions, subprocesses, retries, cancellation, timeouts, shutdown, or resource cleanup. Establish explicit ownership and state transitions, make retry and disposal safe, and verify failure and restart paths instead of only the successful call.
+description: Use when implementing, fixing, or reviewing asynchronous or long-lived behavior involving background tasks, thread pools, scheduled jobs, Kafka consumers, terminal sessions, subprocesses, retries, cancellation, timeouts, shutdown, or resource cleanup. Establish explicit ownership and state transitions, make retry and disposal safe, and verify failure and restart paths instead of only the successful call.
 ---
 
 # Rumo Lifecycle Safety
@@ -44,7 +44,7 @@ Use one authority for each fact. Derived UI or cache state must converge from au
 - Never swallow an exception merely to make a worker, migration, deployment, or terminal task appear successful.
 - Avoid fixed sleeps as synchronization. Wait on an owned condition with a deadline and actionable timeout diagnostics.
 
-For Kafka, Redis, RustFS, terminal tasks, Runner, or PSModel flows, trace durable side effects and replay behavior. A retry that repeats external writes without an idempotency rule is unsafe even when the local future completes once.
+For Kafka, Redis, object storage, terminal tasks, or external runtime flows, trace durable side effects and replay behavior. A retry that repeats external writes without an idempotency rule is unsafe even when the local future completes once.
 
 ## Own Resources Explicitly
 

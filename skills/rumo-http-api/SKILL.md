@@ -1,6 +1,6 @@
 ---
 name: rumo-http-api
-description: Use when designing, adding, changing, or reviewing a Rumo HTTP/JSON endpoint, route, OpenAPI contract, request or response shape, authentication and authorization boundary, idempotency behavior, rate limit, pagination contract, or expensive response field. Do not use as the primary compatibility guide for Kafka, gRPC/protobuf, GraphQL, WebSockets, terminal protocols, or persisted formats.
+description: Use when designing, adding, changing, or reviewing an HTTP/JSON endpoint, route, OpenAPI contract, request or response shape, authentication and authorization boundary, idempotency behavior, rate limit, pagination contract, or expensive response field. Do not use as the primary compatibility guide for Kafka, gRPC/protobuf, GraphQL, WebSockets, terminal protocols, or persisted formats.
 license: MIT
 ---
 

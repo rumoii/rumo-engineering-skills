@@ -13,7 +13,9 @@ Treat this as a quality gate before commit or push. Do not commit or push unless
 
 Apply the review priorities, evidence standard, and finding severities from [`rumo-code-review`](../rumo-code-review/SKILL.md) on every pass. This skill adds the fix-and-repeat control loop; it does not define a second review policy. Use `rumo-code-review` alone for ordinary one-pass or read-only reviews.
 
-## Script
+## Codex App Server Script
+
+This backend requires the Codex CLI. When `codex app-server` is unavailable, skip this section and use the client-neutral backends in [Review Backends](#review-backends).
 
 Use `scripts/app_server_review.py` to launch `codex app-server --stdio`, create a temporary review thread, call `review/start`, wait for `exitedReviewMode.review`, and print the final review text. The script exits `2` when the review text appears to contain P0/P1/P2 or another blocking/critical finding, `0` when no blocking finding is detected, and `1` on protocol/runtime failure. If the app-server turn completes without `exitedReviewMode.review`, the script returns JSON with `error: "missingExitedReviewMode"` and diagnostics instead of a review conclusion.
 
@@ -55,7 +57,7 @@ python3 <skill-dir>/scripts/app_server_review.py --cwd "$PWD" --target commit --
 python3 <skill-dir>/scripts/app_server_review.py --cwd "$PWD" --target custom --instructions "Review this fix for auth bypass regressions" --json
 ```
 
-Do not let the script apply fixes. The script is the review sensor; the current Codex instance remains responsible for code edits, tests, and the loop decision.
+Do not let the script apply fixes. The script is the review sensor; the calling agent remains responsible for code edits, tests, and the loop decision.
 
 Script regression tests:
 
@@ -76,12 +78,12 @@ Capture the current repo, branch, and worktree status at the start. If the user 
 
 ## Review Backends
 
-Prefer the most direct available review surface:
+Prefer the most direct available review surface. Every backend feeds the same loop, severity filter, and stop conditions below.
 
-1. Run `scripts/app_server_review.py` when `codex app-server` is available. This is the preferred automation path.
-2. If running inside Codex with `/review` available and the script cannot run, or two app-server attempts fail without a valid `exitedReviewMode.review`, use the built-in review flow and choose the target above.
-3. If using another App Server client, call `review/start` for the target. Stream `item/*` events and read the final `exitedReviewMode.review` text as the authoritative review output.
-4. If no review surface is directly callable, ask Codex to perform a code-review pass in the current thread, but preserve the same severity filter and loop rules below.
+1. When `codex app-server` is available, run `scripts/app_server_review.py`. It gives an independent review thread with a machine-readable exit code.
+2. Otherwise, or after two app-server attempts fail without a valid `exitedReviewMode.review`, use the current client's built-in review command when one exists, such as `/review` in Codex or `/code-review` in Claude Code, and choose the target above.
+3. If another App Server client is in use, call `review/start` for the target. Stream `item/*` events and read the final `exitedReviewMode.review` text as the authoritative review output.
+4. If no review surface is directly callable, perform a code-review pass in the current session by following `rumo-code-review` for the selected target.
 
 App Server request shape:
 

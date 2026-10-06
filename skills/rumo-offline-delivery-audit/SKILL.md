@@ -17,7 +17,7 @@ Before building or auditing, identify:
 - Exact source repositories, revisions, submodules, vendored inputs, and whether any source tree is dirty.
 - Expected archive format, package root, installation entry point, upgrade path, backup path, rollback path, and health check.
 - Required third-party images, packages, runtimes, licenses, manuals, sample configuration, and database baselines.
-- Which claims require native Windows, Docker Desktop, PowerShell, Runner, PSModel, hardware, customer data, or a field network.
+- Which claims require native Windows, Docker Desktop, PowerShell, external runtimes, hardware, customer data, or a field network.
 
 Stop and request the missing value when the target platform, package entry point, or acceptance claim would materially change the artifact. Do not infer those facts from a previous package name.
 

@@ -33,7 +33,7 @@ Choose the narrowest command that would fail for the affected regression, then b
 | Shared skill | frontmatter validation, referenced-file existence, helper-script tests, cross-platform command review, and `git diff --check` |
 | Documentation or generated artifact | source-owner check, render/build when applicable, forbidden-path scan, and visual inspection |
 
-Source checks do not prove built or deployed artifacts. Package checks do not prove a real Windows, terminal, Runner, PSModel, or customer environment unless that environment was actually exercised.
+Source checks do not prove built or deployed artifacts. Package checks do not prove a real Windows, terminal, external runtime, or customer environment unless that environment was actually exercised.
 
 ## Avoid False Evidence
 

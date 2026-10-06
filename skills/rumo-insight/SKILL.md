@@ -1,12 +1,14 @@
 ---
 name: rumo-insight
-description: Use when analyzing local Codex history for evidence-backed employee AI capability, prompt quality, tool use, verification, or reusable know-how. Build a text-free inventory, then semantically review bounded task lifecycles and explicitly scoped asset or impact evidence without regex scoring.
+description: Use when analyzing local Codex CLI session history (Codex data only) for evidence-backed employee AI capability, prompt quality, tool use, verification, or reusable know-how. Build a text-free inventory, then semantically review bounded task lifecycles and explicitly scoped asset or impact evidence without regex scoring.
 license: MIT
 ---
 
 # Rumo Insight
 
-Analyze Codex usage as a read-only evidence exercise. Build deterministic evidence, then let Codex assess bounded task lifecycles and separately scoped asset or impact evidence without treating activity volume, tool-output heuristics, or model interpretation as proven employee ability.
+Analyze Codex usage as a read-only evidence exercise. Build deterministic evidence, then assess bounded task lifecycles and separately scoped asset or impact evidence without treating activity volume, tool-output heuristics, or model interpretation as proven employee ability.
+
+The collector reads only the Codex session format. Any client may run this skill against an existing Codex home, but it does not analyze Claude Code or other client histories; when the user asks for those, state that they are unsupported instead of approximating them.
 
 ## Establish The Scope
 
@@ -99,7 +101,7 @@ In capability-profile mode, review independent lifecycles one at a time and reta
 
 This is adaptive semantic sampling, not a statistically representative census. Report sample coverage, outcome mix, organizational evidence scope, and selection limits explicitly.
 
-The analyzer does not classify prompts, authorization, corrections, task labels, or command intent. Codex makes those semantic judgments from selected evidence. Tool-failure signals remain leads, not task-failure or user-quality scores.
+The analyzer does not classify prompts, authorization, corrections, task labels, or command intent. The active agent makes those semantic judgments from selected evidence. Tool-failure signals remain leads, not task-failure or user-quality scores.
 
 ## Interpret The Evidence
 

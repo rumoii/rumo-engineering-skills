@@ -23,7 +23,7 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | `rumo-git-commit` | Commit, branch landing, history cleanup, release, and push workflow |
 | `rumo-imagegen` | One-image generation through a configured OpenAI-compatible endpoint |
 | `rumo-incremental-deploy` | Profile-driven bounded deployment planning and guidance with verification and rollback |
-| `rumo-insight` | Evidence-backed local Codex work analysis |
+| `rumo-insight` | Evidence-backed analysis of local Codex session history (Codex data only) |
 | `rumo-interface-evolution` | Compatible producer-consumer interface and persisted-format evolution |
 | `rumo-lifecycle-safety` | Safe ownership, retry, cancellation, timeout, shutdown, and cleanup |
 | `rumo-linux-hardware-inventory` | Read-only Linux hardware evidence and concise handoff |

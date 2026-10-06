@@ -73,7 +73,7 @@ cd rumo-engineering-skills
 - `rumo-engineering-topology-diagram`: 建模、预览、导出和校验工程架构与拓扑图。
 - `rumo-mermaid-diagram`: 创建 Mermaid 业务流程图并导出 PNG 或 SVG。
 - `rumo-imagegen`: 通过用户配置的 OpenAI 兼容接口生成一张图片。
-- `rumo-insight`: 基于本地 Codex 历史证据分析工程工作方式。
+- `rumo-insight`: 基于本地 Codex 会话历史证据分析工程工作方式(仅支持 Codex 数据)。
 
 ## 校验
 

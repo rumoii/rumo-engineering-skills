@@ -17,7 +17,7 @@ Choose the SSH client in this order:
 2. On Windows, fall back to an existing local `D:\putty\plink.exe` or `plink` on `PATH`.
 3. If neither client is available, report the missing prerequisite and stop.
 
-Do not install, download, bundle, or distribute Plink. Codex handles the interactive SSH session, first-use fingerprint confirmation, password prompts, optional read-only `sudo` prompts, and segmented command execution. Passwords must appear only in a visible interactive prompt. Never place credentials in command arguments, scripts, environment variables, profiles, reports, or chat.
+Do not install, download, bundle, or distribute Plink. The agent's interactive terminal handles the SSH session, first-use fingerprint confirmation, password prompts, optional read-only `sudo` prompts, and segmented command execution. Passwords must appear only in a visible interactive prompt. Never place credentials in command arguments, scripts, environment variables, profiles, reports, or chat.
 
 Read [references/collection-commands.md](references/collection-commands.md) before collecting evidence. Run ordinary-permission commands first. Use only an already available `sudo` path for read-only DMI or SMART queries when the additional facts are needed and the user can complete the prompt interactively.
 

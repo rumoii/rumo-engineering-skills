@@ -1,4 +1,4 @@
 interface:
   display_name: "Rumo Coding Guidelines"
-  short_description: "约束 Rumo 代码只做请求和必要工作、保留必要后果并验证闭环"
-  default_prompt: "Use $rumo-coding-guidelines before writing, reviewing, or refactoring Rumo code so it follows the Stop Ladder, keeps requested and necessary consequences, removes obsolete paths, and remains layered, modular, and verified."
+  short_description: "约束代码改动只做请求和必要工作、保留必要后果并验证闭环"
+  default_prompt: "Use $rumo-coding-guidelines before writing, reviewing, or refactoring code so it follows the Stop Ladder, keeps requested and necessary consequences, removes obsolete paths, and remains layered, modular, and verified."

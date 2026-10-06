@@ -82,7 +82,7 @@ skill catalog is reloaded.
 - `rumo-engineering-topology-diagram`: architecture and topology fact models, preview, export, and validation.
 - `rumo-mermaid-diagram`: Mermaid business flowcharts with preview and image export.
 - `rumo-imagegen`: one-image generation through a configured OpenAI-compatible endpoint.
-- `rumo-insight`: evidence-backed local Codex work analysis.
+- `rumo-insight`: evidence-backed work analysis of local Codex session history (Codex data only).
 
 ## Validate
 

@@ -23,7 +23,7 @@ Look for:
 
 A typo, one unused local variable, or "this looks complex" without call-site proof is not a simplification candidate for this skill.
 
-## Rumo Guardrails
+## Guardrails
 
 Before proposing removal or consolidation, inspect the applicable evidence:
 
@@ -31,7 +31,7 @@ Before proposing removal or consolidation, inspect the applicable evidence:
 - active release branches and upgrade paths;
 - existing database rows, schemas, migrations, and rollback behavior;
 - frontend routes, permissions, product modes, licenses, and hidden feature gates;
-- terminal clients, task protocols, Runner, PSModel, MCP, middleware, and third-party consumers;
+- terminal clients, task protocols, external runtimes, MCP, middleware, and third-party consumers;
 - packaging profiles, generated artifacts, deployment scripts, and field configuration.
 
 Absence from one environment, source search, or test suite does not prove that a field capability is unused. Do not remove backward compatibility solely because the repository is quiet. Treat deployment and persisted-data evidence as separate from source evidence.

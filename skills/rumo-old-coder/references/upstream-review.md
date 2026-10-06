@@ -24,7 +24,7 @@ This adaptation retains the upstream principles that materially change agent beh
 
 - The skill is named `rumo-old-coder` so the existing installers synchronize it to Codex, Claude Code, and Grok without broadening third-party skill management.
 - The entrypoint is shorter and routes detailed tooling, templates, and independent verification into references for progressive disclosure.
-- `rumo-coding-guidelines`, `rumo-test-evidence`, `rumo-change-verification`, and domain safety skills remain authoritative for Rumo scope, evidence boundaries, compatibility, lifecycle, database, packaging, deployment, and field claims.
+- `rumo-coding-guidelines`, `rumo-test-evidence`, `rumo-change-verification`, and domain safety skills remain authoritative for scope, evidence boundaries, compatibility, lifecycle, database, packaging, deployment, and field claims.
 - SPEC approval does not imply authorization for commits, pushes, deployments, persistent database writes, destructive actions, dependency installation, or paid/external operations.
 - Checkpoint commits are not required. Repository commit and push policy remains separately controlled by `rumo-git-commit` and the user's explicit request.
 - A cross-platform repository-native or Python gauntlet entry point is preferred over adding a POSIX-only shell workflow; this preserves macOS, Linux, Git Bash, WSL, and native Windows support.

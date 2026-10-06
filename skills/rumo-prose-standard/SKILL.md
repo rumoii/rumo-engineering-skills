@@ -1,6 +1,6 @@
 ---
 name: rumo-prose-standard
-description: Use when writing, reviewing, trimming, or restoring prose in Rumo repositories, including Markdown, JavaDoc/JSDoc, code and test comments, prompts, diagnostics, logs, API errors, configuration descriptions, and product-visible UI strings. Preserve complete behavior and failure facts while removing repetition, implementation narration, review residue, and unresolvable development-session references. Use rumo-document-writing instead for formal DOCX delivery artifacts.
+description: Use when writing, reviewing, trimming, or restoring prose in software repositories, including Markdown, JavaDoc/JSDoc, code and test comments, prompts, diagnostics, logs, API errors, configuration descriptions, and product-visible UI strings. Preserve complete behavior and failure facts while removing repetition, implementation narration, review residue, and unresolvable development-session references. Use rumo-document-writing instead for formal DOCX delivery artifacts.
 ---
 
 # Rumo Prose Standard

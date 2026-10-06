@@ -1,4 +1,4 @@
 interface:
   display_name: "Rumo Frontend Dev"
-  short_description: "启动 Rumo 前端，诊断代理配置与受支持的替代端口设置"
+  short_description: "启动本地前端开发服务，诊断代理配置与受支持的替代端口设置"
   default_prompt: "Use $rumo-frontend-dev to start a frontend repository, verify its backend proxy, and configure a supported alternative port when needed."

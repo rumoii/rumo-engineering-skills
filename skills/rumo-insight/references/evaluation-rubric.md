@@ -1,6 +1,6 @@
 # Employee AI Capability Evidence Rubric
 
-Use this rubric only after Codex has reconstructed bounded task lifecycles and identified any separate asset, adoption, compliance, or baseline evidence needed for the requested capability claim. It evaluates observable AI-enabled work behavior, not intelligence, general productivity, personality, or employment potential.
+Use this rubric only after the agent has reconstructed bounded task lifecycles and identified any separate asset, adoption, compliance, or baseline evidence needed for the requested capability claim. It evaluates observable AI-enabled work behavior, not intelligence, general productivity, personality, or employment potential.
 
 ## Evidence Status
 
