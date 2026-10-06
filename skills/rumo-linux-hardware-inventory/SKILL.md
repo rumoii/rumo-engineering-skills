@@ -1,6 +1,7 @@
 ---
 name: rumo-linux-hardware-inventory
 description: Use when collecting read-only Linux hardware facts locally or through interactive SSH, preserving raw evidence, generating a concise Chinese device-configuration TXT, and returning that exact concise text in chat. Do not use for performance diagnosis, remediation, installation, configuration changes, or service operations.
+disable-model-invocation: true
 ---
 
 # Rumo Linux Hardware Inventory

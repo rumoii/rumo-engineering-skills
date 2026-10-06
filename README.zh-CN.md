@@ -42,7 +42,7 @@ cd rumo-engineering-skills
 
 ## Skill 清单
 
-- `rumo-project-profile`: 为其他 Skill 解析和校验私密项目配置。
+- `rumo-project-profile`: 为其他 Skill 解析和校验私密项目配置(仅手动调用)。
 - `rumo-bug-root-cause`: 基于证据排查源码、运行时、数据、中间件、部署和客户端问题。
 - `rumo-coding-guidelines`: 约束代码修改保持范围明确、改动最小并经过验证。
 - `rumo-http-api`: 设计和审查兼容、安全、可重试、成本受控且可运维的 HTTP/JSON 接口。
@@ -58,7 +58,7 @@ cd rumo-engineering-skills
 - `rumo-engineering-decision`: 记录需要长期保留的重要工程决策。
 - `rumo-find-simplifications`: 基于使用方和兼容性证据寻找可移除的工程复杂度。
 - `rumo-prose-standard`: 规范注释、诊断、日志、仓库文档、提示词和界面文字。
-- `rumo-daily-report`: 跨会话增量生成按日期保存的中文工程日报。
+- `rumo-daily-report`: 跨会话增量生成按日期保存的中文工程日报(仅手动调用)。
 - `rumo-git-commit`: 按仓库约定完成提交、分支落地、历史整理、发布和推送。
 - `rumo-frontend-dev`: 排查本地前端启动、代理、端口、证书和运行时配置。
 - `rumo-frontend-ui`: 开发前端页面、复用组件、统一布局并执行视觉质量检查。
@@ -70,12 +70,12 @@ cd rumo-engineering-skills
 - `rumo-offline-delivery-audit`: 审计离线制品完整性、来源、安装、回滚和验收边界。
 - `rumo-old-coder`: 通过已批准的可执行规格和可复现验证链完成高可靠开发。
 - `rumo-remote-memory-inspection`: 对远程 Linux 内存和性能问题进行只读检查。
-- `rumo-linux-hardware-inventory`: 只读采集 Linux 硬件信息并生成简洁交付结果。
+- `rumo-linux-hardware-inventory`: 只读采集 Linux 硬件信息并生成简洁交付结果(仅手动调用)。
 - `rumo-document-writing`: 编写和检查正式 Word 交付文档。
 - `rumo-engineering-topology-diagram`: 建模、预览、导出和校验工程架构与拓扑图。
 - `rumo-mermaid-diagram`: 创建 Mermaid 业务流程图并导出 PNG 或 SVG。
-- `rumo-imagegen`: 通过用户配置的 OpenAI 兼容接口生成一张图片。
-- `rumo-insight`: 基于本地 Codex 会话历史证据分析工程工作方式(仅支持 Codex 数据)。
+- `rumo-imagegen`: 通过用户配置的 OpenAI 兼容接口生成一张图片(仅手动调用)。
+- `rumo-insight`: 基于本地 Codex 会话历史证据分析工程工作方式(仅支持 Codex 数据，仅手动调用)。
 
 ## 校验
 

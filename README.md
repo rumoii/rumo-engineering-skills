@@ -51,7 +51,7 @@ skill catalog is reloaded.
 
 ## Skill catalog
 
-- `rumo-project-profile`: resolves and validates private project configuration for other skills.
+- `rumo-project-profile`: resolves and validates private project configuration for other skills (manual only).
 - `rumo-bug-root-cause`: evidence-led defect diagnosis across source, runtime, data, middleware, deployment, and clients.
 - `rumo-coding-guidelines`: baseline constraints for minimal, path-grounded, verified code changes.
 - `rumo-http-api`: compatible, secure, retry-safe, bounded, and operable HTTP/JSON API design and review.
@@ -67,7 +67,7 @@ skill catalog is reloaded.
 - `rumo-engineering-decision`: durable records for material engineering decisions.
 - `rumo-find-simplifications`: evidence-led discovery of removable engineering complexity.
 - `rumo-prose-standard`: prose quality for code, diagnostics, logs, repository docs, prompts, and UI strings.
-- `rumo-daily-report`: cross-session incremental Chinese daily reports in a date-based TXT file.
+- `rumo-daily-report`: cross-session incremental Chinese daily reports in a date-based TXT file (manual only).
 - `rumo-git-commit`: commit, branch landing, history cleanup, release, and push workflow following repository conventions.
 - `rumo-frontend-dev`: local frontend startup, proxy, port, certificate, and runtime troubleshooting.
 - `rumo-frontend-ui`: page development, component reuse, layout consistency, and browser QA.
@@ -79,12 +79,12 @@ skill catalog is reloaded.
 - `rumo-offline-delivery-audit`: offline artifact integrity, provenance, install, rollback, and acceptance limits.
 - `rumo-old-coder`: evidence-first high-assurance development through an approved specification and reproducible gauntlet.
 - `rumo-remote-memory-inspection`: read-only remote Linux memory and performance evidence.
-- `rumo-linux-hardware-inventory`: read-only Linux hardware inventory and concise handoff.
+- `rumo-linux-hardware-inventory`: read-only Linux hardware inventory and concise handoff (manual only).
 - `rumo-document-writing`: formal Word-document authoring and quality control.
 - `rumo-engineering-topology-diagram`: architecture and topology fact models, preview, export, and validation.
 - `rumo-mermaid-diagram`: Mermaid business flowcharts with preview and image export.
-- `rumo-imagegen`: one-image generation through a configured OpenAI-compatible endpoint.
-- `rumo-insight`: evidence-backed work analysis of local Codex session history (Codex data only).
+- `rumo-imagegen`: one-image generation through a configured OpenAI-compatible endpoint (manual only).
+- `rumo-insight`: evidence-backed work analysis of local Codex session history (Codex data only; manual only).
 
 ## Validate
 

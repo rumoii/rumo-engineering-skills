@@ -2,6 +2,7 @@
 name: rumo-insight
 description: Use when analyzing local Codex CLI session history (Codex data only) for evidence-backed employee AI capability, prompt quality, tool use, verification, or reusable know-how. Build a text-free inventory, then semantically review bounded task lifecycles and explicitly scoped asset or impact evidence without regex scoring.
 license: MIT
+disable-model-invocation: true
 ---
 
 # Rumo Insight
