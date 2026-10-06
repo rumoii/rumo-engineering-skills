@@ -19,13 +19,32 @@ from typing import Iterator
 NUMBER_RE = re.compile(r"^\s*(\d+)[.)、]\s*")
 
 
-def codex_root() -> Path:
-    configured = os.environ.get("CODEX_HOME")
-    return Path(configured).expanduser() if configured else Path.home() / ".codex"
-
-
 def state_dir() -> Path:
-    return codex_root() / "rumo-daily-report"
+    return Path.home() / ".rumo-engineering-skills" / "daily-report"
+
+
+def legacy_state_dir() -> Path:
+    configured = os.environ.get("CODEX_HOME")
+    root = Path(configured).expanduser() if configured else Path.home() / ".codex"
+    return root / "rumo-daily-report"
+
+
+def migrate_legacy_state() -> None:
+    """Copy configuration and state from the former Codex-specific location once."""
+    target, legacy = state_dir(), legacy_state_dir()
+    if target.exists() or not legacy.is_dir():
+        return
+    copied = []
+    for name in ("config.json", "state.json"):
+        source = legacy / name
+        if source.is_file():
+            atomic_write(target / name, source.read_text(encoding="utf-8"))
+            copied.append(name)
+    if copied:
+        print(
+            f"Copied {', '.join(copied)} from {legacy} to {target}; the old directory was left unchanged.",
+            file=sys.stderr,
+        )
 
 
 def config_path() -> Path:
@@ -246,6 +265,7 @@ def main() -> int:
     append_parser.add_argument("--date")
     args = parser.parse_args()
     try:
+        migrate_legacy_state()
         if args.command == "configure":
             return configure(args.report_dir, args.replace)
         return append_report(args.items_json, args.session_id, args.date)

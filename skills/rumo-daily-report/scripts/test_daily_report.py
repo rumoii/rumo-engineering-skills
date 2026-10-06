@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 import io
 import os
+import shutil
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 import daily_report
@@ -14,18 +15,23 @@ import daily_report
 class DailyReportScriptTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
+        self.home = Path(self.temp.name) / "home"
         self.codex = Path(self.temp.name) / "codex"
         self.reports = Path(self.temp.name) / "reports"
-        self.previous = os.environ.get("CODEX_HOME")
+        self.previous = {
+            name: os.environ.get(name) for name in ("HOME", "USERPROFILE", "CODEX_HOME")
+        }
+        os.environ["HOME"] = os.environ["USERPROFILE"] = str(self.home)
         os.environ["CODEX_HOME"] = str(self.codex)
         with redirect_stdout(io.StringIO()):
             daily_report.configure(str(self.reports))
 
     def tearDown(self) -> None:
-        if self.previous is None:
-            os.environ.pop("CODEX_HOME", None)
-        else:
-            os.environ["CODEX_HOME"] = self.previous
+        for name, value in self.previous.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
         self.temp.cleanup()
 
     def append(self, items: list[str], session: str, day: str) -> None:
@@ -97,6 +103,38 @@ class DailyReportScriptTest(unittest.TestCase):
         report = replacement / "2026-08-27-日报.txt"
         self.assertTrue(report.is_file())
         self.assertIn(item, report.read_text(encoding="utf-8"))
+
+    def test_state_lives_outside_client_homes(self) -> None:
+        self.assertEqual(
+            daily_report.config_path(),
+            self.home / ".rumo-engineering-skills" / "daily-report" / "config.json",
+        )
+        self.assertFalse(self.codex.exists())
+
+    def test_migrates_legacy_codex_state_once(self) -> None:
+        shutil.rmtree(daily_report.state_dir())
+        legacy = self.codex / "rumo-daily-report"
+        legacy.mkdir(parents=True)
+        legacy_reports = Path(self.temp.name) / "legacy-reports"
+        (legacy / "config.json").write_text(
+            json.dumps({"report_dir": str(legacy_reports)}), encoding="utf-8"
+        )
+        (legacy / "state.json").write_text('{"marker": true}', encoding="utf-8")
+
+        with redirect_stderr(io.StringIO()) as notice:
+            daily_report.migrate_legacy_state()
+
+        self.assertIn("config.json, state.json", notice.getvalue())
+        self.assertEqual(daily_report.load_config(), legacy_reports)
+        self.assertTrue((legacy / "config.json").is_file())
+
+        (legacy / "config.json").write_text(
+            json.dumps({"report_dir": str(self.reports)}), encoding="utf-8"
+        )
+        with redirect_stderr(io.StringIO()) as second_notice:
+            daily_report.migrate_legacy_state()
+        self.assertEqual(second_notice.getvalue(), "")
+        self.assertEqual(daily_report.load_config(), legacy_reports)
 
 
 if __name__ == "__main__":

@@ -13,13 +13,13 @@ Use this skill when the user asks to `整理日报`, `生成日报`, or explicit
 - Read only the current conversation and clearly related evidence already collected in it. Historical report files provide continuity, numbering, and style; they do not provide facts for the current batch.
 - Append only the current conversation's new work to the local report for the machine's current local date. Do not rewrite, reorder, or silently merge existing entries.
 - Do not claim a fix, cause, percentage, deployment, or other result that the conversation does not establish.
-- This skill writes the daily TXT because the user explicitly requested incremental local accumulation. It is separate from `engineering-task-summary`, which handles structured engineering archives when the user asks to summarize and save an engineering task.
+- This skill writes the daily TXT because the user explicitly requested incremental local accumulation. It does not create structured engineering archives.
 
 ## First-use and file selection
 
 1. If no fixed report directory is configured, ask the user for the directory once. Do not guess a product path. Configure it with the bundled script and reuse it thereafter.
 2. Use the local date at execution time and the exact filename `YYYY-MM-DD-日报.txt`, for example `2026-08-27-日报.txt`.
-3. Keep configuration and deduplication state under the user's Codex configuration directory, not in the report directory. Never put credentials or tokens in either location.
+3. Keep configuration and deduplication state under `~/.rumo-engineering-skills/daily-report/`, not in the report directory. The script copies state from the former `$CODEX_HOME/rumo-daily-report/` location once when the new directory does not exist yet. Never put credentials or tokens in either location.
 
 ## Extract and write
 
