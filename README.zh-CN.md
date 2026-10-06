@@ -6,15 +6,17 @@
 
 这是 `rumo-*` 技能命名空间的公共主仓库。这些技能适用于个人、团队和企业工程场景，但不包含任何组织专属的运维知识。
 
-具体项目的仓库名称、组件清单、主机、服务名称、安装目录和凭据应保存在本地 Profile 或可选的私密 Profile 仓库中。可以使用自带的 `rumo-project-profile` 初始化程序创建本地 Profile；只有团队通过私密仓库共享 Profile 时才需要设置 `RUMO_SKILL_PROFILES_REPO`。
+## 按场景开始
 
-```powershell
-py -3 skills\rumo-project-profile\scripts\init_profile.py --profile my-project
-```
+安装后，在智能体会话中使用对应客户端的指令。
 
-```bash
-python3 skills/rumo-project-profile/scripts/init_profile.py --profile my-project
-```
+| 场景 | 目标 | Codex | Claude Code |
+| --- | --- | --- | --- |
+| 排错 | 只读排查当前问题，基于证据追溯原因。 | `$rumo-bug-root-cause 只读排查当前问题，并提供原因与证据。` | `/rumo-bug-root-cause 只读排查当前问题，并提供原因与证据。` |
+| 审查 | 对当前未提交修改进行一次审查，保持文件不变。 | `$rumo-code-review 审查当前未提交修改，不修改文件。` | `/rumo-code-review 审查当前未提交修改，不修改文件。` |
+| 实现 | 以最小必要改动实现当前需求，并完成针对性验证。 | `$rumo-coding-guidelines 实现当前需求，保持最小必要改动并完成针对性验证。` | `/rumo-coding-guidelines 实现当前需求，保持最小必要改动并完成针对性验证。` |
+| 验证 | 核对当前准确变更范围，并报告实际运行的检查。 | `$rumo-change-verification 验证当前变更，并报告实际运行的检查。` | `/rumo-change-verification 验证当前变更，并报告实际运行的检查。` |
+| 部署 | 使用选定 Profile，为现有开发或测试环境规划有边界的制品部署。 | `$rumo-incremental-deploy 使用选定 Profile，规划向现有开发或测试环境部署制品，不执行部署。` | `/rumo-incremental-deploy 使用选定 Profile，规划向现有开发或测试环境部署制品，不执行部署。` |
 
 ## 快速开始
 
@@ -135,6 +137,20 @@ Rumo 配置文件中，凭据仍必须保存在公共仓库之外。
 默认远程仓库：`https://github.com/rumoii/rumo-engineering-skills.git`。
 
 PowerShell 安装程序在原生 Windows 上创建 Junction；Shell 安装程序在 macOS、Linux 和 WSL 上创建符号链接。增加、删除或重命名 Skill 后，需要重新运行安装程序。
+
+## 可选的项目 Profile
+
+Profile 是可选的；任务需要私密项目配置时再使用。
+
+具体项目的仓库名称、组件清单、主机、服务名称、安装目录和凭据应保存在本地 Profile 或可选的私密 Profile 仓库中。可以使用自带的 `rumo-project-profile` 初始化程序创建本地 Profile；只有团队通过私密仓库共享 Profile 时才需要设置 `RUMO_SKILL_PROFILES_REPO`。
+
+```powershell
+py -3 skills\rumo-project-profile\scripts\init_profile.py --profile my-project
+```
+
+```bash
+python3 skills/rumo-project-profile/scripts/init_profile.py --profile my-project
+```
 
 ## 安全
 

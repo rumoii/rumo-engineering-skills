@@ -8,15 +8,17 @@ This is the public upstream repository for the `rumo-*` skill namespace. The
 skills are suitable for individual, team, and enterprise engineering workflows,
 but they do not contain organization-specific operating knowledge.
 
-Project-specific repository names, component inventories, hosts, service names, install roots, and credentials belong in a local profile or an optional private profiles checkout. Use the bundled `rumo-project-profile` initializer to create a local profile; set `RUMO_SKILL_PROFILES_REPO` only when using a shared private checkout.
+## Start by scenario
 
-```powershell
-py -3 skills\rumo-project-profile\scripts\init_profile.py --profile my-project
-```
+Use the matching instruction in your agent session after installation.
 
-```bash
-python3 skills/rumo-project-profile/scripts/init_profile.py --profile my-project
-```
+| Scenario | Goal | Codex | Claude Code |
+| --- | --- | --- | --- |
+| Debug | Trace the current issue to an evidence-backed cause through read-only investigation. | `$rumo-bug-root-cause Investigate the current issue read-only and report the cause with evidence.` | `/rumo-bug-root-cause Investigate the current issue read-only and report the cause with evidence.` |
+| Review | Review the current uncommitted changes once without editing files. | `$rumo-code-review Review the current uncommitted changes without editing files.` | `/rumo-code-review Review the current uncommitted changes without editing files.` |
+| Implement | Implement the requested feature with minimal changes and focused verification. | `$rumo-coding-guidelines Implement the requested feature with minimal changes and focused verification.` | `/rumo-coding-guidelines Implement the requested feature with minimal changes and focused verification.` |
+| Verify | Check the exact current change and report the checks actually run. | `$rumo-change-verification Verify the current change and report the checks actually run.` | `/rumo-change-verification Verify the current change and report the checks actually run.` |
+| Deploy | Plan bounded artifact deployment to an existing development or test environment using the selected profile. | `$rumo-incremental-deploy Use the selected profile to plan artifact deployment to the existing development or test environment without executing it.` | `/rumo-incremental-deploy Use the selected profile to plan artifact deployment to the existing development or test environment without executing it.` |
 
 ## Getting started
 
@@ -141,6 +143,20 @@ The configuration file is `~/.rumo-engineering-skills/config.json`.
 Default remote: `https://github.com/rumoii/rumo-engineering-skills.git`.
 
 The PowerShell installer creates junctions on native Windows. The shell installer creates symbolic links on macOS, Linux, and WSL. Re-run the installer after adding, removing, or renaming skills.
+
+## Optional project profiles
+
+Profiles are optional; use them when a task needs private project configuration.
+
+Project-specific repository names, component inventories, hosts, service names, install roots, and credentials belong in a local profile or an optional private profiles checkout. Use the bundled `rumo-project-profile` initializer to create a local profile; set `RUMO_SKILL_PROFILES_REPO` only when using a shared private checkout.
+
+```powershell
+py -3 skills\rumo-project-profile\scripts\init_profile.py --profile my-project
+```
+
+```bash
+python3 skills/rumo-project-profile/scripts/init_profile.py --profile my-project
+```
 
 ## Security
 
