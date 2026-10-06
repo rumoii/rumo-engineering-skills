@@ -20,15 +20,9 @@ OPENAI_STRING_RE = re.compile(
     re.MULTILINE,
 )
 MARKDOWN_EXCLUDED_DIRS = {"node_modules"}
-FORMER_BRAND = bytes((117, 115, 103)).decode("ascii")
-FORMER_PROJECT_MARKERS = (
-    FORMER_BRAND,
-    bytes((106, 115, 122, 99)).decode("ascii"),
-    bytes((106, 115, 106, 100)).decode("ascii"),
-    "技" + "术监督",
-    "g" + "pdata",
-)
-FORBIDDEN_PROJECT_PATTERNS = (re.compile(r"\b10\.12\.\d{1,3}\.\d{1,3}\b"),)
+MAX_NAME_LENGTH = 64
+MAX_DESCRIPTION_LENGTH = 1024
+FORBIDDEN_TERMS_ENV = "RUMO_FORBIDDEN_TERMS_FILE"
 FORBIDDEN_SECRET_PATTERNS = (
     re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----"),
     re.compile(r"\b(?:ghp|github_pat|glpat|sk)-[A-Za-z0-9_-]{20,}\b"),
@@ -43,6 +37,45 @@ FORBIDDEN_TRACKED_NAMES = {
     "secrets.env",
     "secrets.md",
 }
+
+
+def default_forbidden_terms_file() -> Path:
+    """Return the per-user private forbidden-terms file location."""
+    return Path.home() / ".rumo-engineering-skills" / "forbidden-terms.txt"
+
+
+def load_forbidden_terms(errors: list[str]) -> list[re.Pattern[str]]:
+    """Load private terms that must not appear in this public repository.
+
+    Each non-empty line not starting with ``#`` is a case-insensitive literal,
+    or a regular expression when prefixed with ``re:``. A missing default file
+    disables the check; a missing explicitly configured file is an error.
+    """
+    configured = os.environ.get(FORBIDDEN_TERMS_ENV)
+    path = Path(configured).expanduser() if configured else default_forbidden_terms_file()
+    if not path.is_file():
+        if configured:
+            errors.append(f"{FORBIDDEN_TERMS_ENV} points to a missing file: {path}")
+        return []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError) as exc:
+        errors.append(f"{path}: cannot read forbidden terms: {exc}")
+        return []
+
+    patterns: list[re.Pattern[str]] = []
+    for line_number, raw_line in enumerate(lines, start=1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("re:"):
+            try:
+                patterns.append(re.compile(line[3:]))
+            except re.error as exc:
+                errors.append(f"{path}:{line_number}: invalid regular expression: {exc}")
+        else:
+            patterns.append(re.compile(re.escape(line), re.IGNORECASE))
+    return patterns
 
 
 def read_text(path: Path, errors: list[str]) -> str | None:
@@ -191,9 +224,12 @@ def validate_readme_inventory(
         errors.append(f"{path}: lists nonexistent skills: {', '.join(stale)}")
 
 
-def validate_repository(repo_root: Path) -> list[str]:
+def validate_repository(
+    repo_root: Path, forbidden_terms: list[re.Pattern[str]] | None = None
+) -> list[str]:
     """Return every validation error found in one Rumo skills repository."""
     errors: list[str] = []
+    forbidden_terms = forbidden_terms or []
     skills_root = repo_root / "skills"
     if not skills_root.is_dir():
         return [f"{skills_root}: skills directory not found"]
@@ -231,6 +267,12 @@ def validate_repository(repo_root: Path) -> list[str]:
             )
         if not description or description.startswith("["):
             errors.append(f"{skill_path}: description must be a concrete activation hint")
+        if len(declared_name) > MAX_NAME_LENGTH:
+            errors.append(f"{skill_path}: name must contain at most {MAX_NAME_LENGTH} characters")
+        if len(description) > MAX_DESCRIPTION_LENGTH:
+            errors.append(
+                f"{skill_path}: description must contain at most {MAX_DESCRIPTION_LENGTH} characters"
+            )
 
         metadata_path = skill_dir / "agents" / "openai.yaml"
         if metadata_path.exists():
@@ -266,15 +308,8 @@ def validate_repository(repo_root: Path) -> list[str]:
             text = path.read_text(encoding="utf-8")
         except (OSError, UnicodeError):
             continue
-        lowered_text = text.lower()
-        for marker in FORMER_PROJECT_MARKERS:
-            if marker.lower() in lowered_text:
-                errors.append(f"{path}: contains a forbidden project-specific term")
-                break
-        for pattern in FORBIDDEN_PROJECT_PATTERNS:
-            if pattern.search(text):
-                errors.append(f"{path}: contains a forbidden internal network address")
-                break
+        if any(pattern.search(text) for pattern in forbidden_terms):
+            errors.append(f"{path}: matched a private forbidden term")
         for pattern in FORBIDDEN_SECRET_PATTERNS:
             if pattern.search(text):
                 errors.append(f"{path}: contains a possible private key or access token")
@@ -352,7 +387,9 @@ def main() -> int:
     )
     args = parser.parse_args()
     repo_root = args.repo_root.expanduser().resolve()
-    errors = validate_repository(repo_root)
+    errors: list[str] = []
+    forbidden_terms = load_forbidden_terms(errors)
+    errors.extend(validate_repository(repo_root, forbidden_terms))
     if errors:
         print(f"Rumo skill validation failed with {len(errors)} error(s):", file=sys.stderr)
         for error in errors:

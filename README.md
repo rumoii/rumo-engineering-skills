@@ -106,7 +106,11 @@ py -3 scripts\run_auxiliary_tests.py
 python3 scripts/run_auxiliary_tests.py
 ```
 
-The validator checks naming, frontmatter, UI metadata, relative links, JSON syntax, catalog inventories, forbidden project-specific terms, and tracked credential files.
+On Windows without the `py` launcher, replace `py -3` with `python`.
+
+The validator checks naming, frontmatter (including the common Agent Skills length limits), UI metadata, relative links, JSON syntax, catalog inventories, likely secrets, and tracked credential files. To block private project vocabulary, list terms in `~/.rumo-engineering-skills/forbidden-terms.txt` (or the file named by `RUMO_FORBIDDEN_TERMS_FILE`), one per line, with a `re:` prefix for regular expressions. Keep that file out of the repository; a match reports only the file path, never the term.
+
+Clients select skills from `SKILL.md` `name` and `description` only. `agents/openai.yaml` is optional Codex UI metadata that other clients ignore.
 
 ## Install
 

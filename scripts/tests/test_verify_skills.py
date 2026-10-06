@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+import os
 import tempfile
 import subprocess
 import unittest
 from pathlib import Path
+from unittest import mock
 
-from scripts.verify_skills import validate_repository
+from scripts.verify_skills import (
+    FORBIDDEN_TERMS_ENV,
+    load_forbidden_terms,
+    validate_repository,
+)
 
 
 class VerifySkillsTest(unittest.TestCase):
@@ -134,12 +140,56 @@ class VerifySkillsTest(unittest.TestCase):
         )
         self.assert_error_contains("file must end with a newline")
 
-    def test_rejects_forbidden_project_marker(self) -> None:
-        marker = "u" + "sg"
+    def write_terms(self, content: str) -> Path:
+        terms_path = Path(self.temp_dir.name).parent / f"{self.repo_root.name}-terms.txt"
+        terms_path.write_text(content, encoding="utf-8")
+        self.addCleanup(terms_path.unlink)
+        return terms_path
+
+    def test_rejects_private_forbidden_term_without_echoing_it(self) -> None:
         (self.repo_root / "public-note.md").write_text(
-            f"This note must not mention {marker}.\n", encoding="utf-8"
+            "Deployed by AcmeCorp to host 192.0.2.17.\n", encoding="utf-8"
         )
-        self.assert_error_contains("forbidden project-specific term")
+        terms_path = self.write_terms("# private\nacmecorp\n")
+        with mock.patch.dict(os.environ, {FORBIDDEN_TERMS_ENV: str(terms_path)}):
+            load_errors: list[str] = []
+            terms = load_forbidden_terms(load_errors)
+        self.assertEqual(load_errors, [])
+
+        errors = validate_repository(self.repo_root, terms)
+
+        self.assertTrue(any("matched a private forbidden term" in e for e in errors), errors)
+        self.assertFalse(any("acmecorp" in e.lower() for e in errors), errors)
+
+    def test_forbidden_regex_terms(self) -> None:
+        (self.repo_root / "public-note.md").write_text(
+            "Host 192.0.2.17 is internal.\n", encoding="utf-8"
+        )
+        terms_path = self.write_terms("re:\\b192\\.0\\.2\\.\\d{1,3}\\b\n")
+        with mock.patch.dict(os.environ, {FORBIDDEN_TERMS_ENV: str(terms_path)}):
+            terms = load_forbidden_terms([])
+
+        errors = validate_repository(self.repo_root, terms)
+
+        self.assertTrue(any("matched a private forbidden term" in e for e in errors), errors)
+
+    def test_missing_explicit_terms_file_is_an_error(self) -> None:
+        missing = Path(self.temp_dir.name) / "absent-terms.txt"
+        errors: list[str] = []
+        with mock.patch.dict(os.environ, {FORBIDDEN_TERMS_ENV: str(missing)}):
+            self.assertEqual(load_forbidden_terms(errors), [])
+        self.assertTrue(any("points to a missing file" in e for e in errors), errors)
+
+    def test_rejects_overlong_description(self) -> None:
+        skill_path = self.repo_root / "skills" / "rumo-example" / "SKILL.md"
+        skill_path.write_text(
+            skill_path.read_text(encoding="utf-8").replace(
+                "description: Use when validating a concrete example skill.",
+                "description: Use when " + "x" * 1030,
+            ),
+            encoding="utf-8",
+        )
+        self.assert_error_contains("description must contain at most 1024 characters")
 
     def test_rejects_private_key_material(self) -> None:
         private_key_marker = "-----BEGIN " + "PRIVATE KEY-----"

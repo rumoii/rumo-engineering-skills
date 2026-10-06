@@ -101,7 +101,11 @@ py -3 scripts\run_auxiliary_tests.py
 python3 scripts/run_auxiliary_tests.py
 ```
 
-校验器会检查 Skill 命名、Frontmatter、界面元数据、相对链接、JSON 语法、清单一致性、禁止出现的项目专属内容和被跟踪的凭据文件。
+Windows 没有 `py` 启动器时，把 `py -3` 换成 `python`。
+
+校验器会检查 Skill 命名、Frontmatter（含通用 Agent Skills 的长度限制）、界面元数据、相对链接、JSON 语法、清单一致性、疑似密钥和被跟踪的凭据文件。如需拦截私有项目词汇，可把词条写入 `~/.rumo-engineering-skills/forbidden-terms.txt`（或用 `RUMO_FORBIDDEN_TERMS_FILE` 指定），每行一个词，`re:` 前缀表示正则；该文件不进入仓库，命中时只报告文件路径，不回显词条。
+
+各客户端只依赖 `SKILL.md` 的 `name` 和 `description` 选择技能；`agents/openai.yaml` 是 Codex 的可选界面元数据，其他客户端会忽略。
 
 ## 安装
 
