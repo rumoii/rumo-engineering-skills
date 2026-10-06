@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Linux Service Deploy"
+  short_description: "安装、升级或卸载 Linux 服务，提前准备恢复办法并验收运行、数据、暴露面和真实功能"
+  default_prompt: "Use $rumo-linux-service-deploy to deliver the requested Linux service change with recovery preparation and functional acceptance."

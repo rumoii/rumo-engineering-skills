@@ -62,6 +62,9 @@ cd rumo-engineering-skills
 - `rumo-frontend-ui`: 开发前端页面、复用组件、统一布局并执行视觉质量检查。
 - `rumo-browser-evidence`: 生成可追溯的截图、页面状态、DOM 证据和可选 GIF。
 - `rumo-incremental-deploy`: 依据 Profile 规划并指导有边界的制品部署、备份、验证和回滚。
+- `rumo-remote-ops-safety`: 轻量执行远程 Linux 查询，保护 SSH 变更入口并核实中断后的执行状态。
+- `rumo-linux-service-deploy`: 安装、升级或卸载 Linux 服务，提前准备恢复办法并完成真实功能验收。
+- `rumo-backup-restore`: 明确备份范围、一致性与受限存储，分层验证数据及服务恢复。
 - `rumo-offline-delivery-audit`: 审计离线制品完整性、来源、安装、回滚和验收边界。
 - `rumo-old-coder`: 通过已批准的可执行规格和可复现验证链完成高可靠开发。
 - `rumo-remote-memory-inspection`: 对远程 Linux 内存和性能问题进行只读检查。

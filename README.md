@@ -71,6 +71,9 @@ skill catalog is reloaded.
 - `rumo-frontend-ui`: page development, component reuse, layout consistency, and browser QA.
 - `rumo-browser-evidence`: traceable screenshots, DOM evidence, state sequences, and optional GIFs.
 - `rumo-incremental-deploy`: profile-driven bounded deployment planning and guidance with backup, verification, and rollback.
+- `rumo-remote-ops-safety`: lightweight remote Linux queries and bounded SSH changes with access protection and execution reconciliation.
+- `rumo-linux-service-deploy`: Linux service installation, upgrade, and removal with recovery preparation and functional acceptance.
+- `rumo-backup-restore`: explicit backup coverage, consistency, protected storage, and layered recovery verification.
 - `rumo-offline-delivery-audit`: offline artifact integrity, provenance, install, rollback, and acceptance limits.
 - `rumo-old-coder`: evidence-first high-assurance development through an approved specification and reproducible gauntlet.
 - `rumo-remote-memory-inspection`: read-only remote Linux memory and performance evidence.

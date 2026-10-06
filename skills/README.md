@@ -4,6 +4,7 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 
 | Skill | Purpose |
 | --- | --- |
+| `rumo-backup-restore` | Backup coverage, consistency, protected storage, and layered recovery verification |
 | `rumo-browser-evidence` | Traceable browser screenshots, state sequences, DOM evidence, and optional GIFs |
 | `rumo-bug-root-cause` | Evidence-led root-cause investigation across source and runtime boundaries |
 | `rumo-change-verification` | Exact change-scope inspection and smallest-sufficient verification |
@@ -26,12 +27,14 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | `rumo-interface-evolution` | Compatible producer-consumer interface and persisted-format evolution |
 | `rumo-lifecycle-safety` | Safe ownership, retry, cancellation, timeout, shutdown, and cleanup |
 | `rumo-linux-hardware-inventory` | Read-only Linux hardware evidence and concise handoff |
+| `rumo-linux-service-deploy` | Linux service installation, upgrade, and removal with recovery and functional acceptance |
 | `rumo-mermaid-diagram` | Mermaid business flowcharts with preview and PNG/SVG export |
 | `rumo-offline-delivery-audit` | Offline artifact integrity, provenance, installation, rollback, and acceptance limits |
 | `rumo-old-coder` | Evidence-first high-assurance development through an approved specification and reproducible gauntlet |
 | `rumo-project-profile` | Private project profile resolution and validation for other skills |
 | `rumo-prose-standard` | Prose quality for comments, diagnostics, logs, docs, prompts, and UI strings |
 | `rumo-remote-memory-inspection` | Read-only remote Linux memory and performance inspection |
+| `rumo-remote-ops-safety` | Lightweight remote Linux queries, bounded changes, access protection, and execution reconciliation |
 | `rumo-repository-gates` | Deterministic repository-owned CI and static gates |
 | `rumo-review-fix-loop` | Iterative review, blocking-finding repair, verification, and re-review |
 | `rumo-test-evidence` | Risk-based test evidence across source, application, artifact, deployment, and field layers |

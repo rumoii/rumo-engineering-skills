@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Backup Restore"
+  short_description: "明确服务器与服务数据的备份范围、一致性和凭据保护，分层验证恢复并避免覆盖现有数据"
+  default_prompt: "Use $rumo-backup-restore to define backup coverage and verify recovery within the authorized data and storage boundaries."
