@@ -1,6 +1,6 @@
 ---
 name: rumo-test-evidence
-description: Use when planning, writing, reviewing, or assessing tests for a change, especially when deciding between unit, integration, browser, snapshot, artifact, deployment, terminal, Windows, or field evidence. Convert behavioral claims and risks into the smallest sufficient evidence set, exercise production paths and failure cases, and state clearly what each test layer does not prove.
+description: Use when planning, writing, reviewing, or assessing tests for a change, especially when deciding between unit, integration, browser, snapshot, artifact, deployment, terminal, Windows, or field evidence. Convert behavioral claims and risks into the smallest sufficient evidence set, exercise production paths and failure cases, and state clearly what each test layer does not prove. Use rumo-change-verification instead for checking the exact implemented diff and reporting verification commands actually run.
 ---
 
 # Rumo Test Evidence
