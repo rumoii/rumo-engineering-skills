@@ -447,7 +447,12 @@ class InstallShellExtrasTests(unittest.TestCase):
         self.assertEqual(self.installed("codex"), sorted((*CORE_SKILLS, "rumo-delta")))
 
     def test_unknown_extra_fails_before_any_change(self) -> None:
-        for name in ("rumo-missing", "rumo-gamma/../../skills/rumo-alpha"):
+        for name in (
+            "rumo-missing",
+            "rumo-gamma/../../skills/rumo-alpha",
+            "rumo-delta rumo-gamma",
+            "rumo-delta\trumo-gamma",
+        ):
             result = self.run_installer("--extras", name)
 
             self.assertNotEqual(result.returncode, 0)

@@ -78,11 +78,18 @@ list_contains() {
   [ -n "$1" ] && printf '%s\n' "$1" | grep -Fxq -- "$2"
 }
 
+NEWLINE='
+'
+
+# Names are newline-separated; iterate line by line so a name with inner
+# whitespace stays one (invalid) name instead of splitting into valid ones.
 check_extra_names() {
   set -f
+  saved_ifs=$IFS
+  IFS=$NEWLINE
   for name in $EXTRA_NAMES $REMOVE_EXTRA_NAMES; do
     case "$name" in
-      rumo-*/*|rumo-*\\*) known=0 ;;
+      *[[:space:]]*|rumo-*/*|rumo-*\\*) known=0 ;;
       rumo-*) if [ -d "$REPO_PATH/extras/$name" ]; then known=1; else known=0; fi ;;
       *) known=0 ;;
     esac
@@ -91,18 +98,22 @@ check_extra_names() {
       exit 1
     fi
   done
+  IFS=$saved_ifs
   set +f
 }
 
 EXTRA_NAMES=$(split_names "$EXTRAS_REQUEST")
 REMOVE_EXTRA_NAMES=$(split_names "$REMOVE_EXTRAS_REQUEST")
 set -f
+saved_ifs=$IFS
+IFS=$NEWLINE
 for name in $EXTRA_NAMES; do
   if list_contains "$REMOVE_EXTRA_NAMES" "$name"; then
     echo "$name was passed to both --extras and --remove-extras; nothing was changed." >&2
     exit 1
   fi
 done
+IFS=$saved_ifs
 set +f
 
 if [ "$LIST_EXTRAS" -eq 1 ]; then
@@ -120,7 +131,7 @@ fi
 
 command -v git >/dev/null 2>&1 || { echo 'Git is required.' >&2; exit 1; }
 [ ! -d "$REPO_PATH/skills" ] || check_extra_names
-if [ -d "$REPO_PATH/.git" ]; then
+if [ -e "$REPO_PATH/.git" ]; then
   [ "$RUN_PULL" -eq 0 ] || run git -C "$REPO_PATH" pull --ff-only
 elif [ ! -d "$REPO_PATH/skills" ]; then
   run mkdir -p "$(dirname "$REPO_PATH")"

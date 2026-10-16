@@ -415,12 +415,13 @@ class InstallPowerShellExtrasTests(unittest.TestCase):
         self.assertEqual(self.installed("CodexHome"), sorted((*CORE_SKILLS, "rumo-delta")))
 
     def test_unknown_extra_fails_before_any_change(self) -> None:
-        result = self.run_installer("-Extras", "rumo-missing")
+        for name in ("rumo-missing", "rumo-delta rumo-gamma", "rumo-delta\trumo-gamma"):
+            result = self.run_installer("-Extras", name)
 
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Unknown optional skill: rumo-missing", result.stdout + result.stderr)
-        for home in self.homes.values():
-            self.assertFalse(home.exists())
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Unknown optional skill", result.stdout + result.stderr)
+            for home in self.homes.values():
+                self.assertFalse(home.exists())
 
     def test_unknown_extra_fails_before_pull(self) -> None:
         (self.repo / ".git").mkdir()
