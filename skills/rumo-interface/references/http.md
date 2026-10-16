@@ -22,6 +22,20 @@ Follow the API's existing naming, casing, envelope, verb, status-code, and error
 
 Field names, types, nullability, enum handling, defaults, validation, ordering, status codes, error shape, pagination, and rate-limit behavior are all contract. A rename is a removal plus an addition; a stricter validator can break callers that used to work. Check strict and generated clients before assuming unknown fields are ignored.
 
+### Compatibility With Existing Callers
+
+Assume some caller uses generated or strict types, branches on status codes and error categories, stores identifiers or cursors, and cannot upgrade at the same moment as the server. With that caller in mind, these look harmless but break someone:
+
+- a new value in a response enum, unless open-enum handling is proven for known clients;
+- a changed default, because callers that omit the field silently get new behavior;
+- a different status code or error body;
+- changed ordering, page size, cursor meaning, or end-of-list signal;
+- a new or tighter rate limit (measure callers, announce, return recovery hints, roll out in stages);
+- a bug fix that callers have already worked around;
+- a field whose meaning changes while its shape stays the same, which is the hardest to detect, so add a new field or an explicit opt-in instead.
+
+New optional inputs must keep the old behavior when omitted. Looser validation must not weaken authorization or integrity. A new side effect, permission check, latency class, or external call can break callers even when the schema is unchanged. Before versioning, try in order: an opt-in parameter, a new field next to the old one, a new route next to the old one; version only when both contracts can be served, tested, operated, and rolled back for the whole support window. To retire a route or field, follow the deprecation steps in SKILL.md and use gateway, access-log, or per-consumer telemetry where it exists.
+
 ### Authentication
 
 Pick credentials suited to the caller. Never put long-lived secrets in URLs, frontend bundles, mobile apps, logs, or error bodies. Each credential type needs a scope, secure transport, expiry where it applies, rotation, revocation, and a way to identify and disable it during an incident. Reuse existing identity infrastructure when it fits. An anonymous route must state how abuse and data exposure stay bounded. Knowing who the caller is does not decide what they may do.
@@ -32,7 +46,7 @@ For every route, state actor, action, resource, owner, and tenant or product bou
 
 ### Retries And Idempotency
 
-Classify each operation: naturally idempotent, deduplicated, compensating, deliberately at-most-once, or unsafe to repeat. When duplicate effects matter, require an idempotency key or an operation identity. Scope every key to the authenticated principal, tenant, operation, and endpoint, so the same client key from another caller or route never matches. Store the key with the request fingerprint and the original result; reject the same key with different input, and re-check authorization before replaying a stored result. Claim the key in the same atomic step as the effect, or state the crash window that remains. A timeout or 5xx leaves the caller unsure, so tell them how to find out what happened or repeat safely.
+Classify each operation: naturally idempotent, deduplicated, compensating, deliberately at-most-once, or unsafe to repeat. When duplicate effects matter, require an idempotency key or an operation identity. Scope every key to the authenticated principal, tenant, operation, and endpoint, so the same client key from another caller or route never matches. Store the key with the request fingerprint and the original result; reject the same key with different input, and re-check authorization before replaying a stored result. Track each claim as in progress, completed, failed but retryable, or expired, and keep records at least as long as clients are documented to retry. Decide what a concurrent duplicate, a crash, a cancellation, and a restart each see. When a duplicate effect is unacceptable (money, stock, irreversible actions), commit the idempotency record atomically with the authoritative state, typically through a unique constraint or a record owned by the same transaction. Only low-stakes operations may use a separate bounded store, and then the remaining crash window must be stated. A timeout or 5xx leaves the caller unsure, so tell them how to find out what happened or repeat safely.
 
 ### Cost And Incident Control
 

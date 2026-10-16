@@ -33,6 +33,8 @@ When versions overlap, expand, migrate, then contract:
 4. Confirm old producers, queued messages, files, and supported clients are drained or upgraded.
 5. Remove the compatibility code only once its supported lifetime is over.
 
+To deprecate a route, field, message, or format, and only when removal is authorized: ship and document the replacement, find and notify consumers, expose the established deprecation or sunset signal, measure usage per consumer, rehearse migration and rollback, and remove only when the agreed support window and usage criteria are both met. Age alone never proves something is safe to remove; consumers you cannot observe stay recorded as unverified.
+
 Resolve defaults in the owning parser or config layer, not in scattered null checks. Fail early and loudly on invalid referents, fields, enum values, units, or versions. Use opaque stable identifiers. Version durable formats whose interpretation can change, say which versions each reader accepts, and never reinterpret old data silently.
 
 ## 4. Failure And Rollback
@@ -41,7 +43,7 @@ Define error categories, partial success, retry safety, duplicate handling, and 
 
 ## 5. HTTP Routes
 
-For HTTP/JSON surfaces, read [references/http.md](references/http.md) and work through its checklist: convention, contract, authentication, authorization and isolation, retries and idempotency, cost and incident control, collections, response cost, errors, and leaked internals.
+For HTTP/JSON surfaces, read [references/http.md](references/http.md) and work through its checklist: convention, contract, compatibility with existing callers, authentication, authorization and isolation, retries and idempotency, cost and incident control, collections, response cost, errors, and leaked internals.
 
 ## 6. Verify The Matrix
 
