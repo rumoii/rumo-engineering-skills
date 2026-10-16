@@ -24,14 +24,8 @@ OPENAI_MANUAL_ONLY_RE = re.compile(
 )
 MARKDOWN_EXCLUDED_DIRS = {"node_modules"}
 SKILL_ROOTS = ("skills", "extras")
-MIGRATIONS_FILE = Path("scripts") / "skill-migrations.tsv"
-RETIRED_NAME_SCAN_FILES = (
-    "README.md",
-    "README.zh-CN.md",
-    "GETTING_STARTED.md",
-    "CONTRIBUTING.md",
-    "AGENTS.md",
-)
+EXTRAS_HEADINGS = {"extras", "optional extras", "可选扩展"}
+H2_RE = re.compile(r"^## +(.+?)\s*$", re.MULTILINE)
 MAX_NAME_LENGTH = 64
 MAX_DESCRIPTION_LENGTH = 1024
 MAX_DEFAULT_SKILL_LINES = 150
@@ -223,72 +217,6 @@ def _is_within(path: Path, root: Path) -> bool:
     return True
 
 
-def load_migrations(
-    repo_root: Path, skill_names: set[str], errors: list[str]
-) -> dict[str, str]:
-    """Return retired skill names mapped to their successor, or ``-`` when retired.
-
-    Each non-empty line not starting with ``#`` holds ``<old-name><TAB><new-name>``.
-    """
-    path = repo_root / MIGRATIONS_FILE
-    if not path.is_file():
-        return {}
-    text = read_text(path, errors)
-    if text is None:
-        return {}
-
-    migrations: dict[str, str] = {}
-    for line_number, raw_line in enumerate(text.splitlines(), start=1):
-        if not raw_line.strip() or raw_line.startswith("#"):
-            continue
-        parts = raw_line.split("\t")
-        if len(parts) != 2:
-            errors.append(f"{path}:{line_number}: expected <old-name><TAB><new-name>")
-            continue
-        old_name, new_name = parts
-        if not SKILL_NAME_RE.fullmatch(old_name) or not old_name.startswith("rumo-"):
-            errors.append(f"{path}:{line_number}: invalid retired skill name {old_name!r}")
-            continue
-        if old_name in migrations:
-            errors.append(f"{path}:{line_number}: duplicate retired skill name {old_name}")
-            continue
-        if old_name in skill_names:
-            errors.append(f"{path}:{line_number}: {old_name} still exists as a skill")
-        if new_name != "-" and new_name not in skill_names:
-            errors.append(f"{path}:{line_number}: successor {new_name!r} is not a skill")
-        migrations[old_name] = new_name
-    return migrations
-
-
-def validate_retired_names(
-    repo_root: Path,
-    migrations: dict[str, str],
-    scanned_files: list[Path],
-    errors: list[str],
-) -> None:
-    """Reject plain-text references to retired skill names."""
-    if not migrations:
-        return
-    pattern = re.compile(
-        r"(?<![a-z0-9-])("
-        + "|".join(re.escape(name) for name in sorted(migrations, key=len, reverse=True))
-        + r")(?![a-z0-9-])"
-    )
-    for path in scanned_files:
-        try:
-            text = path.read_text(encoding="utf-8")
-        except (OSError, UnicodeError):
-            continue
-        for line_number, line in enumerate(text.splitlines(), start=1):
-            for match in pattern.finditer(line):
-                old_name = match.group(1)
-                successor = migrations[old_name]
-                hint = "retired" if successor == "-" else f"use {successor}"
-                errors.append(
-                    f"{path}:{line_number}: references retired skill {old_name} ({hint})"
-                )
-
-
 def iter_skill_markdown(skills_root: Path) -> list[Path]:
     """Return owned skill Markdown while excluding vendored dependency trees."""
     return sorted(
@@ -302,19 +230,44 @@ def iter_skill_markdown(skills_root: Path) -> list[Path]:
 
 
 def validate_readme_inventory(
-    path: Path, skill_names: set[str], errors: list[str]
+    path: Path, core_names: set[str], extra_names: set[str], errors: list[str]
 ) -> None:
-    """Require a README inventory to contain every and only catalog skill."""
+    """Require a README inventory to list every skill once, in the right group.
+
+    Skills listed under an Extras heading must be optional extras; every other
+    listed skill must be a default skill.
+    """
     text = read_text(path, errors)
     if text is None:
         return
-    documented = set(README_SKILL_RE.findall(text))
+    documented_core: set[str] = set()
+    documented_extras: set[str] = set()
+    headings = list(H2_RE.finditer(text))
+    starts = [0, *(match.start() for match in headings)]
+    titles = ["", *(match.group(1) for match in headings)]
+    for index, start in enumerate(starts):
+        end = starts[index + 1] if index + 1 < len(starts) else len(text)
+        names = set(README_SKILL_RE.findall(text[start:end]))
+        if titles[index].strip().lower() in EXTRAS_HEADINGS:
+            documented_extras |= names
+        else:
+            documented_core |= names
+    skill_names = core_names | extra_names
+    documented = documented_core | documented_extras
     missing = sorted(skill_names - documented)
     stale = sorted(documented - skill_names)
+    core_as_extra = sorted(documented_extras & core_names)
+    extra_as_core = sorted(documented_core & extra_names)
     if missing:
         errors.append(f"{path}: missing skills: {', '.join(missing)}")
     if stale:
         errors.append(f"{path}: lists nonexistent skills: {', '.join(stale)}")
+    if core_as_extra:
+        errors.append(f"{path}: lists default skills under Extras: {', '.join(core_as_extra)}")
+    if extra_as_core:
+        errors.append(
+            f"{path}: lists optional skills outside the Extras section: {', '.join(extra_as_core)}"
+        )
 
 
 def validate_repository(
@@ -336,6 +289,8 @@ def validate_repository(
         if skill_dir.name in skill_names:
             errors.append(f"{skill_dir}: skill name is defined in both skills/ and extras/")
         skill_names.add(skill_dir.name)
+    core_names = {path.name for path in skill_dirs if path.parent == skills_root}
+    extra_names = skill_names - core_names
     candidate_files, tracked_files = repository_files(repo_root)
     for skill_dir in skill_dirs:
         skill_name = skill_dir.name
@@ -409,7 +364,7 @@ def validate_repository(
         if not readme_path.is_file():
             errors.append(f"{readme_path}: required catalog inventory not found")
         else:
-            validate_readme_inventory(readme_path, skill_names, errors)
+            validate_readme_inventory(readme_path, core_names, extra_names, errors)
 
     markdown_files = sorted(path for path in readme_paths if path.is_file())
     for root_name in SKILL_ROOTS:
@@ -417,14 +372,6 @@ def validate_repository(
             markdown_files.extend(iter_skill_markdown(repo_root / root_name))
     validate_markdown_links(repo_root, markdown_files, errors)
 
-    migrations = load_migrations(repo_root, skill_names, errors)
-    retired_scan = sorted(
-        {*markdown_files, *(repo_root / name for name in RETIRED_NAME_SCAN_FILES)}
-        | {skill_dir / "agents" / "openai.yaml" for skill_dir in skill_dirs}
-    )
-    validate_retired_names(
-        repo_root, migrations, [path for path in retired_scan if path.is_file()], errors
-    )
     validate_json_files(candidate_files, errors)
 
     for path in candidate_files:

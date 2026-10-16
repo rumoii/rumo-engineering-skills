@@ -35,9 +35,6 @@ In short:
 - `extras/` holds optional skills that users install with `-Extras` or
   `--extras`. A default skill must not link to an extra; mention it by name and
   say what to do when it is not installed.
-- When a skill is renamed, merged, or retired, add a line to
-  `scripts/skill-migrations.tsv` so installers can explain the change and the
-  validator can reject stale references.
 
 ## Validate changes
 

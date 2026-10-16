@@ -16,7 +16,6 @@ Commits and pushes follow `skills/rumo-git-commit/SKILL.md` and repository-local
 ## Layout
 
 - `skills/` holds the default skills that the installers always link; `extras/` holds optional skills installed with `-Extras` or `--extras`. A default skill must not link to an extra.
-- When a skill is renamed, merged, or retired, add `<old-name><TAB><new-name or ->` to `scripts/skill-migrations.tsv`. The installers use it to explain upgrades and the validator rejects stale references.
 - Follow the skill structure in `CONTRIBUTING.md` and `skills/rumo-prose/references/agent-docs.md`.
 
 ## Skill Language Policy

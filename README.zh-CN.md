@@ -93,10 +93,6 @@ cd rumo-engineering-skills
 
 已安装的扩展在不带参数重跑安装器时会保留。
 
-### 从旧版本升级
-
-在本仓库目录重跑安装器即可。已退役或改名的技能链接会被移除，安装器会逐条说明去向：被哪个新技能替代、已退役，或已改为扩展以及如何用 `-Extras` 装回。指向本仓库的旧链接会被直接替换，不需要 `-ReplaceForeignLinks`；指向其他仓库的链接或真实目录仍会让安装器在改动前停止。
-
 可选环境变量：`RUMO_SKILLS_REPO`(固定的本地仓库)、`RUMO_SKILLS_REMOTE`(克隆地址)、`RUMO_SKILL_PROFILES_REPO`(私有 Profile 仓库)、`RUMO_PROJECT_PROFILE`(显式指定 Profile)，以及 `CODEX_HOME`、`CLAUDE_HOME`、`AGENTS_HOME`(自定义客户端目录)。安装时加 `-ProfilesRepo <path>` 或 `--profiles-repo <path>` 可把 Profile 仓库路径保存到 `~/.rumo-engineering-skills/config.json`。
 
 ## 项目 Profile
@@ -125,7 +121,7 @@ python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 python3 scripts/run_auxiliary_tests.py
 ```
 
-Windows 没有 `py` 启动器时改用 `python`。校验器检查命名、frontmatter、界面元数据、相对链接、目录清单、迁移表与残留旧技能名、默认技能篇幅、多余的许可文件、JSON 语法、疑似密钥和被跟踪的凭据文件。如需拦截私有词汇，把词条写入 `~/.rumo-engineering-skills/forbidden-terms.txt`(或 `RUMO_FORBIDDEN_TERMS_FILE` 指定的文件)，每行一个，正则以 `re:` 开头；该文件不要放进仓库。
+Windows 没有 `py` 启动器时改用 `python`。校验器检查命名、frontmatter、界面元数据、相对链接、按默认与扩展分组的目录清单、默认技能篇幅、多余的许可文件、JSON 语法、疑似密钥和被跟踪的凭据文件。如需拦截私有词汇，把词条写入 `~/.rumo-engineering-skills/forbidden-terms.txt`(或 `RUMO_FORBIDDEN_TERMS_FILE` 指定的文件)，每行一个，正则以 `re:` 开头；该文件不要放进仓库。
 
 ## 安全
 

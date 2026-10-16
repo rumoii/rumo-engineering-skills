@@ -93,10 +93,6 @@ Manage extras:
 
 Installed extras stay installed when you rerun the installer without options.
 
-### Upgrading From Earlier Versions
-
-Rerun the installer from this checkout. Links to retired or renamed skills are removed, and the installer prints where each one went: which skill replaced it, that it was retired, or that it is now optional and how to reinstall it with `-Extras`. Links that point into this checkout are replaced without `-ReplaceForeignLinks`; links from other checkouts or real directories still stop the installer before any change.
-
 Optional environment variables: `RUMO_SKILLS_REPO` (stable checkout), `RUMO_SKILLS_REMOTE` (clone URL), `RUMO_SKILL_PROFILES_REPO` (private profiles checkout), `RUMO_PROJECT_PROFILE` (explicit profile ID), and `CODEX_HOME`, `CLAUDE_HOME`, `AGENTS_HOME` (custom client homes). Pass `-ProfilesRepo <path>` or `--profiles-repo <path>` to persist a profiles checkout in `~/.rumo-engineering-skills/config.json`.
 
 ## Project Profiles
@@ -125,7 +121,7 @@ python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 python3 scripts/run_auxiliary_tests.py
 ```
 
-On Windows without the `py` launcher, use `python`. The validator checks names, frontmatter, UI metadata, relative links, catalog inventories, the migration table and stale skill names, default-skill size, stray license files, JSON syntax, likely secrets, and tracked credential files. To block private vocabulary, list terms in `~/.rumo-engineering-skills/forbidden-terms.txt` (or the file named by `RUMO_FORBIDDEN_TERMS_FILE`), one per line, with a `re:` prefix for regular expressions; keep that file out of the repository.
+On Windows without the `py` launcher, use `python`. The validator checks names, frontmatter, UI metadata, relative links, catalog inventories grouped into default skills and extras, default-skill size, stray license files, JSON syntax, likely secrets, and tracked credential files. To block private vocabulary, list terms in `~/.rumo-engineering-skills/forbidden-terms.txt` (or the file named by `RUMO_FORBIDDEN_TERMS_FILE`), one per line, with a `re:` prefix for regular expressions; keep that file out of the repository.
 
 ## Security
 

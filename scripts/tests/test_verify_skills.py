@@ -270,14 +270,8 @@ class VerifySkillsTest(unittest.TestCase):
             self.repo_root / "skills" / "README.md",
         ):
             with readme.open("a", encoding="utf-8") as handle:
-                handle.write(f"- `{name}`: optional.\n")
+                handle.write(f"\n## Extras\n\n- `{name}`: optional.\n")
         return extra_dir
-
-    def write_migrations(self, text: str) -> None:
-        (self.repo_root / "scripts").mkdir(exist_ok=True)
-        (self.repo_root / "scripts" / "skill-migrations.tsv").write_text(
-            text, encoding="utf-8"
-        )
 
     def append_to_skill(self, text: str) -> None:
         skill_path = self.repo_root / "skills" / "rumo-example" / "SKILL.md"
@@ -294,6 +288,27 @@ class VerifySkillsTest(unittest.TestCase):
             "# Catalog\n\n- `rumo-example`: example.\n", encoding="utf-8"
         )
         self.assert_error_contains("missing skills: rumo-optional")
+
+    def test_rejects_extra_listed_with_default_skills(self) -> None:
+        self.add_extra()
+        readme = self.repo_root / "skills" / "README.md"
+        readme.write_text(
+            readme.read_text(encoding="utf-8").replace("## Extras\n", ""),
+            encoding="utf-8",
+        )
+        self.assert_error_contains(
+            "lists optional skills outside the Extras section: rumo-optional"
+        )
+
+    def test_rejects_default_skill_listed_under_extras(self) -> None:
+        self.add_extra()
+        readme = self.repo_root / "README.zh-CN.md"
+        readme.write_text(
+            readme.read_text(encoding="utf-8").replace("- `rumo-example`: 示例。\n", "")
+            + "- `rumo-example`: 示例。\n",
+            encoding="utf-8",
+        )
+        self.assert_error_contains("lists default skills under Extras: rumo-example")
 
     def test_rejects_name_in_both_roots(self) -> None:
         self.add_extra("rumo-example")
@@ -318,36 +333,6 @@ class VerifySkillsTest(unittest.TestCase):
         extra_dir = self.add_extra()
         with (extra_dir / "SKILL.md").open("a", encoding="utf-8") as handle:
             handle.write("line\n" * 150)
-        self.assertEqual(validate_repository(self.repo_root), [])
-
-    def test_accepts_valid_migrations(self) -> None:
-        self.write_migrations(
-            "# old<TAB>new\nrumo-old-name\trumo-example\nrumo-gone\t-\n"
-        )
-        self.assertEqual(validate_repository(self.repo_root), [])
-
-    def test_rejects_migration_to_missing_successor(self) -> None:
-        self.write_migrations("rumo-old-name\trumo-missing\n")
-        self.assert_error_contains("successor 'rumo-missing' is not a skill")
-
-    def test_rejects_migration_of_existing_skill(self) -> None:
-        self.write_migrations("rumo-example\t-\n")
-        self.assert_error_contains("rumo-example still exists as a skill")
-
-    def test_rejects_malformed_migration_line(self) -> None:
-        self.write_migrations("rumo-old-name rumo-example\n")
-        self.assert_error_contains("expected <old-name><TAB><new-name>")
-
-    def test_rejects_retired_name_reference(self) -> None:
-        self.write_migrations("rumo-old-name\trumo-example\n")
-        self.append_to_skill("Use rumo-old-name first.\n")
-        self.assert_error_contains(
-            "references retired skill rumo-old-name (use rumo-example)"
-        )
-
-    def test_retired_name_check_ignores_longer_names(self) -> None:
-        self.write_migrations("rumo-old\t-\n")
-        self.append_to_skill("The rumo-older-tool name is unrelated.\n")
         self.assertEqual(validate_repository(self.repo_root), [])
 
 
