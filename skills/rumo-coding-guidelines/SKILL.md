@@ -1,136 +1,54 @@
 ---
 name: rumo-coding-guidelines
-description: Use when writing, fixing, reviewing, or refactoring code in software repositories, including shared skill repositories. This is a general baseline coding constraint that may be used alongside more specific skills; confirm real paths and success criteria, keep work requested and necessary, preserve proven consequences, and avoid overengineering, unrelated edits, and unverified conclusions.
-license: MIT
+description: Use when writing, fixing, or refactoring code in a software repository, as the baseline discipline alongside more specific skills. Ground every edit in the real code path, do only the requested work and what it necessarily implies, avoid speculative abstraction and drive-by edits, and close with verification. Do not use alone for review-only, diagnosis-only, or question-answering requests.
 ---
 
 # Rumo Coding Guidelines
 
-Use this skill first when writing code in software repositories, including shared skill repositories. Every change should be traceable to the user request, the real code path, and concrete verification evidence.
+Every change should trace back to the request, the code path it touches, and evidence that it works.
 
-## Core Principles
+## Before Editing
 
-### Confirm Real Paths First
+- Read the repository's agent instructions (`AGENTS.md`, `CLAUDE.md`, nearby guidance) and follow them over these defaults.
+- Find the real entry point, call chain, configuration, and the existing pattern for this kind of change. Do not locate code from memory, screenshots, error summaries, or file names alone.
+- Check the dependencies, types, and documentation already in the project before writing replacement code or adding a package. Do not assume a library lacks a feature without checking its API.
+- When the request has several reasonable readings, state the trade-off. Resolve high-risk ambiguity first; `rumo-clarify` covers how.
+- When several repositories are involved, keep track of which ones were read, changed, and verified.
 
-- Read the current repo's `AGENTS.md`, `CLAUDE.md`, and nearby directory guidance before editing.
-- Locate the real entry points, call chain, configuration, and existing patterns before designing changes.
-- Do not guess implementation locations from screenshots, memory, error summaries, or file names.
-- If the user names multiple repositories, state which repositories were inspected, modified, and verified.
+## Scope Test
 
-### Make The Smallest Correct Change
+Before adding anything the user did not name, answer three questions:
 
-- Implement only what the current task requires; do not add future-facing features.
-- Do not add generic abstractions, plugin layers, configuration switches, or fallback frameworks for one-off use.
-- Do not opportunistically reorder, reformat, rename, or refactor adjacent code.
-- Match the existing code style even when you would personally choose a different style.
-- Clean up only unused imports, variables, functions, or files created by this change.
+1. Did the user ask for it?
+2. Will the requested result fail without it?
+3. What concrete code, data, deployment fact, or user decision shows it is needed?
 
-### Apply The Stop Ladder
+If the first two answers are no, leave it out and mention it only when the user would want to know. The goal is the smallest correct result, not the smallest diff: keep callers, tests, accessibility, security, existing-data migration, supported platforms, and deployment steps working whenever evidence shows they depend on the change.
 
-Before adding work that the user did not name, ask:
+## While Editing
 
-1. Did the user request it?
-2. Is it necessary to complete the requested result?
-3. What reachable code, data, deployment state, user decision, or acceptance proves that need?
-4. Would omitting it fail the current task?
+- Build the thinnest version that works end to end through the real entry point, then add capability in layers that each still work.
+- Do not add generic abstractions, plugin points, configuration switches, or fallback frameworks for a single use.
+- Do not reformat, rename, reorder, or refactor neighboring code. Match the surrounding style even when you would choose differently.
+- Remove only the dead code this change created.
+- Do not keep obsolete paths alive with shims, dual writes, flags, or deprecation periods unless the current contract requires them. Before deleting a path, confirm its callers, generated outputs, and deployment references. Contracts with external, persisted, or deployed consumers follow `rumo-interface`.
+- Do not accept a stopgap whose stated purpose is to be replaced later. Record material architectural choices with `rumo-plan`.
+- Keep internal risk notes out of deliverables. Add a disclaimer or warning only when the user asked, a decision depends on it, or leaving it out would make the result false or unsafe.
+- Report unrelated problems you notice instead of fixing them.
 
-If the answer remains no, do not implement it. Report it only when it is useful to the user.
-The smallest correct result is the goal, not the smallest diff: preserve callers, fixtures,
-tests, accessibility, security, current-data migration, supported-platform compatibility, and
-deployment work when reachable evidence requires them.
+## Authorization
 
-Do not turn internal risk controls into user-facing caveats. Add a disclaimer, limitation,
-privacy notice, or safety warning only when the user requested it, a reachable decision requires
-it, or omission would make the result false, unsafe, or non-compliant. Keep internal process out
-of deliverables unless the user requests methodology or it materially changes how the result is
-interpreted or used.
+Treat review, explanation, and monitoring requests as read-only until the user asks for a change. When the request changes mode or scope, re-read it rather than carrying old assumptions forward. Stop searching, testing, or reviewing once the evidence answers the question.
 
-### Respect Task Authorization
+## Close With Evidence
 
-- Treat `review`, `answer`, and `monitor` requests as read-only until the user explicitly authorizes a change.
-- In `change` work, implement only the requested work and its necessary consequences.
-- Do not add hashing, dependencies, migrations, compatibility layers, abstractions, or subagents merely because they might help later.
-- When authorization, scope, or task mode changes, re-evaluate the active request instead of carrying forward assumptions from the previous mode.
-- When the requested result has enough evidence, stop repeating searches, tests, or reviews.
+- Turn the task into a checkable goal, for example: reproduce, fix, run the focused test.
+- Prefer focused tests, builds, linters, script self-tests, `git diff --check`, or a real request or page check. Use `rumo-verify` before claiming the change is ready.
+- When a check fails, report the command, the reason, and the remaining risk. When a check cannot run, say so; never substitute "should work".
 
-### Prefer Current Requirements Over Obsolete Compatibility
+## Before Handing Back
 
-- Do not preserve backward compatibility for obsolete paths unless the user explicitly requires it as part of the current contract.
-- Remove obsolete routes, fields, branches, adapters, fallback paths, migrations, and compatibility layers instead of adding indirection that keeps dead behavior alive.
-- Do not invent a deprecation period, dual-write path, feature flag, shim, or fallback to avoid making the required current-state change.
-- Before deleting a path, verify its current callers, owners, generated outputs, and deployment references. Preserve only behavior that the current requirements or an identified supported consumer still require.
-- When an API, message, configuration field, persisted format, or other contract has external, persisted, or already deployed consumers, follow [`rumo-interface-evolution`](../rumo-interface-evolution/SKILL.md) for compatibility and rollout order instead of removing the old shape directly.
-
-### Grow In Working Layers
-
-- Start with the smallest version that works end to end through the real entry point, then add the next capability on top of that working baseline.
-- Keep each layer independently understandable and verifiable. Do not trade a working product for unfinished orchestration, speculative abstractions, or a broad framework.
-- Keep components modular and separate concerns at their ownership boundaries; do not hide unrelated responsibilities behind a convenient shared helper.
-
-### Reuse Proven Dependencies And Patterns
-
-- Check the dependencies already present in the project, their documentation, and their types before writing replacement code or adding a package.
-- Prefer an established, maintained library when it materially reduces implementation and maintenance complexity or improves reliability.
-- Do not assume an existing library lacks a capability without verifying its documented API and supported types.
-- Study established products and repository patterns before designing a new mechanism. Adopt a proven convention when it satisfies the current requirements; document the concrete reason when departing from it.
-
-### Make Durable Architectural Decisions
-
-- Choose designs that remain correct and maintainable as the system grows. Do not accept a stopgap whose stated purpose is to be replaced later.
-- Keep the simplest implementation that fully meets the current requirements; reject speculative configuration, indirection, extension points, and compatibility machinery.
-- When a material choice affects module boundaries, interfaces, persistence, deployment, security, lifecycle, or rollback, record the rationale with `rumo-engineering-decision` rather than leaving it in chat or comments.
-
-### Handle Assumptions Explicitly
-
-- When multiple interpretations exist, state the tradeoff; clarify high-risk ambiguity before editing.
-- Do not present guesses as facts or unverified symptoms as root causes.
-- When unrelated issues appear, record or report them instead of expanding the change scope.
-- Prefer the simpler sufficient solution and state why it is enough.
-
-### Close With Verification
-
-- Turn the task into a verifiable goal such as reproduce -> fix -> run targeted verification.
-- Prefer targeted tests, builds, lint, script self-tests, `git diff --check`, or real API/page verification.
-- If verification fails, state the failed command, the reason, and the remaining risk.
-- If verification is impossible, say that explicitly; do not replace evidence with "should work."
-
-## Working Method
-
-For complex tasks, provide a short plan where each step has a verification method:
-
-```text
-1. Locate the real path and proven options -> verify: entry points, callers, dependencies, documentation, types, and established patterns inspected
-2. Define the smallest current-state end-to-end layer -> verify: obsolete paths identified for removal and the first working slice is explicit
-3. Implement in modular layers -> verify: each added layer works on top of the previous one and owns one concern
-4. Run targeted verification -> verify: focused behavior, relevant integration, build/lint, and diff checks pass
-```
-
-Simple tasks can be executed directly, but changes must still stay surgical.
-
-## Pre-Commit Self-Check
-
-- Does every changed file belong to this task?
-- Does every change map to the user request or a verification failure?
-- Did the change remove obsolete paths instead of retaining compatibility, fallbacks, or migrations without a current requirement?
-- Did the change introduce an unrequested abstraction, configuration option, or generic capability?
-- Were existing dependencies, documentation, types, and established product patterns checked before adding custom code or a package?
-- Does the implementation work end to end at its smallest layer, with later capabilities added modularly?
-- Is any architectural choice a declared stopgap intended to be replaced later?
-- Did it edit code that is not understood or unrelated?
-- Does the final response distinguish changed, verified, and unverified or blocked work?
-
-## Related Skills
-
-- Use [`rumo-code-review`](../rumo-code-review/SKILL.md) for an evidence-backed one-pass review.
-- Use [`rumo-change-verification`](../rumo-change-verification/SKILL.md) to match checks to an exact outgoing or requested diff.
-- Use [`rumo-database-change-safety`](../rumo-database-change-safety/SKILL.md) for write-capable schema migrations, data repairs, cleanup, resets, and rollback.
-- Use [`rumo-filesystem-safety`](../rumo-filesystem-safety/SKILL.md) when a change must delete or bulk-clean files, caches, or build outputs.
-- Use the optional `rumo-offline-delivery-audit` extra, when installed, for installable offline artifacts, dependency closure, provenance, and field-acceptance limits.
-- Use [`rumo-prose`](../rumo-prose/SKILL.md) for comments, diagnostics, UI strings, and repository documentation.
-- Use [`rumo-engineering-decision`](../rumo-engineering-decision/SKILL.md) only when a material cross-module obligation needs durable rationale.
-
-## Provenance
-
-The Stop Ladder and requested-or-necessary scope discipline adapt the
-MIT-licensed `stop-that-shit` project. Preserve its [upstream license](LICENSE.stop-that-shit)
-when maintaining or redistributing this adaptation.
+- Every changed file and hunk belongs to this task.
+- No unrequested abstraction, option, or capability slipped in.
+- Existing dependencies and patterns were checked before custom code was added.
+- The final message separates what changed, what was verified, and what remains unverified or blocked.
