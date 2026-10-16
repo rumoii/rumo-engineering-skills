@@ -29,7 +29,7 @@ A read-only query loads only the session rules below; it does not need a change 
 
 ## Before Any Change
 
-State the intended state, affected host and resources, current authorization, relevant before-state, verification, and failure handling; a short note is enough for a bounded change. Judge risk by actual effect, not command name: a package install can start services, change repositories or networking, and run privileged scripts. Connectivity, privilege, public exposure, and persistent data call for stronger protection. Continue within existing authorization without asking again for each command. Database writes go through `rumo-database-change-safety`; file deletion through `rumo-filesystem-safety`.
+State the intended state, affected host and resources, current authorization, relevant before-state, verification, and failure handling; a short note is enough for a bounded change. Judge risk by actual effect, not command name: a package install can start services, change repositories or networking, and run privileged scripts. Connectivity, privilege, public exposure, and persistent data call for stronger protection. Changes, service deployments, and artifact deployments default to development or test environments; production needs authorization for the exact action and otherwise stays read-only. Continue within existing authorization without asking again for each command. Database writes go through `rumo-database-change-safety`; file deletion through `rumo-filesystem-safety`.
 
 ## Stop And Reconcile
 
