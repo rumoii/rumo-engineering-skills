@@ -1,11 +1,6 @@
 ---
 name: rumo-diagram
-description: >
-  Use when creating, revising, previewing, exporting, or validating engineering diagrams:
-  Mermaid flowcharts and business process diagrams (流程图、业务链路图、校验/审核分支图) as
-  Markdown + HTML preview + PNG, or architecture, deployment, security-zone, interface, and
-  network topology diagrams built from a confirmed fact model. Do not use for screenshots,
-  photos, or general image generation.
+description: Use when creating, revising, previewing, exporting, or validating engineering diagrams, either Mermaid flowcharts and business process diagrams (流程图、业务链路图、校验/审核分支图) as Markdown + HTML preview + PNG, or architecture, deployment, security-zone, interface, and network topology diagrams built from a confirmed fact model. Do not use for screenshots, photos, or general image generation.
 ---
 
 # Rumo Diagram

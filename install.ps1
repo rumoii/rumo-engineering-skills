@@ -178,6 +178,7 @@ function Show-Extras {
   foreach ($Name in ($ExtraDirs.Keys | Sort-Object)) {
     $SkillText = Get-Content -LiteralPath (Join-Path $ExtraDirs[$Name] "SKILL.md") -Raw -Encoding UTF8
     $Description = if ($SkillText -match "(?m)^description:\s*(.+?)\s*$") { $Matches[1].Trim('"', "'") } else { "" }
+    $Description = ($Description -split "(?<=\.)\s", 2)[0]
     Write-Host "  $Name  $Description"
   }
 }

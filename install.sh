@@ -76,7 +76,7 @@ if [ "$LIST_EXTRAS" -eq 1 ]; then
   for extra_dir in "$REPO_PATH"/extras/rumo-*; do
     [ -d "$extra_dir" ] || continue
     if [ "$found" -eq 0 ]; then echo 'Optional skills (install with --extras <name>[,<name>]):'; found=1; fi
-    description=$(sed -n 's/^description:[[:space:]]*//p' "$extra_dir/SKILL.md" | head -n 1 | sed -e 's/^"//' -e 's/"$//')
+    description=$(sed -n 's/^description:[[:space:]]*//p' "$extra_dir/SKILL.md" | head -n 1 | sed -e 's/^"//' -e 's/"$//' -e 's/\. .*/./')
     printf '  %s  %s\n' "$(basename "$extra_dir")" "$description"
   done
   [ "$found" -eq 1 ] || echo "No optional skills are available in $REPO_PATH."
