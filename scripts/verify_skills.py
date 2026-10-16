@@ -34,6 +34,7 @@ RETIRED_NAME_SCAN_FILES = (
 )
 MAX_NAME_LENGTH = 64
 MAX_DESCRIPTION_LENGTH = 1024
+MAX_DEFAULT_SKILL_LINES = 150
 FORBIDDEN_TERMS_ENV = "RUMO_FORBIDDEN_TERMS_FILE"
 FORBIDDEN_SECRET_PATTERNS = (
     re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----"),
@@ -342,6 +343,12 @@ def validate_repository(
             errors.append(f"{skill_dir}: directory name must use lowercase hyphen-case")
         if not skill_name.startswith("rumo-"):
             errors.append(f"{skill_dir}: shared skill names must use the rumo- namespace")
+        for license_path in sorted(skill_dir.rglob("LICENSE*")):
+            if "node_modules" not in license_path.parts:
+                errors.append(
+                    f"{license_path}: skills are covered by the repository license; "
+                    "do not ship separate license files"
+                )
 
         skill_path = skill_dir / "SKILL.md"
         if not skill_path.is_file():
@@ -353,6 +360,12 @@ def validate_repository(
             continue
         if "[TODO" in text or "TODO:" in text:
             errors.append(f"{skill_path}: unresolved template marker")
+        line_count = len(text.splitlines())
+        if skill_dir.parent.name == "skills" and line_count > MAX_DEFAULT_SKILL_LINES:
+            errors.append(
+                f"{skill_path}: default skill has {line_count} lines; keep it within "
+                f"{MAX_DEFAULT_SKILL_LINES} and move detail into references/"
+            )
 
         frontmatter = parse_frontmatter(skill_path, text, errors)
         declared_name = frontmatter.get("name", "")

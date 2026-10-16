@@ -67,7 +67,7 @@ Profile 不是使用技能的前置条件。可以直接在客户端中提出任
 Codex 用 `$rumo-review`，Claude Code 用 `/rumo-review`；也可以只用自然语言描述，
 由客户端根据技能描述自动选择。
 
-`rumo-daily-report`、`rumo-insight`、`rumo-imagegen`、`rumo-linux-inspect`、
+`rumo-daily-report`、`rumo-imagegen`、`rumo-linux-inspect`、
 `rumo-project-profile` 是仅手动调用的技能，不会被自然语言自动触发，也不占用会话的技能列表。
 使用时必须点名，例如 `$rumo-daily-report 整理日报`（Claude Code 为 `/rumo-daily-report 整理日报`）。
 

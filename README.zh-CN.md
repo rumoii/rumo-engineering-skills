@@ -65,7 +65,6 @@ cd rumo-engineering-skills
 - `rumo-document-writing`: 编写和检查正式 Word 交付文档。
 - `rumo-diagram`: Mermaid 业务流程图与经确认的工程拓扑图，含预览与导出(可选扩展)。
 - `rumo-imagegen`: 通过用户配置的 OpenAI 兼容接口生成一张图片(仅手动调用)。
-- `rumo-insight`: 基于本地 Codex 会话历史证据分析工程工作方式(仅支持 Codex 数据，仅手动调用)。
 
 ## 校验
 

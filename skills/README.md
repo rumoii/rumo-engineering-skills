@@ -19,7 +19,6 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | `rumo-frontend` | Page development, local dev-server troubleshooting, and requested browser evidence (optional extra) |
 | `rumo-git-commit` | Commit, branch landing, history cleanup, release, and push workflow |
 | `rumo-imagegen` | One-image generation through a configured OpenAI-compatible endpoint (manual only) |
-| `rumo-insight` | Evidence-backed analysis of local Codex session history (Codex data only; manual only) |
 | `rumo-lifecycle-safety` | Safe ownership, retry, cancellation, timeout, shutdown, and cleanup |
 | `rumo-linux-inspect` | Read-only Linux hardware inventory or memory inspection (optional extra, manual only) |
 | `rumo-offline-delivery-audit` | Offline artifact integrity, provenance, installation, rollback, and acceptance limits |

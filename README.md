@@ -74,7 +74,6 @@ skill catalog is reloaded.
 - `rumo-document-writing`: formal Word-document authoring and quality control.
 - `rumo-diagram`: Mermaid business flowcharts and confirmed topology diagrams with preview and export (optional extra).
 - `rumo-imagegen`: one-image generation through a configured OpenAI-compatible endpoint (manual only).
-- `rumo-insight`: evidence-backed work analysis of local Codex session history (Codex data only; manual only).
 
 ## Validate
 

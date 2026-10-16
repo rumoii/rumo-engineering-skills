@@ -22,3 +22,4 @@ rumo-remote-ops-safety	rumo-remote-ops
 rumo-linux-service-deploy	rumo-remote-ops
 rumo-backup-restore	rumo-remote-ops
 rumo-incremental-deploy	rumo-remote-ops
+rumo-insight	-

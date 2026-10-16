@@ -304,6 +304,22 @@ class VerifySkillsTest(unittest.TestCase):
         self.append_to_skill("See [optional](../../extras/rumo-optional/SKILL.md).\n")
         self.assert_error_contains("must not link to optional extras")
 
+    def test_rejects_license_file_inside_skill(self) -> None:
+        (self.repo_root / "skills" / "rumo-example" / "LICENSE.vendor").write_text(
+            "license text\n", encoding="utf-8"
+        )
+        self.assert_error_contains("do not ship separate license files")
+
+    def test_rejects_oversized_default_skill(self) -> None:
+        self.append_to_skill("line\n" * 150)
+        self.assert_error_contains("keep it within 150")
+
+    def test_allows_longer_extra_skill(self) -> None:
+        extra_dir = self.add_extra()
+        with (extra_dir / "SKILL.md").open("a", encoding="utf-8") as handle:
+            handle.write("line\n" * 150)
+        self.assertEqual(validate_repository(self.repo_root), [])
+
     def test_accepts_valid_migrations(self) -> None:
         self.write_migrations(
             "# old<TAB>new\nrumo-old-name\trumo-example\nrumo-gone\t-\n"
