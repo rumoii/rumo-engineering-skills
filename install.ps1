@@ -1,3 +1,52 @@
+<#
+.SYNOPSIS
+Validates this skills repository and links its default skills, plus any requested optional skills, into each detected agent client.
+
+.PARAMETER Repo
+Local skills repository. Defaults to RUMO_SKILLS_REPO, then this script's checkout, then ~/.rumo-engineering-skills.
+
+.PARAMETER ProfilesRepo
+Optional private project profiles repository to save in ~/.rumo-engineering-skills/config.json.
+
+.PARAMETER CodexHome
+Codex home directory. Defaults to CODEX_HOME, then ~/.codex.
+
+.PARAMETER ClaudeHome
+Claude Code home directory. Defaults to CLAUDE_HOME, then ~/.claude.
+
+.PARAMETER AgentsHome
+Shared agent skills home directory. Defaults to AGENTS_HOME, then ~/.agents.
+
+.PARAMETER Remote
+Clone URL used when the repository is absent. Defaults to RUMO_SKILLS_REMOTE.
+
+.PARAMETER Extras
+Also install these optional skills, for example rumo-diagram,rumo-frontend.
+
+.PARAMETER RemoveExtras
+Remove these optional skills.
+
+.PARAMETER ListExtras
+List optional skills without changing anything.
+
+.PARAMETER NoPull
+Do not update an existing checkout.
+
+.PARAMETER DryRun
+Print operations without changing links.
+
+.PARAMETER ReplaceForeignLinks
+Replace same-name links that point into another repository.
+
+.EXAMPLE
+.\install.ps1 -NoPull
+
+.EXAMPLE
+.\install.ps1 -NoPull -ListExtras
+
+.EXAMPLE
+.\install.ps1 -NoPull -Extras rumo-diagram,rumo-frontend
+#>
 param(
   [string]$Repo = $env:RUMO_SKILLS_REPO,
   [string]$ProfilesRepo = "",
