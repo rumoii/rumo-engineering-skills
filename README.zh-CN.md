@@ -56,7 +56,7 @@ cd rumo-engineering-skills
 - `rumo-database-change-safety`: 规划有边界的数据库变更、授权、备份、验证和回滚。
 - `rumo-filesystem-safety`: 删除文件或清理目录前按规模分级检查目标与边界，禁止自造备份副本。
 - `rumo-repository-gates`: 建立确定性的仓库 CI 和静态校验门禁。
-- `rumo-engineering-decision`: 记录需要长期保留的重要工程决策。
+- `rumo-plan`: 记录需要长期保留的重要工程决策。
 - `rumo-find-simplifications`: 基于使用方和兼容性证据寻找可移除的工程复杂度。
 - `rumo-prose`: 规范注释、诊断、日志、仓库文档、提示词和界面文字。
 - `rumo-daily-report`: 跨会话增量生成按日期保存的中文工程日报(仅手动调用)。

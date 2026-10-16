@@ -9,7 +9,7 @@ from pathlib import Path
 SCRIPT_PATH = (
     Path(__file__).resolve().parents[2]
     / "skills"
-    / "rumo-engineering-decision"
+    / "rumo-plan"
     / "scripts"
     / "verify_decisions.py"
 )

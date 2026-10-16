@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Plan"
+  short_description: "把多步任务拆成可验证的计划，或创建与维护跨模块工程决策记录"
+  default_prompt: "Use $rumo-plan to write a short spec and verifiable task breakdown, or to create or update the decision record for this change."

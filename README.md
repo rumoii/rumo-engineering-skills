@@ -65,7 +65,7 @@ skill catalog is reloaded.
 - `rumo-database-change-safety`: bounded database change planning, authorization, backup, verification, and rollback.
 - `rumo-filesystem-safety`: tiered file and directory deletion with boundary checks and no ad hoc backups.
 - `rumo-repository-gates`: deterministic repository-owned CI and static checks.
-- `rumo-engineering-decision`: durable records for material engineering decisions.
+- `rumo-plan`: durable records for material engineering decisions.
 - `rumo-find-simplifications`: evidence-led discovery of removable engineering complexity.
 - `rumo-prose`: prose quality for code, diagnostics, logs, repository docs, prompts, and UI strings.
 - `rumo-daily-report`: cross-session incremental Chinese daily reports in a date-based TXT file (manual only).

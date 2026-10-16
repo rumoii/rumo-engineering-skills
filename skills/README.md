@@ -14,7 +14,7 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | `rumo-database-change-safety` | Safe database migration, repair, cleanup, backup, authorization, and rollback |
 | `rumo-filesystem-safety` | Tiered file and directory deletion with boundary checks and no ad hoc backups |
 | `rumo-document-writing` | Formal delivery DOCX authoring, revision, formatting, and quality control |
-| `rumo-engineering-decision` | Durable engineering decisions, alternatives, compatibility, and rollback |
+| `rumo-plan` | Durable engineering decisions, alternatives, compatibility, and rollback |
 | `rumo-diagram` | Mermaid flowcharts and confirmed topology diagrams with preview and export (optional extra) |
 | `rumo-find-simplifications` | Evidence-led discovery of removable or consolidatable complexity |
 | `rumo-frontend` | Page development, local dev-server troubleshooting, and requested browser evidence (optional extra) |

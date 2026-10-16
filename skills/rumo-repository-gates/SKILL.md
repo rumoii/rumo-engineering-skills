@@ -60,7 +60,7 @@ Add focused tests or fixtures that show:
 
 Run the gate itself, its focused tests, the top-level command that includes it, configuration parsing, and `git diff --check`. When feasible, verify that a deliberately invalid temporary fixture makes the aggregate entry point fail; do not corrupt the user's working tree to test this.
 
-Use `rumo-test-evidence` to select proof for the invariant, `rumo-change-verification` before claiming readiness, and `rumo-engineering-decision` when the gate introduces a material repository policy or cost.
+Use `rumo-test-evidence` to select proof for the invariant, `rumo-change-verification` before claiming readiness, and `rumo-plan` when the gate introduces a material repository policy or cost.
 
 ## Report
 
