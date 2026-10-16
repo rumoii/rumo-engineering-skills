@@ -45,6 +45,42 @@ BOUNDARIES = (
         r"database.*(?:cleanup|data)",
         r"(?:files?|directories).*(?:delet|clean)",
     ),
+    (
+        "rumo-debug",
+        "rumo-test",
+        r"(?:plan|writ).*tests?",
+        r"root cause|existing defect",
+    ),
+)
+
+# Each merged skill keeps one trigger phrase per mode in its description,
+# because clients pick skills from the description alone.
+MODE_TRIGGERS = {
+    "rumo-plan": (r"task breakdown", r"decision record|ADR"),
+    "rumo-test": (r"existing tests are enough", r"test-driven", r"high-assurance"),
+    "rumo-verify": (r"before claiming work is done", r"CI check|static verifier"),
+    "rumo-review": (r"read-only code review", r"review-fix", r"simplification audit"),
+    "rumo-interface": (r"HTTP", r"event|queue message", r"configuration field"),
+    "rumo-remote-ops": (r"remote Linux host", r"systemd|Docker Compose", r"backups? and restores?", r"deployment of selected application artifacts"),
+    "rumo-debug": (r"stay read-only unless the request also asks for the fix",),
+}
+
+# Rules that keep rumo-clarify light; each must stay in the description or body.
+CLARIFY_DESCRIPTION_RULES = (
+    r"Do not use when the request is already specific",
+    r"for pure questions",
+    r"for reviews",
+    r"at most one round",
+    r"only when the user asks",
+)
+CLARIFY_BODY_RULES = (
+    r"Asking about a clear request is a failure",
+    r"At most five numbered questions",
+    r"recommended answer",
+    r"accepts only the recommendations shown in this round",
+    r"Critical.*do not default it",
+    r"Do not start a second round on your own",
+    r"Answers to clarifying questions do not widen what the agent may do",
 )
 
 
@@ -83,6 +119,24 @@ class SkillBoundariesTest(unittest.TestCase):
                     "reference to the counterpart skill; add the confirmed boundary "
                     "to at least one frontmatter description.",
                 )
+
+    def test_merged_skill_descriptions_cover_every_mode(self) -> None:
+        for skill, patterns in MODE_TRIGGERS.items():
+            description = read_description(REPO_ROOT / "skills" / skill / "SKILL.md")
+            for pattern in patterns:
+                with self.subTest(skill=skill, mode=pattern):
+                    self.assertRegex(description, re.compile(pattern, re.I))
+
+    def test_clarify_stays_light(self) -> None:
+        path = REPO_ROOT / "skills" / "rumo-clarify" / "SKILL.md"
+        description = read_description(path)
+        body = path.read_text(encoding="utf-8").split("\n---\n", 1)[1]
+        for pattern in CLARIFY_DESCRIPTION_RULES:
+            with self.subTest(description_rule=pattern):
+                self.assertRegex(description, re.compile(pattern, re.I))
+        for pattern in CLARIFY_BODY_RULES:
+            with self.subTest(body_rule=pattern):
+                self.assertRegex(body, re.compile(pattern, re.I))
 
     def test_accepts_counterpart_or_pair_specific_exclusion(self) -> None:
         self.assertTrue(has_boundary("Use rumo-verify instead.", "rumo-verify", "unused"))
