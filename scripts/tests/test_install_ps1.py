@@ -323,7 +323,9 @@ class InstallPowerShellExtrasTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 
-    def run_installer(self, *extra: str, pull: bool = False) -> subprocess.CompletedProcess[str]:
+    def run_installer(
+        self, *extra: str, pull: bool = False, env: dict[str, str] | None = None
+    ) -> subprocess.CompletedProcess[str]:
         command = [
             POWERSHELL,
             "-NoProfile",
@@ -342,6 +344,7 @@ class InstallPowerShellExtrasTests(unittest.TestCase):
         return subprocess.run(
             command,
             cwd=self.repo,
+            env=env,
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -396,6 +399,17 @@ class InstallPowerShellExtrasTests(unittest.TestCase):
         self.assertIn("rumo-delta", result.stdout)
         for home in self.homes.values():
             self.assertFalse(home.exists())
+
+    def test_list_extras_does_not_require_git(self) -> None:
+        path = os.pathsep.join(
+            entry
+            for entry in os.environ.get("PATH", "").split(os.pathsep)
+            if entry and not (Path(entry) / "git.exe").exists()
+        )
+        result = self.run_installer("-ListExtras", env={**os.environ, "PATH": path})
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("rumo-gamma", result.stdout)
 
     def test_extras_are_installed_preserved_and_removed(self) -> None:
         result = self.run_installer("-Extras", "rumo-gamma,rumo-delta")

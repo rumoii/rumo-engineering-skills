@@ -185,7 +185,6 @@ function Show-Extras {
   }
 }
 
-if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw "Git is required." }
 $ScriptRoot = $PSScriptRoot
 if (-not $Repo) { $Repo = if (Test-Path (Join-Path $ScriptRoot "skills")) { $ScriptRoot } else { Join-Path $HOME ".rumo-engineering-skills" } }
 $Repo = [IO.Path]::GetFullPath($Repo)
@@ -209,6 +208,7 @@ if ($ListExtras) {
   exit 0
 }
 
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw "Git is required." }
 if (Test-Path $RepoSkills) { Assert-ExtraNames }
 
 if (Test-Path (Join-Path $Repo ".git")) {
