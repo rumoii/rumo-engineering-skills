@@ -1,6 +1,6 @@
 ---
 name: rumo-verify
-description: Use before claiming work is done, marking it ready, committing for handoff, or pushing, and when asked to verify a change; establish the exact committed and dirty change scope, run the smallest sufficient checks, and report only commands actually run. Also use when adding, changing, or diagnosing a repository-owned CI check, static verifier, generated-file check, pre-commit rule, or aggregate test entry point. Never commits, pushes, deploys, or changes remote systems; do not use for test planning before implementation.
+description: Use before claiming work is done, marking it ready, committing for handoff, or pushing, and when asked to verify a change; establish the exact committed and dirty change scope, run the smallest sufficient checks, and report only commands actually run. Also use when adding, changing, reviewing, or diagnosing a repository-owned CI check, static verifier, generated-file check, pre-commit rule, or aggregate test entry point. Never commits, pushes, deploys, or changes remote systems; do not use for test planning before implementation.
 ---
 
 # Rumo Verify
@@ -12,7 +12,7 @@ No claim of "done", "fixed", or "passing" without fresh evidence from this state
 | Mode | Use when |
 | --- | --- |
 | Verify a change (default) | Before handoff, commit, push, or when asked to check work |
-| Build a gate | Adding or changing a CI job, verifier, threshold, hook, or aggregate check; read [references/gates.md](references/gates.md) first |
+| Build or review a gate | Adding, changing, or reviewing a CI job, verifier, threshold, hook, or aggregate check; read [references/gates.md](references/gates.md) first. A review stays read-only. |
 
 ## Verify A Change
 
@@ -42,6 +42,13 @@ List the verified scope, each command with its actual result, skipped or unavail
 - A required check cannot run because credentials, software, platform, or access is missing: report the missing boundary; never mark it passed.
 - Getting evidence would require deploying, restarting services, changing data, or pushing: stop and ask; those are separate authorizations.
 - Verification fails for a reason outside this change and cannot be isolated: report it with the failing output.
+
+## Related
+
+- Passing commands do not replace a semantic review; use `rumo-review` for that.
+- Running a migration, repair, cleanup, or rollback against an existing database goes through `rumo-database-change-safety` first.
+- Compatibility and rollout questions go to `rumo-interface`; retry, cancellation, timeout, and shutdown behavior to `rumo-lifecycle-safety`.
+- Commit, tag, or push afterwards with `rumo-git-commit` when the user asks.
 
 ## Red Flags
 

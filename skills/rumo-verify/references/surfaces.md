@@ -14,4 +14,4 @@ Start from the narrowest command that would fail for the regression, then widen 
 | Shared skill | frontmatter and catalog validation, referenced files exist, helper-script tests, cross-platform command review, `git diff --check` |
 | Documentation or generated file | owner check, render or build when applicable, forbidden-path scan, visual inspection |
 
-Source checks do not prove built or deployed artifacts. Package checks do not prove a real platform, terminal, external runtime, or customer environment unless that environment was exercised.
+Fakes, mocks, and unit tests do not prove an external or field boundary. Source checks do not prove built or deployed artifacts. Package checks do not prove a real platform, terminal, external runtime, or customer environment unless that environment was exercised.

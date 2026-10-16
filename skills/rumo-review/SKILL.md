@@ -36,6 +36,8 @@ Read enough surrounding code and current consumers to judge, in this order:
 5. **Compatibility and operations:** supported branches, existing data, upgrades, configuration precedence, platforms, topology, observability.
 6. **Test quality:** tests must exercise the affected production route; a mock-only assertion, compile, HTTP 200, or coverage number is not proof.
 
+When the target is a CI job, verifier, threshold, or other gate, also apply the gate rules in `rumo-verify` (still read-only).
+
 ## Evidence Standard
 
 - Trace both sides of every changed interface and every production consumer in scope.
