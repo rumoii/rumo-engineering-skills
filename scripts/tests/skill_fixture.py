@@ -9,11 +9,6 @@ import shutil
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CORE_SKILLS = ("rumo-alpha", "rumo-beta")
 EXTRA_SKILLS = ("rumo-delta", "rumo-gamma")
-MIGRATIONS = (
-    ("rumo-old-alpha", "rumo-alpha"),
-    ("rumo-old-tool", "rumo-gamma"),
-    ("rumo-gone", "-"),
-)
 
 
 def write_skill(skill_dir: Path, description: str) -> None:
@@ -41,10 +36,8 @@ def build_fixture_repo(root: Path) -> Path:
     for name in EXTRA_SKILLS:
         write_skill(repo / "extras" / name, f"Use when testing optional skill {name}.")
 
-    inventory = "".join(f"- `{name}`: fixture.\n" for name in (*CORE_SKILLS, *EXTRA_SKILLS))
+    core = "".join(f"- `{name}`: fixture.\n" for name in CORE_SKILLS)
+    extras = "".join(f"- `{name}`: fixture.\n" for name in EXTRA_SKILLS)
     for readme in (repo / "README.md", repo / "README.zh-CN.md", repo / "skills" / "README.md"):
-        readme.write_text(f"# Fixture\n\n{inventory}", encoding="utf-8")
-    (repo / "scripts" / "skill-migrations.tsv").write_text(
-        "".join(f"{old}\t{new}\n" for old, new in MIGRATIONS), encoding="utf-8"
-    )
+        readme.write_text(f"# Fixture\n\n{core}\n## Extras\n\n{extras}", encoding="utf-8")
     return repo

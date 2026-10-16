@@ -323,7 +323,7 @@ class InstallPowerShellExtrasTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 
-    def run_installer(self, *extra: str) -> subprocess.CompletedProcess[str]:
+    def run_installer(self, *extra: str, pull: bool = False) -> subprocess.CompletedProcess[str]:
         command = [
             POWERSHELL,
             "-NoProfile",
@@ -333,8 +333,9 @@ class InstallPowerShellExtrasTests(unittest.TestCase):
             str(self.repo / "install.ps1"),
             "-Repo",
             str(self.repo),
-            "-NoPull",
         ]
+        if not pull:
+            command.append("-NoPull")
         for parameter, home in self.homes.items():
             command.extend((f"-{parameter}", str(home)))
         command.extend(extra)
@@ -421,6 +422,14 @@ class InstallPowerShellExtrasTests(unittest.TestCase):
         for home in self.homes.values():
             self.assertFalse(home.exists())
 
+    def test_unknown_extra_fails_before_pull(self) -> None:
+        (self.repo / ".git").mkdir()
+        result = self.run_installer("-Extras", "rumo-missing", "-DryRun", pull=True)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Unknown optional skill: rumo-missing", result.stdout + result.stderr)
+        self.assertNotIn("pull --ff-only", result.stdout)
+
     def test_same_name_in_extras_and_remove_extras_fails(self) -> None:
         result = self.run_installer("-Extras", "rumo-gamma", "-RemoveExtras", "rumo-gamma")
 
@@ -429,17 +438,11 @@ class InstallPowerShellExtrasTests(unittest.TestCase):
         for home in self.homes.values():
             self.assertFalse(home.exists())
 
-    def test_upgrade_from_previous_layout_migrates_links(self) -> None:
+    def test_stale_repository_links_are_removed(self) -> None:
         for home in self.homes.values():
             skills = home / "skills"
             self.create_dangling_junction(
                 skills / "rumo-old-alpha", self.repo / "skills" / "rumo-old-alpha"
-            )
-            self.create_dangling_junction(
-                skills / "rumo-old-tool", self.repo / "skills" / "rumo-old-tool"
-            )
-            self.create_dangling_junction(
-                skills / "rumo-gone", self.repo / "skills" / "rumo-gone"
             )
             self.create_dangling_junction(
                 skills / "rumo-gamma", self.repo / "skills" / "rumo-gamma"
@@ -448,12 +451,7 @@ class InstallPowerShellExtrasTests(unittest.TestCase):
         result = self.run_installer()
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("rumo-old-alpha was replaced by rumo-alpha.", result.stdout)
-        self.assertIn(
-            "rumo-old-tool moved into optional rumo-gamma; install it with -Extras rumo-gamma.",
-            result.stdout,
-        )
-        self.assertIn("rumo-gone was retired.", result.stdout)
+        self.assertIn("Removed stale link rumo-old-alpha.", result.stdout)
         self.assertIn("rumo-gamma is optional now", result.stdout)
         for home in self.homes:
             self.assertEqual(self.installed(home), sorted(CORE_SKILLS))

@@ -70,6 +70,41 @@ run() {
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
 [ -n "$REPO_PATH" ] || { [ -d "$SCRIPT_DIR/skills" ] && REPO_PATH="$SCRIPT_DIR" || REPO_PATH="$HOME/.rumo-engineering-skills"; }
 
+split_names() {
+  printf '%s\n' "$1" | tr ',' '\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e '/^$/d'
+}
+
+list_contains() {
+  [ -n "$1" ] && printf '%s\n' "$1" | grep -Fxq -- "$2"
+}
+
+check_extra_names() {
+  set -f
+  for name in $EXTRA_NAMES $REMOVE_EXTRA_NAMES; do
+    case "$name" in
+      rumo-*/*|rumo-*\\*) known=0 ;;
+      rumo-*) if [ -d "$REPO_PATH/extras/$name" ]; then known=1; else known=0; fi ;;
+      *) known=0 ;;
+    esac
+    if [ "$known" -eq 0 ]; then
+      echo "Unknown optional skill: $name. Run with --list-extras to see available names; nothing was changed." >&2
+      exit 1
+    fi
+  done
+  set +f
+}
+
+EXTRA_NAMES=$(split_names "$EXTRAS_REQUEST")
+REMOVE_EXTRA_NAMES=$(split_names "$REMOVE_EXTRAS_REQUEST")
+set -f
+for name in $EXTRA_NAMES; do
+  if list_contains "$REMOVE_EXTRA_NAMES" "$name"; then
+    echo "$name was passed to both --extras and --remove-extras; nothing was changed." >&2
+    exit 1
+  fi
+done
+set +f
+
 if [ "$LIST_EXTRAS" -eq 1 ]; then
   [ -d "$REPO_PATH/skills" ] || { echo "Skills repository not found: $REPO_PATH. Install once before listing optional skills." >&2; exit 1; }
   found=0
@@ -84,6 +119,7 @@ if [ "$LIST_EXTRAS" -eq 1 ]; then
 fi
 
 command -v git >/dev/null 2>&1 || { echo 'Git is required.' >&2; exit 1; }
+[ ! -d "$REPO_PATH/skills" ] || check_extra_names
 if [ -d "$REPO_PATH/.git" ]; then
   [ "$RUN_PULL" -eq 0 ] || run git -C "$REPO_PATH" pull --ff-only
 elif [ ! -d "$REPO_PATH/skills" ]; then
@@ -92,7 +128,6 @@ elif [ ! -d "$REPO_PATH/skills" ]; then
   [ "$DRY_RUN" -eq 0 ] || exit 0
 fi
 REPO_PATH=$(CDPATH= cd -- "$REPO_PATH" && pwd -P)
-MIGRATIONS_FILE="$REPO_PATH/scripts/skill-migrations.tsv"
 
 validator="$REPO_PATH/scripts/verify_skills.py"
 [ -f "$validator" ] || { echo "Validator not found: $validator" >&2; exit 1; }
@@ -100,36 +135,8 @@ if command -v python3 >/dev/null 2>&1; then python3 "$validator" --repo-root "$R
 elif command -v python >/dev/null 2>&1; then python "$validator" --repo-root "$REPO_PATH"
 else echo 'Python 3 is required.' >&2; exit 1
 fi
+check_extra_names
 
-split_names() {
-  printf '%s\n' "$1" | tr ',' '\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e '/^$/d'
-}
-
-list_contains() {
-  [ -n "$1" ] && printf '%s\n' "$1" | grep -Fxq -- "$2"
-}
-
-EXTRA_NAMES=$(split_names "$EXTRAS_REQUEST")
-REMOVE_EXTRA_NAMES=$(split_names "$REMOVE_EXTRAS_REQUEST")
-set -f
-for name in $EXTRA_NAMES $REMOVE_EXTRA_NAMES; do
-  case "$name" in
-    rumo-*/*|rumo-*\\*) known=0 ;;
-    rumo-*) if [ -d "$REPO_PATH/extras/$name" ]; then known=1; else known=0; fi ;;
-    *) known=0 ;;
-  esac
-  if [ "$known" -eq 0 ]; then
-    echo "Unknown optional skill: $name. Run with --list-extras to see available names; no links were changed." >&2
-    exit 1
-  fi
-done
-for name in $EXTRA_NAMES; do
-  if list_contains "$REMOVE_EXTRA_NAMES" "$name"; then
-    echo "$name was passed to both --extras and --remove-extras; no links were changed." >&2
-    exit 1
-  fi
-done
-set +f
 
 resolve_link_target() {
   link_path="$1"
@@ -189,21 +196,7 @@ removal_notice() {
     echo "$name is optional now; reinstall it with --extras $name."
     return 0
   fi
-  successor=""
-  if [ -f "$MIGRATIONS_FILE" ]; then
-    successor=$(awk -F '\t' -v n="$name" '$1 == n { sub(/\r$/, "", $2); print $2; exit }' "$MIGRATIONS_FILE")
-  fi
-  case "$successor" in
-    "") echo "Removed stale link $name." ;;
-    -) echo "$name was retired." ;;
-    *)
-      if [ -d "$REPO_PATH/extras/$successor" ]; then
-        echo "$name moved into optional $successor; install it with --extras $successor."
-      else
-        echo "$name was replaced by $successor."
-      fi
-      ;;
-  esac
+  echo "Removed stale link $name."
 }
 
 preflight_links() {

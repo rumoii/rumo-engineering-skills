@@ -385,8 +385,10 @@ class InstallShellExtrasTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 
-    def run_installer(self, *extra: str) -> subprocess.CompletedProcess[str]:
-        command = [SH, str(self.repo / "install.sh"), "--repo", str(self.repo), "--no-pull"]
+    def run_installer(self, *extra: str, pull: bool = False) -> subprocess.CompletedProcess[str]:
+        command = [SH, str(self.repo / "install.sh"), "--repo", str(self.repo)]
+        if not pull:
+            command.append("--no-pull")
         for client, home in self.homes.items():
             command.extend((f"--{client}-home", str(home)))
         command.extend(extra)
@@ -463,21 +465,24 @@ class InstallShellExtrasTests(unittest.TestCase):
         for home in self.homes.values():
             self.assertFalse(home.exists())
 
-    def test_upgrade_from_previous_layout_migrates_links(self) -> None:
+    def test_unknown_extra_fails_before_pull(self) -> None:
+        (self.repo / ".git").mkdir()
+        result = self.run_installer("--extras", "rumo-missing", "--dry-run", pull=True)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Unknown optional skill: rumo-missing", result.stderr)
+        self.assertNotIn("pull --ff-only", result.stdout)
+
+    def test_stale_repository_links_are_removed(self) -> None:
         for home in self.homes.values():
             skills = home / "skills"
-            for name in ("rumo-old-alpha", "rumo-old-tool", "rumo-gone", "rumo-gamma"):
+            for name in ("rumo-old-alpha", "rumo-gamma"):
                 self.create_link(skills / name, self.repo / "skills" / name)
 
         result = self.run_installer()
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("rumo-old-alpha was replaced by rumo-alpha.", result.stdout)
-        self.assertIn(
-            "rumo-old-tool moved into optional rumo-gamma; install it with --extras rumo-gamma.",
-            result.stdout,
-        )
-        self.assertIn("rumo-gone was retired.", result.stdout)
+        self.assertIn("Removed stale link rumo-old-alpha.", result.stdout)
         self.assertIn("rumo-gamma is optional now", result.stdout)
         for client in self.homes:
             self.assertEqual(self.installed(client), sorted(CORE_SKILLS))

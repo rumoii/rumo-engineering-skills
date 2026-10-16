@@ -108,12 +108,6 @@ function Get-RemovalNotice {
   param([Parameter(Mandatory = $true)][string]$Name)
   if ($RemoveExtraNames -contains $Name) { return "Removed optional skill $Name." }
   if ($ExtraDirs.ContainsKey($Name)) { return "$Name is optional now; reinstall it with -Extras $Name." }
-  if ($Migrations.ContainsKey($Name)) {
-    $Successor = $Migrations[$Name]
-    if ($Successor -eq "-") { return "$Name was retired." }
-    if ($ExtraDirs.ContainsKey($Successor)) { return "$Name moved into optional $Successor; install it with -Extras $Successor." }
-    return "$Name was replaced by $Successor."
-  }
   return "Removed stale link $Name."
 }
 
@@ -169,6 +163,14 @@ function Sync-SkillLinks {
   }
 }
 
+function Assert-ExtraNames {
+  foreach ($Name in @($ExtraNames + $RemoveExtraNames)) {
+    if (-not $ExtraDirs.ContainsKey($Name)) {
+      throw "Unknown optional skill: $Name. Run with -ListExtras to see available names; nothing was changed."
+    }
+  }
+}
+
 function Show-Extras {
   if ($ExtraDirs.Count -eq 0) {
     Write-Host "No optional skills are available in $Repo."
@@ -195,11 +197,19 @@ $RepoExtras = Join-Path $Repo "extras"
 $ExtraDirs = @{}
 foreach ($Dir in (Get-SkillDirs $RepoExtras)) { $ExtraDirs[$Dir.Name] = $Dir.FullName }
 
+$ExtraNames = @(Split-NameList $Extras)
+$RemoveExtraNames = @(Split-NameList $RemoveExtras)
+foreach ($Name in $ExtraNames) {
+  if ($RemoveExtraNames -contains $Name) { throw "$Name was passed to both -Extras and -RemoveExtras; nothing was changed." }
+}
+
 if ($ListExtras) {
   if (-not (Test-Path $RepoSkills)) { throw "Skills repository not found: $Repo. Install once before listing optional skills." }
   Show-Extras
   exit 0
 }
+
+if (Test-Path $RepoSkills) { Assert-ExtraNames }
 
 if (Test-Path (Join-Path $Repo ".git")) {
   if (-not $NoPull) {
@@ -224,25 +234,7 @@ Invoke-SkillValidation $Repo
 $CoreDirs = @(Get-SkillDirs $RepoSkills)
 $ExtraDirs = @{}
 foreach ($Dir in (Get-SkillDirs $RepoExtras)) { $ExtraDirs[$Dir.Name] = $Dir.FullName }
-$Migrations = @{}
-$MigrationsFile = Join-Path $Repo "scripts\skill-migrations.tsv"
-if (Test-Path $MigrationsFile -PathType Leaf) {
-  foreach ($Line in (Get-Content -LiteralPath $MigrationsFile -Encoding UTF8)) {
-    if (-not $Line.Trim() -or $Line.StartsWith("#")) { continue }
-    $Parts = $Line -split "`t"
-    if ($Parts.Count -eq 2) { $Migrations[$Parts[0]] = $Parts[1] }
-  }
-}
-$ExtraNames = @(Split-NameList $Extras)
-$RemoveExtraNames = @(Split-NameList $RemoveExtras)
-foreach ($Name in @($ExtraNames + $RemoveExtraNames)) {
-  if (-not $ExtraDirs.ContainsKey($Name)) {
-    throw "Unknown optional skill: $Name. Run with -ListExtras to see available names; no links were changed."
-  }
-}
-foreach ($Name in $ExtraNames) {
-  if ($RemoveExtraNames -contains $Name) { throw "$Name was passed to both -Extras and -RemoveExtras; no links were changed." }
-}
+Assert-ExtraNames
 
 if ($ProfilesRepoExplicit) {
   $ProfileConfig = Join-Path $Repo "skills\rumo-project-profile\scripts\profile_config.py"
