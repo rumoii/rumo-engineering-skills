@@ -53,6 +53,34 @@ cd /path/to/rumo-engineering-skills
 
 装过的扩展在不带参数重跑安装器时会保留。
 
+### 其他客户端
+
+安装器只直接管理上表的三个目录。其他客户端统一接到共享目录 `~/.agents/skills`，以后更新或增减扩展只需重跑安装器。如果安装器没有检测到共享目录，安装时显式加 `-AgentsHome "$HOME\.agents"` 或 `--agents-home ~/.agents`。
+
+| 客户端 | 接入方式 |
+| --- | --- |
+| deepseek harness、pi | 默认会读 `~/.agents/skills`，无需设置。如果在 pi 的 `settings.json` 的 `skills` 里另外写了本仓库路径，请删掉，以免重复加载 |
+| qwen、grok 等只读自己目录的客户端 | 把它们的技能目录（例如 `~/.qwen/skills`、`~/.grok/skills`）换成指向 `~/.agents/skills` 的链接，见下方命令 |
+| hermes | 在 hermes 的 `config.yaml` 中，把共享目录的绝对路径加入 `skills.external_dirs` |
+
+建链接前，先确认原技能目录里没有其他来源的技能。如果有，先把它们移走，或者只为 `rumo-*` 单独建链接。
+
+```powershell
+New-Item -ItemType Junction -Path "$HOME\.qwen\skills" -Target "$HOME\.agents\skills"
+```
+
+```bash
+ln -s ~/.agents/skills ~/.qwen/skills
+```
+
+```yaml
+skills:
+  external_dirs:
+    - C:/Users/<you>/.agents/skills
+```
+
+有的客户端会同时读多个目录，例如 grok 开启 Claude 兼容时还会读 `~/.claude/skills`，这时同一个技能可能出现两次。遇到这种情况，关掉其中一个来源即可。各客户端的读取规则以其官方文档为准。
+
 ## 2. 验证安装
 
 ```powershell
