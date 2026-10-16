@@ -1,6 +1,6 @@
 ---
 name: rumo-plan
-description: Use when turning an agreed multi-step or cross-module task into a short spec and verifiable task breakdown before implementation, or when creating, updating, superseding, implementing, or rejecting a durable engineering decision record (ADR) for a cross-module contract, data or wire format, permission model, lifecycle rule, deployment topology, migration, or rollback strategy. Do not use for single-file fixes, mechanical edits, or choices already owned by a current decision record; settle unclear goals with rumo-clarify first.
+description: Use when turning an agreed multi-step or cross-module task into a short spec and verifiable task breakdown before implementation, or when creating, updating, superseding, implementing, or rejecting a durable engineering decision record (ADR) for a cross-module contract, data or wire format, permission model, lifecycle rule, deployment topology, migration, or rollback strategy. Do not use for single-file fixes or mechanical edits, and do not write a duplicate record for a choice an existing record already owns (update, review, or supersede that record instead); settle unclear goals with rumo-clarify first.
 ---
 
 # Rumo Plan
@@ -22,7 +22,7 @@ Unclear goals or acceptance criteria go to `rumo-clarify` first. A decision reco
 2. Write the spec in a few lines each: goal, non-goals, constraints, acceptance criteria, and open decisions with recommended answers.
 3. Break the work into tasks. Each task names the files or modules it touches, the check that proves it done, and what it depends on. Prefer thin end-to-end slices over layer-by-layer batches.
 4. Mark tasks that need separate authorization: database writes, deployments, pushes, deletions, paid services.
-5. Show the plan and wait for approval of that exact version before implementing. A clarifying answer revises the plan; it is not approval.
+5. Show the plan. When the user already authorized this scope and the plan adds no new decision, continue; otherwise wait for approval of that exact version, pausing only the tasks that depend on the open decision or authorization. A clarifying answer revises the plan; it is not approval.
 6. While implementing, stop and revise the plan when a task turns out wrong or a hidden requirement appears; do not silently drift.
 
 Save the plan where the user or repository wants it. Without a convention, keep it in the conversation rather than inventing a directory.
