@@ -52,6 +52,7 @@ skill catalog is reloaded.
 ## Skill catalog
 
 - `rumo-project-profile`: resolves and validates private project configuration for other skills (manual only).
+- `rumo-handoff`: self-contained handoff document so another session or client can continue (manual only).
 - `rumo-clarify`: lightweight requirement clarification: one round of questions with recommended answers, critical decisions never defaulted.
 - `rumo-debug`: evidence-led defect diagnosis across source, runtime, data, middleware, deployment, and clients.
 - `rumo-coding-guidelines`: baseline constraints for minimal, path-grounded, verified code changes.

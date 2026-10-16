@@ -43,6 +43,7 @@ cd rumo-engineering-skills
 ## Skill 清单
 
 - `rumo-project-profile`: 为其他 Skill 解析和校验私密项目配置(仅手动调用)。
+- `rumo-handoff`: 整理自包含的交接文档，便于其他会话或客户端接力(仅手动调用)。
 - `rumo-clarify`: 轻量需求澄清：只问一轮带推荐答案的问题，关键决策不明则暂停。
 - `rumo-debug`: 基于证据排查源码、运行时、数据、中间件、部署和客户端问题。
 - `rumo-coding-guidelines`: 约束代码修改保持范围明确、改动最小并经过验证。
