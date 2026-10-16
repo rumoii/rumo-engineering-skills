@@ -1,6 +1,6 @@
 # Simplification Audit
 
-Use only when the user explicitly asks to find simplifications, reduce complexity, or audit removable surface. The audit is read-only; implementing a candidate is a separate request handled with `rumo-coding-guidelines` and `rumo-verify`, one candidate per change.
+Use only when the user explicitly asks to find simplifications, reduce complexity, or audit removable surface. The audit is read-only; implementing a candidate is a separate request handled with `rumo-coding-guidelines` and `rumo-verify`, one candidate per change; a candidate that deletes files or directories also goes through `rumo-filesystem-safety`.
 
 ## Strong Candidates
 

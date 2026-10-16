@@ -33,7 +33,7 @@ Tests are evidence for claims. A large suite, a coverage number, an HTTP 200, or
 
 ## High Assurance
 
-Read [references/high-assurance.md](references/high-assurance.md) in full before starting. In short: an approved spec before any implementation, test-first for every behavior, one entry point that reruns every selected check from clean inputs, and a final evidence report from a single fresh run after the last edit. Spec approval authorizes implementation and local checks only; commits, tags, pushes, deployments, database writes, deletions, credential changes, dependency installs, and paid services keep their own approvals.
+Read [references/high-assurance.md](references/high-assurance.md) in full before starting. In short: an approved spec before any implementation, test-first for every behavior, one entry point that reruns every selected check from clean inputs, and a final evidence report from a single fresh run after the last edit. Spec approval authorizes implementation and local checks only; commits, tags, pushes, deployments, database writes, deletions, credential changes, dependency installs, paid services, and any other separately controlled action keep their own approvals.
 
 ## Rules For Every Mode
 

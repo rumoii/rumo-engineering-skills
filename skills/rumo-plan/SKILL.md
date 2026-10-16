@@ -1,6 +1,6 @@
 ---
 name: rumo-plan
-description: Use when turning an agreed multi-step or cross-module task into a short spec and verifiable task breakdown before implementation, or when creating, updating, superseding, implementing, or rejecting a durable engineering decision record (ADR) for a cross-module contract, data or wire format, permission model, lifecycle rule, deployment topology, migration, or rollback strategy. Do not use for single-file fixes or mechanical edits, and do not write a duplicate record for a choice an existing record already owns (update, review, or supersede that record instead); settle unclear goals with rumo-clarify first.
+description: Use when turning an agreed multi-step or cross-module task into a short spec and verifiable task breakdown before implementation, or when creating, updating, superseding, implementing, or rejecting a durable engineering decision record (ADR) for a cross-module contract, data or wire format, permission model or security policy, lifecycle rule, deployment topology, migration, or rollback strategy. Do not use for single-file fixes or mechanical edits, and do not write a duplicate record for a choice an existing record already owns (update, review, or supersede that record instead); settle unclear goals with rumo-clarify first.
 ---
 
 # Rumo Plan

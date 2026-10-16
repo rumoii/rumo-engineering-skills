@@ -35,7 +35,7 @@ When versions overlap, expand, migrate, then contract:
 
 To deprecate a route, field, message, or format, and only when removal is authorized: ship and document the replacement, find and notify consumers, expose the established deprecation or sunset signal, measure usage per consumer, rehearse migration and rollback, and remove only when the agreed support window and usage criteria are both met. Age alone never proves something is safe to remove; consumers you cannot observe stay recorded as unverified.
 
-Resolve defaults in the owning parser or config layer, not in scattered null checks. Fail early and loudly on invalid referents, fields, enum values, units, or versions. Use opaque stable identifiers. Version durable formats whose interpretation can change, say which versions each reader accepts, and never reinterpret old data silently.
+Resolve defaults in the owning parser or config layer, not in scattered null checks. Fail early and loudly on invalid referents, fields, enum values, units, or versions. Keep unknown values only when passing them through is an explicit requirement; otherwise reject them with a diagnostic that names the field without echoing sensitive content. Use opaque stable identifiers. Version durable formats whose interpretation can change: say who bumps the version, which versions each reader accepts, and whether an unsupported version fails, migrates, or opens read-only. Never reinterpret old data silently.
 
 ## 4. Failure And Rollback
 
