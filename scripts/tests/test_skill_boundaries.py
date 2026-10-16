@@ -17,7 +17,7 @@ BOUNDARIES = (
     ),
     (
         "rumo-test",
-        "rumo-change-verification",
+        "rumo-verify",
         r"(?:exact|finished).*(?:change|diff)|(?:checks|commands).*actually run",
         r"(?:test|evidence).*planning|planning.*(?:test|evidence)",
     ),
@@ -75,7 +75,7 @@ class SkillBoundariesTest(unittest.TestCase):
     def test_accepts_counterpart_or_pair_specific_exclusion(self) -> None:
         self.assertTrue(has_boundary("Use rumo-review-fix-loop instead.", "rumo-review-fix-loop", "unused"))
         self.assertTrue(has_boundary("Do not use for iterative review-and-fix loops.", "rumo-review-fix-loop", BOUNDARIES[0][2]))
-        self.assertTrue(has_boundary("Use exact diff verification instead.", "rumo-change-verification", BOUNDARIES[1][2]))
+        self.assertTrue(has_boundary("Use exact diff verification instead.", "rumo-verify", BOUNDARIES[1][2]))
 
     def test_rejects_missing_boundary_or_unrelated_exclusion(self) -> None:
         for description in (

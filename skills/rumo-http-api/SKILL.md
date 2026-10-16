@@ -127,7 +127,7 @@ Use `rumo-test` to map each claim to the lowest layer that can falsify it. Depen
 - old and new clients or representations defined by `rumo-interface-evolution`;
 - logs, metrics, audit records, and killswitch behavior where incident control is claimed.
 
-Use `rumo-change-verification` before declaring the implementation ready. Source checks do not prove a gateway, deployed policy, generated client, or field integration that was not exercised.
+Use `rumo-verify` before declaring the implementation ready. Source checks do not prove a gateway, deployed policy, generated client, or field integration that was not exercised.
 
 ## Review Output
 

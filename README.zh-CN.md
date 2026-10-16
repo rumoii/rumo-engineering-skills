@@ -15,7 +15,7 @@
 | 排错 | 只读排查当前问题，基于证据追溯原因。 | `$rumo-debug 只读排查当前问题，并提供原因与证据。` | `/rumo-debug 只读排查当前问题，并提供原因与证据。` |
 | 审查 | 对当前未提交修改进行一次审查，保持文件不变。 | `$rumo-code-review 审查当前未提交修改，不修改文件。` | `/rumo-code-review 审查当前未提交修改，不修改文件。` |
 | 实现 | 以最小必要改动实现当前需求，并完成针对性验证。 | `$rumo-coding-guidelines 实现当前需求，保持最小必要改动并完成针对性验证。` | `/rumo-coding-guidelines 实现当前需求，保持最小必要改动并完成针对性验证。` |
-| 验证 | 核对当前准确变更范围，并报告实际运行的检查。 | `$rumo-change-verification 验证当前变更，并报告实际运行的检查。` | `/rumo-change-verification 验证当前变更，并报告实际运行的检查。` |
+| 验证 | 核对当前准确变更范围，并报告实际运行的检查。 | `$rumo-verify 验证当前变更，并报告实际运行的检查。` | `/rumo-verify 验证当前变更，并报告实际运行的检查。` |
 | 部署 | 使用选定 Profile，为现有开发或测试环境规划有边界的制品部署。 | `$rumo-incremental-deploy 使用选定 Profile，规划向现有开发或测试环境部署制品，不执行部署。` | `/rumo-incremental-deploy 使用选定 Profile，规划向现有开发或测试环境部署制品，不执行部署。` |
 
 ## 快速开始
@@ -49,13 +49,12 @@ cd rumo-engineering-skills
 - `rumo-http-api`: 设计和审查兼容、安全、可重试、成本受控且可运维的 HTTP/JSON 接口。
 - `rumo-code-review`: 执行一次只读的工程代码审查。
 - `rumo-review-fix-loop`: 按需循环执行审查、修复、验证和复审。
-- `rumo-change-verification`: 核对准确变更范围并选择最小充分验证。
+- `rumo-verify`: 核对准确变更范围并选择最小充分验证。
 - `rumo-test`: 根据风险规划测试和验收证据。
 - `rumo-lifecycle-safety`: 处理资源所有权、重试、取消、超时、关闭和清理。
 - `rumo-interface-evolution`: 安全演进 API、消息、配置和持久化格式。
 - `rumo-database-change-safety`: 规划有边界的数据库变更、授权、备份、验证和回滚。
 - `rumo-filesystem-safety`: 删除文件或清理目录前按规模分级检查目标与边界，禁止自造备份副本。
-- `rumo-repository-gates`: 建立确定性的仓库 CI 和静态校验门禁。
 - `rumo-plan`: 记录需要长期保留的重要工程决策。
 - `rumo-find-simplifications`: 基于使用方和兼容性证据寻找可移除的工程复杂度。
 - `rumo-prose`: 规范注释、诊断、日志、仓库文档、提示词和界面文字。

@@ -11,3 +11,5 @@ rumo-engineering-decision	rumo-plan
 rumo-test-evidence	rumo-test
 rumo-old-coder	rumo-test
 rumo-bug-root-cause	rumo-debug
+rumo-change-verification	rumo-verify
+rumo-repository-gates	rumo-verify

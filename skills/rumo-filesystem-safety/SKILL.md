@@ -69,5 +69,5 @@ State what was removed, what was skipped, the method used (permanent deletion or
 ## Related Skills
 
 - Use [`rumo-coding-guidelines`](../rumo-coding-guidelines/SKILL.md) to keep code changes within the requested scope.
-- Use [`rumo-change-verification`](../rumo-change-verification/SKILL.md) to verify the exact changed files before delivery.
+- Use [`rumo-verify`](../rumo-verify/SKILL.md) to verify the exact changed files before delivery.
 - Use [`rumo-database-change-safety`](../rumo-database-change-safety/SKILL.md) for destructive cleanup of persisted database data; this skill covers filesystem paths.

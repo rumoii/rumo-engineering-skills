@@ -30,7 +30,7 @@ Read enough surrounding code and current consumers to evaluate these areas in or
 
 Apply `rumo-coding-guidelines` as the baseline. Use `rumo-debug` when the task is primarily diagnosis of an observed runtime symptom. Use `rumo-review-fix-loop` only when the user explicitly requests repeated review and repair.
 
-Apply `rumo-lifecycle-safety` to lifecycle-heavy changes, `rumo-interface-evolution` to producer-consumer changes, `rumo-test` when the evidence claim is unclear, and `rumo-repository-gates` when reviewing CI or static validation machinery.
+Apply `rumo-lifecycle-safety` to lifecycle-heavy changes, `rumo-interface-evolution` to producer-consumer changes, `rumo-test` when the evidence claim is unclear, and `rumo-verify` when reviewing CI or static validation machinery.
 
 ## Evidence Standard
 

@@ -17,7 +17,7 @@ Use the matching instruction in your agent session after installation.
 | Debug | Trace the current issue to an evidence-backed cause through read-only investigation. | `$rumo-debug Investigate the current issue read-only and report the cause with evidence.` | `/rumo-debug Investigate the current issue read-only and report the cause with evidence.` |
 | Review | Review the current uncommitted changes once without editing files. | `$rumo-code-review Review the current uncommitted changes without editing files.` | `/rumo-code-review Review the current uncommitted changes without editing files.` |
 | Implement | Implement the requested feature with minimal changes and focused verification. | `$rumo-coding-guidelines Implement the requested feature with minimal changes and focused verification.` | `/rumo-coding-guidelines Implement the requested feature with minimal changes and focused verification.` |
-| Verify | Check the exact current change and report the checks actually run. | `$rumo-change-verification Verify the current change and report the checks actually run.` | `/rumo-change-verification Verify the current change and report the checks actually run.` |
+| Verify | Check the exact current change and report the checks actually run. | `$rumo-verify Verify the current change and report the checks actually run.` | `/rumo-verify Verify the current change and report the checks actually run.` |
 | Deploy | Plan bounded artifact deployment to an existing development or test environment using the selected profile. | `$rumo-incremental-deploy Use the selected profile to plan artifact deployment to the existing development or test environment without executing it.` | `/rumo-incremental-deploy Use the selected profile to plan artifact deployment to the existing development or test environment without executing it.` |
 
 ## Getting started
@@ -58,13 +58,12 @@ skill catalog is reloaded.
 - `rumo-http-api`: compatible, secure, retry-safe, bounded, and operable HTTP/JSON API design and review.
 - `rumo-code-review`: one-pass read-only engineering review.
 - `rumo-review-fix-loop`: explicit iterative review, repair, verification, and re-review.
-- `rumo-change-verification`: exact change-scope inspection and smallest sufficient checks.
+- `rumo-verify`: exact change-scope inspection and smallest sufficient checks.
 - `rumo-test`: risk-based test and acceptance evidence planning.
 - `rumo-lifecycle-safety`: safe ownership, retry, cancellation, timeout, shutdown, and cleanup.
 - `rumo-interface-evolution`: compatible API, message, configuration, and persisted-format evolution.
 - `rumo-database-change-safety`: bounded database change planning, authorization, backup, verification, and rollback.
 - `rumo-filesystem-safety`: tiered file and directory deletion with boundary checks and no ad hoc backups.
-- `rumo-repository-gates`: deterministic repository-owned CI and static checks.
 - `rumo-plan`: durable records for material engineering decisions.
 - `rumo-find-simplifications`: evidence-led discovery of removable engineering complexity.
 - `rumo-prose`: prose quality for code, diagnostics, logs, repository docs, prompts, and UI strings.

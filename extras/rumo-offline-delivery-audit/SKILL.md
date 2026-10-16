@@ -120,6 +120,6 @@ Close with the final artifact path, external checksum, source revisions, target 
 
 ## Related Skills
 
-- Use `rumo-change-verification` to verify the source and packaging-code change scope before release.
+- Use `rumo-verify` to verify the source and packaging-code change scope before release.
 - Use `rumo-database-change-safety` when the package installs, migrates, repairs, resets, or rolls back an existing database.
 - Use `rumo-incremental-deploy` for bounded online deployment to an existing development or test environment; it does not establish offline-package acceptance.

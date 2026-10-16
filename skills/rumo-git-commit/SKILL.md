@@ -21,7 +21,7 @@ Do not require a particular language, trailer set, version scheme, or branch pat
 - Never create a tag unless the user explicitly asks for tagging or release work.
 - Never push unless the user explicitly asks.
 
-Before a requested push, use [`rumo-change-verification`](../rumo-change-verification/SKILL.md) on the exact outgoing diff. Reuse still-valid evidence rather than rerunning unchanged checks.
+Before a requested push, use [`rumo-verify`](../rumo-verify/SKILL.md) on the exact outgoing diff. Reuse still-valid evidence rather than rerunning unchanged checks.
 
 ## Branch Landing
 

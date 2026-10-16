@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Verify"
+  short_description: "声称完成前按真实改动范围跑最小充分检查，或建设仓库门禁与 CI 校验"
+  default_prompt: "Use $rumo-verify to establish the exact change scope, run the smallest sufficient checks, and report only what actually ran."

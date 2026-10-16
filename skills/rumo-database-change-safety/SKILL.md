@@ -162,7 +162,7 @@ For plan-only work, label every command as proposed and state that no database w
 ## Related Skills
 
 - Use [`rumo-debug`](../rumo-debug/SKILL.md) for read-only database investigation and root-cause tracing.
-- Use [`rumo-change-verification`](../rumo-change-verification/SKILL.md) to select source, migration, compatibility, and service checks for a database-code change.
+- Use [`rumo-verify`](../rumo-verify/SKILL.md) to select source, migration, compatibility, and service checks for a database-code change.
 - Use [`rumo-plan`](../rumo-plan/SKILL.md) when the schema transition or compatibility strategy needs a durable decision record.
 - Use the optional `rumo-offline-delivery-audit` extra, when installed, when migration and rollback assets are embedded in an offline package.
 - Use [`rumo-filesystem-safety`](../rumo-filesystem-safety/SKILL.md) for deleting or cleaning files, build outputs, or caches; this skill covers persisted database data.
