@@ -366,7 +366,9 @@ def validate_repository(
         else:
             validate_readme_inventory(readme_path, core_names, extra_names, errors)
 
-    markdown_files = sorted(path for path in readme_paths if path.is_file())
+    markdown_files = sorted(
+        {path for path in readme_paths if path.is_file()} | set(repo_root.glob("*.md"))
+    )
     for root_name in SKILL_ROOTS:
         if (repo_root / root_name).is_dir():
             markdown_files.extend(iter_skill_markdown(repo_root / root_name))

@@ -88,6 +88,12 @@ class VerifySkillsTest(unittest.TestCase):
         (self.repo_root / "skills" / "rumo-example" / "reference.md").unlink()
         self.assert_error_contains("broken relative link")
 
+    def test_rejects_broken_link_in_root_document(self) -> None:
+        (self.repo_root / "CONTRIBUTING.md").write_text(
+            "# Contributing\n\nSee [the guide](missing.md).\n", encoding="utf-8"
+        )
+        self.assert_error_contains("broken relative link")
+
     def test_ignores_broken_links_in_vendored_dependencies(self) -> None:
         dependency_skill = (
             self.repo_root
