@@ -20,7 +20,7 @@ Use this skill when the user asks to `整理日报`, `生成日报`, or explicit
 
 1. If no fixed report directory is configured, ask the user for the directory once. Do not guess a product path. Configure it with the bundled script and reuse it thereafter.
 2. Use the local date at execution time and the exact filename `YYYY-MM-DD-日报.txt`, for example `2026-08-27-日报.txt`.
-3. Keep configuration and deduplication state under `~/.rumo-engineering-skills/daily-report/`, not in the report directory. The script copies state from the former `$CODEX_HOME/rumo-daily-report/` location once when the new directory does not exist yet. Never put credentials or tokens in either location.
+3. Keep configuration and deduplication state under `~/.rumo-engineering-skills/daily-report/`, not in the report directory. Never put credentials or tokens there.
 
 ## Extract and write
 
