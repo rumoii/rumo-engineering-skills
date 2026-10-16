@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Interface"
+  short_description: "安全演进 API、消息、配置和持久化格式，并覆盖 HTTP 鉴权幂等分页等契约"
+  default_prompt: "Use $rumo-interface to plan and verify a compatible interface or format change, including HTTP contract checks when relevant."

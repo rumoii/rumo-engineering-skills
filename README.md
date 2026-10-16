@@ -55,12 +55,11 @@ skill catalog is reloaded.
 - `rumo-clarify`: lightweight requirement clarification: one round of questions with recommended answers, critical decisions never defaulted.
 - `rumo-debug`: evidence-led defect diagnosis across source, runtime, data, middleware, deployment, and clients.
 - `rumo-coding-guidelines`: baseline constraints for minimal, path-grounded, verified code changes.
-- `rumo-http-api`: compatible, secure, retry-safe, bounded, and operable HTTP/JSON API design and review.
+- `rumo-interface`: compatible, secure, retry-safe, bounded, and operable HTTP/JSON API design and review.
 - `rumo-review`: one-pass read-only engineering review.
 - `rumo-verify`: exact change-scope inspection and smallest sufficient checks.
 - `rumo-test`: risk-based test and acceptance evidence planning.
 - `rumo-lifecycle-safety`: safe ownership, retry, cancellation, timeout, shutdown, and cleanup.
-- `rumo-interface-evolution`: compatible API, message, configuration, and persisted-format evolution.
 - `rumo-database-change-safety`: bounded database change planning, authorization, backup, verification, and rollback.
 - `rumo-filesystem-safety`: tiered file and directory deletion with boundary checks and no ad hoc backups.
 - `rumo-plan`: durable records for material engineering decisions.

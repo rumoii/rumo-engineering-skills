@@ -46,12 +46,11 @@ cd rumo-engineering-skills
 - `rumo-clarify`: 轻量需求澄清：只问一轮带推荐答案的问题，关键决策不明则暂停。
 - `rumo-debug`: 基于证据排查源码、运行时、数据、中间件、部署和客户端问题。
 - `rumo-coding-guidelines`: 约束代码修改保持范围明确、改动最小并经过验证。
-- `rumo-http-api`: 设计和审查兼容、安全、可重试、成本受控且可运维的 HTTP/JSON 接口。
+- `rumo-interface`: 设计和审查兼容、安全、可重试、成本受控且可运维的 HTTP/JSON 接口。
 - `rumo-review`: 执行一次只读的工程代码审查。
 - `rumo-verify`: 核对准确变更范围并选择最小充分验证。
 - `rumo-test`: 根据风险规划测试和验收证据。
 - `rumo-lifecycle-safety`: 处理资源所有权、重试、取消、超时、关闭和清理。
-- `rumo-interface-evolution`: 安全演进 API、消息、配置和持久化格式。
 - `rumo-database-change-safety`: 规划有边界的数据库变更、授权、备份、验证和回滚。
 - `rumo-filesystem-safety`: 删除文件或清理目录前按规模分级检查目标与边界，禁止自造备份副本。
 - `rumo-plan`: 记录需要长期保留的重要工程决策。

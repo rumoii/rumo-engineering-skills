@@ -16,3 +16,5 @@ rumo-repository-gates	rumo-verify
 rumo-code-review	rumo-review
 rumo-review-fix-loop	rumo-review
 rumo-find-simplifications	rumo-review
+rumo-interface-evolution	rumo-interface
+rumo-http-api	rumo-interface

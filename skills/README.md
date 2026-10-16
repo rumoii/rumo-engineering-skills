@@ -9,7 +9,7 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | `rumo-verify` | Exact change-scope inspection and smallest-sufficient verification |
 | `rumo-review` | One-pass read-only engineering review |
 | `rumo-coding-guidelines` | Minimal, path-grounded, assumption-aware, verified code changes |
-| `rumo-http-api` | Compatible, secure, retry-safe, bounded, and operable HTTP/JSON API design and review |
+| `rumo-interface` | Compatible, secure, retry-safe, bounded, and operable HTTP/JSON API design and review |
 | `rumo-daily-report` | Cross-session incremental Chinese daily reports in a date-based TXT file (manual only) |
 | `rumo-database-change-safety` | Safe database migration, repair, cleanup, backup, authorization, and rollback |
 | `rumo-filesystem-safety` | Tiered file and directory deletion with boundary checks and no ad hoc backups |
@@ -21,7 +21,6 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | `rumo-imagegen` | One-image generation through a configured OpenAI-compatible endpoint (manual only) |
 | `rumo-incremental-deploy` | Profile-driven bounded deployment planning and guidance with verification and rollback |
 | `rumo-insight` | Evidence-backed analysis of local Codex session history (Codex data only; manual only) |
-| `rumo-interface-evolution` | Compatible producer-consumer interface and persisted-format evolution |
 | `rumo-lifecycle-safety` | Safe ownership, retry, cancellation, timeout, shutdown, and cleanup |
 | `rumo-linux-inspect` | Read-only Linux hardware inventory or memory inspection (optional extra, manual only) |
 | `rumo-linux-service-deploy` | Linux service installation, upgrade, and removal with recovery and functional acceptance |
