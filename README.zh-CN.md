@@ -2,27 +2,66 @@
 
 [English](README.md) | 简体中文
 
-一组可复用的 Codex、Claude Code 和智能体工程技能，不依赖特定公司、产品、仓库结构、主机或部署环境。
+一套精简的工程技能，适用于 Codex、Claude Code 以及其他能加载 `SKILL.md` 目录的 agent。技能本身不含任何公司、产品、主机或部署环境的信息；项目私有事实放在可选的本地 Profile 中。
 
-这是 `rumo-*` 技能命名空间的公共主仓库。这些技能适用于个人、团队和企业工程场景，但不包含任何组织专属的运维知识。
+## 工作主线
 
-## 按场景开始
+```text
+clarify -> plan -> test -> verify -> review -> git-commit
+```
 
-安装后，在智能体会话中使用对应客户端的指令。
+每一步对应一个技能，按需选用即可：一行就能改完的修复直接写代码并验证；含糊的功能需求先用 `rumo-clarify` 对齐。
 
-| 场景 | 目标 | Codex | Claude Code |
-| --- | --- | --- | --- |
-| 排错 | 只读排查当前问题，基于证据追溯原因。 | `$rumo-debug 只读排查当前问题，并提供原因与证据。` | `/rumo-debug 只读排查当前问题，并提供原因与证据。` |
-| 审查 | 对当前未提交修改进行一次审查，保持文件不变。 | `$rumo-review 审查当前未提交修改，不修改文件。` | `/rumo-review 审查当前未提交修改，不修改文件。` |
-| 实现 | 以最小必要改动实现当前需求，并完成针对性验证。 | `$rumo-coding-guidelines 实现当前需求，保持最小必要改动并完成针对性验证。` | `/rumo-coding-guidelines 实现当前需求，保持最小必要改动并完成针对性验证。` |
-| 验证 | 核对当前准确变更范围，并报告实际运行的检查。 | `$rumo-verify 验证当前变更，并报告实际运行的检查。` | `/rumo-verify 验证当前变更，并报告实际运行的检查。` |
-| 部署 | 使用选定 Profile，为现有开发或测试环境规划有边界的制品部署。 | `$rumo-remote-ops 使用选定 Profile，规划向现有开发或测试环境部署制品，不执行部署。` | `/rumo-remote-ops 使用选定 Profile，规划向现有开发或测试环境部署制品，不执行部署。` |
+| 想做的事 | Codex | Claude Code |
+| --- | --- | --- |
+| 对齐含糊的需求 | `$rumo-clarify` | `/rumo-clarify` |
+| 把已确认的工作拆成可验证的任务 | `$rumo-plan` | `/rumo-plan` |
+| 测试先行地实现 | `$rumo-test` | `/rumo-test` |
+| 只读排查缺陷根因 | `$rumo-debug` | `/rumo-debug` |
+| 声称完成前检查改动 | `$rumo-verify` | `/rumo-verify` |
+| 只读评审差异 | `$rumo-review` | `/rumo-review` |
+| 提交、合入或推送 | `$rumo-git-commit` | `/rumo-git-commit` |
 
-## 快速开始
+客户端也会根据技能描述自动选择；除“仅手动调用”的技能外，点名不是必需的。
 
-如果你刚刚克隆本仓库，请阅读[新用户使用说明](GETTING_STARTED.md)。其中介绍了安装、校验、直接调用 Skill、可选本地 Profile 和凭据安全边界。
+## 默认技能
 
-先克隆公共仓库：
+默认安装。
+
+| 技能 | 用途 |
+| --- | --- |
+| `rumo-clarify` | 需求不清时只问一轮带推荐答案的短问题；关键决策不明则暂停，绝不擅自取默认值 |
+| `rumo-plan` | 短规格加可验证的任务拆分，或持久化的工程决策记录 |
+| `rumo-coding-guidelines` | 基线纪律：基于真实代码路径，只做请求和必要的工作，并以验证收尾 |
+| `rumo-test` | 证据规划、测试先行实现，以及高风险改动的规格加证据流程 |
+| `rumo-debug` | 复现、定位并用证据证明根因；除非请求包含修复，否则只读 |
+| `rumo-verify` | 声称完成前确定真实改动范围并跑最小充分检查；建设仓库门禁 |
+| `rumo-review` | 只读评审；明确要求时进入评审修复循环或做可删复杂度审计 |
+| `rumo-git-commit` | 按仓库约定提交、合入分支、整理历史、发布与推送 |
+| `rumo-interface` | API、消息、配置和持久化格式的兼容演进，含 HTTP 契约检查 |
+| `rumo-lifecycle-safety` | 长期运行任务的归属、重试、取消、超时、关闭与资源清理 |
+| `rumo-database-change-safety` | 经授权、有备份、影响有界且可回滚的数据库写入 |
+| `rumo-filesystem-safety` | 按影响范围分级处理删除与批量清理 |
+| `rumo-remote-ops` | 远程 Linux 查询与变更、服务部署、备份恢复和制品部署 |
+| `rumo-prose` | 保留全部事实的注释、报错、日志、界面文案、文档与 agent 文件 |
+| `rumo-handoff` | 生成自包含的交接文档，便于其他会话或客户端接力(仅手动调用) |
+| `rumo-project-profile` | 为其他技能解析和校验私有项目 Profile(仅手动调用) |
+
+## 可选扩展
+
+默认不安装，用 `-Extras`(PowerShell) 或 `--extras`(shell) 按需添加。
+
+| 技能 | 用途 |
+| --- | --- |
+| `rumo-diagram` | Mermaid 业务流程图与经确认的工程拓扑图，含预览与导出 |
+| `rumo-document-writing` | 正式的 Word 交付文档 |
+| `rumo-frontend` | 前端页面开发、本地开发服务排障与按需采集浏览器证据 |
+| `rumo-offline-delivery-audit` | 离线交付包的完整性、溯源、安装、回滚与验收边界 |
+| `rumo-daily-report` | 按日期文本文件增量生成中文日报(仅手动调用) |
+| `rumo-linux-inspect` | 只读采集 Linux 硬件配置或巡检内存(仅手动调用) |
+| `rumo-imagegen` | 通过用户自配的 OpenAI 兼容接口生成单张图片(仅手动调用) |
+
+## 安装
 
 ```powershell
 git clone https://github.com/rumoii/rumo-engineering-skills.git
@@ -36,102 +75,33 @@ cd rumo-engineering-skills
 ./install.sh --no-pull
 ```
 
-如果客户端中已有同名 `rumo-*` 链接指向其他仓库，安装程序会在修改任何客户端前停止。只有明确要切换到本公共仓库时，才使用 `-ReplaceForeignLinks` 或 `--replace-foreign-links`。
+安装器先校验仓库，再把默认技能链接到检测到的每个客户端(Codex、Claude Code 和共享的 `~/.agents` 目录)。它只管理 `rumo-*` 链接，不动其他技能。安装后重新开始一个 agent 会话，让客户端重新加载技能列表。客户端检测规则和 Profile 用法见 [GETTING_STARTED.md](GETTING_STARTED.md)。
 
-安装程序只管理 `rumo-*` 链接，会保留其他命名空间和来源的 Skill。安装完成后，请新建一个智能体会话，让客户端重新加载 Skill 列表。
-
-## Skill 清单
-
-- `rumo-project-profile`: 为其他 Skill 解析和校验私密项目配置(仅手动调用)。
-- `rumo-handoff`: 整理自包含的交接文档，便于其他会话或客户端接力(仅手动调用)。
-- `rumo-clarify`: 轻量需求澄清：只问一轮带推荐答案的问题，关键决策不明则暂停。
-- `rumo-debug`: 基于证据排查源码、运行时、数据、中间件、部署和客户端问题。
-- `rumo-coding-guidelines`: 约束代码修改保持范围明确、改动最小并经过验证。
-- `rumo-interface`: 设计和审查兼容、安全、可重试、成本受控且可运维的 HTTP/JSON 接口。
-- `rumo-review`: 执行一次只读的工程代码审查。
-- `rumo-verify`: 核对准确变更范围并选择最小充分验证。
-- `rumo-test`: 根据风险规划测试和验收证据。
-- `rumo-lifecycle-safety`: 处理资源所有权、重试、取消、超时、关闭和清理。
-- `rumo-database-change-safety`: 规划有边界的数据库变更、授权、备份、验证和回滚。
-- `rumo-filesystem-safety`: 删除文件或清理目录前按规模分级检查目标与边界，禁止自造备份副本。
-- `rumo-plan`: 记录需要长期保留的重要工程决策。
-- `rumo-prose`: 规范注释、诊断、日志、仓库文档、提示词和界面文字。
-- `rumo-daily-report`: 跨会话增量生成按日期保存的中文工程日报(仅手动调用)。
-- `rumo-git-commit`: 按仓库约定完成提交、分支落地、历史整理、发布和推送。
-- `rumo-frontend`: 前端页面开发、本地开发服务排障与按需采集浏览器证据(可选扩展)。
-- `rumo-remote-ops`: 依据 Profile 规划并指导有边界的制品部署、备份、验证和回滚。
-- `rumo-offline-delivery-audit`: 审计离线制品完整性、来源、安装、回滚和验收边界。
-- `rumo-linux-inspect`: 只读采集 Linux 硬件配置或巡检内存与性能(可选扩展，仅手动调用)。
-- `rumo-document-writing`: 编写和检查正式 Word 交付文档。
-- `rumo-diagram`: Mermaid 业务流程图与经确认的工程拓扑图，含预览与导出(可选扩展)。
-- `rumo-imagegen`: 通过用户配置的 OpenAI 兼容接口生成一张图片(仅手动调用)。
-
-## 校验
-
-Windows：
+管理扩展：
 
 ```powershell
-py -3 scripts\verify_skills.py
-py -3 -m unittest discover -s scripts\tests -p "test_*.py"
-```
-
-Linux 和 macOS：
-
-```bash
-python3 scripts/verify_skills.py
-python3 -m unittest discover -s scripts/tests -p 'test_*.py'
-```
-
-贡献或发布前还应执行各 Skill 自带的辅助测试：
-
-```powershell
-py -3 scripts\run_auxiliary_tests.py
+.\install.ps1 -NoPull -ListExtras
+.\install.ps1 -NoPull -Extras rumo-diagram,rumo-frontend
+.\install.ps1 -NoPull -RemoveExtras rumo-frontend
 ```
 
 ```bash
-python3 scripts/run_auxiliary_tests.py
+./install.sh --no-pull --list-extras
+./install.sh --no-pull --extras rumo-diagram,rumo-frontend
+./install.sh --no-pull --remove-extras rumo-frontend
 ```
 
-Windows 没有 `py` 启动器时，把 `py -3` 换成 `python`。
+已安装的扩展在不带参数重跑安装器时会保留。
 
-校验器会检查 Skill 命名、Frontmatter（含通用 Agent Skills 的长度限制）、界面元数据、相对链接、JSON 语法、清单一致性、疑似密钥和被跟踪的凭据文件。如需拦截私有项目词汇，可把词条写入 `~/.rumo-engineering-skills/forbidden-terms.txt`（或用 `RUMO_FORBIDDEN_TERMS_FILE` 指定），每行一个词，`re:` 前缀表示正则；该文件不进入仓库，命中时只报告文件路径，不回显词条。
+### 从旧版本升级
 
-各客户端只依赖 `SKILL.md` 的 `name` 和 `description` 选择技能；`agents/openai.yaml` 是 Codex 的可选界面元数据，其他客户端会忽略。
+在本仓库目录重跑安装器即可。已退役或改名的技能链接会被移除，安装器会逐条说明去向：被哪个新技能替代、已退役，或已改为扩展以及如何用 `-Extras` 装回。指向本仓库的旧链接会被直接替换，不需要 `-ReplaceForeignLinks`；指向其他仓库的链接或真实目录仍会让安装器在改动前停止。
 
-## 安装
+可选环境变量：`RUMO_SKILLS_REPO`(固定的本地仓库)、`RUMO_SKILLS_REMOTE`(克隆地址)、`RUMO_SKILL_PROFILES_REPO`(私有 Profile 仓库)、`RUMO_PROJECT_PROFILE`(显式指定 Profile)，以及 `CODEX_HOME`、`CLAUDE_HOME`、`AGENTS_HOME`(自定义客户端目录)。安装时加 `-ProfilesRepo <path>` 或 `--profiles-repo <path>` 可把 Profile 仓库路径保存到 `~/.rumo-engineering-skills/config.json`。
 
-请在一个稳定的本地仓库目录中运行安装程序。安装前会先执行校验，并且只替换 `rumo-*` 链接，不会影响其他 Skill。安装程序只同步检测到的客户端（Codex、Claude Code、共享 `~/.agents`），检测规则见 [GETTING_STARTED.md](GETTING_STARTED.md)；一个客户端都没检测到时会直接失败，不做任何改动。
+## 项目 Profile
 
-```powershell
-.\install.ps1 -NoPull
-```
-
-```bash
-./install.sh --no-pull
-```
-
-可选环境变量：
-
-- `RUMO_SKILLS_REPO`：本仓库的稳定本地目录。
-- `RUMO_SKILLS_REMOTE`：自定义克隆地址。
-- `RUMO_SKILL_PROFILES_REPO`：私密项目 Profile 仓库目录。
-- `RUMO_PROJECT_PROFILE`：自动匹配存在歧义时明确指定的 Profile ID。
-- `CODEX_HOME`、`CLAUDE_HOME`、`AGENTS_HOME`：自定义客户端主目录。
-
-如需让 Profile 解析器长期使用私有 Profile 仓库，可在安装时传入
-`-ProfilesRepo <path>` 或 `--profiles-repo <path>`。该路径会保存到用户级
-Rumo 配置文件中，凭据仍必须保存在公共仓库之外。
-配置文件路径为 `~/.rumo-engineering-skills/config.json`。
-
-默认远程仓库：`https://github.com/rumoii/rumo-engineering-skills.git`。
-
-PowerShell 安装程序在原生 Windows 上创建 Junction；Shell 安装程序在 macOS、Linux 和 WSL 上创建符号链接。增加、删除或重命名 Skill 后，需要重新运行安装程序。
-
-## 可选的项目 Profile
-
-Profile 是可选的；任务需要私密项目配置时再使用。
-
-具体项目的仓库名称、组件清单、主机、服务名称、安装目录和凭据应保存在本地 Profile 或可选的私密 Profile 仓库中。可以使用自带的 `rumo-project-profile` 初始化程序创建本地 Profile；只有团队通过私密仓库共享 Profile 时才需要设置 `RUMO_SKILL_PROFILES_REPO`。
+Profile 是可选的。仓库名称、组件清单、主机、服务名、安装目录和凭据应放在本地 Profile 或私有 Profile 仓库中，绝不放进本仓库。
 
 ```powershell
 py -3 skills\rumo-project-profile\scripts\init_profile.py --profile my-project
@@ -141,15 +111,30 @@ py -3 skills\rumo-project-profile\scripts\init_profile.py --profile my-project
 python3 skills/rumo-project-profile/scripts/init_profile.py --profile my-project
 ```
 
+## 校验
+
+```powershell
+py -3 scripts\verify_skills.py
+py -3 -m unittest discover -s scripts\tests -p "test_*.py"
+py -3 scripts\run_auxiliary_tests.py
+```
+
+```bash
+python3 scripts/verify_skills.py
+python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+python3 scripts/run_auxiliary_tests.py
+```
+
+Windows 没有 `py` 启动器时改用 `python`。校验器检查命名、frontmatter、界面元数据、相对链接、目录清单、迁移表与残留旧技能名、默认技能篇幅、多余的许可文件、JSON 语法、疑似密钥和被跟踪的凭据文件。如需拦截私有词汇，把词条写入 `~/.rumo-engineering-skills/forbidden-terms.txt`(或 `RUMO_FORBIDDEN_TERMS_FILE` 指定的文件)，每行一个，正则以 `re:` 开头；该文件不要放进仓库。
+
 ## 安全
 
-- 不要提交 `pwd.md`、包含凭据的 `.env` 文件、Token、私钥或包含私密材料的证书。
-- 安装程序、Profile 解析、证据脚本、测试和报告都不得打印秘密值。
-- 项目专属 Profile 必须保持私密，每次推送前都应确认远程仓库可见性。
-- 默认只访问本机或用户明确指定的开发、测试环境。操作生产环境需要准确授权；除非用户另行授权修改，否则生产环境保持只读。
+- 不要提交密码、凭据文件、Token、私钥或含私有材料的证书。
+- 安装器、Profile 解析、脚本、测试和报告都不得打印密钥值。
+- 默认只访问 localhost 或明确标识为开发、测试的环境。生产环境需要精确授权，并且除非另行批准变更，一律只读。
 
-私密报告漏洞或意外泄露的方法请参阅[安全策略](SECURITY.md)，参与贡献请参阅[贡献指南](CONTRIBUTING.md)。
+漏洞报告见 [SECURITY.md](SECURITY.md)，贡献规则见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-## 许可证
+## 许可
 
-本项目采用 MIT 许可证，详见 [LICENSE](LICENSE)。
+MIT，见 [LICENSE](LICENSE)。

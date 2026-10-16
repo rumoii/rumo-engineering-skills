@@ -2,31 +2,66 @@
 
 English | [简体中文](README.zh-CN.md)
 
-Reusable Codex, Claude Code, and agent skills that are independent of a specific company, product, repository layout, host, or deployment environment.
+A compact set of engineering skills for Codex, Claude Code, and other agents that load `SKILL.md` directories. The skills carry no company, product, host, or deployment specifics; private project facts live in optional local profiles.
 
-This is the public upstream repository for the `rumo-*` skill namespace. The
-skills are suitable for individual, team, and enterprise engineering workflows,
-but they do not contain organization-specific operating knowledge.
+## The Workflow
 
-## Start by scenario
+```text
+clarify -> plan -> test -> verify -> review -> git-commit
+```
 
-Use the matching instruction in your agent session after installation.
+Each step is a skill. Use only the ones a task needs: a one-line fix goes straight to coding and verification, while a vague feature request starts with `rumo-clarify`.
 
-| Scenario | Goal | Codex | Claude Code |
-| --- | --- | --- | --- |
-| Debug | Trace the current issue to an evidence-backed cause through read-only investigation. | `$rumo-debug Investigate the current issue read-only and report the cause with evidence.` | `/rumo-debug Investigate the current issue read-only and report the cause with evidence.` |
-| Review | Review the current uncommitted changes once without editing files. | `$rumo-review Review the current uncommitted changes without editing files.` | `/rumo-review Review the current uncommitted changes without editing files.` |
-| Implement | Implement the requested feature with minimal changes and focused verification. | `$rumo-coding-guidelines Implement the requested feature with minimal changes and focused verification.` | `/rumo-coding-guidelines Implement the requested feature with minimal changes and focused verification.` |
-| Verify | Check the exact current change and report the checks actually run. | `$rumo-verify Verify the current change and report the checks actually run.` | `/rumo-verify Verify the current change and report the checks actually run.` |
-| Deploy | Plan bounded artifact deployment to an existing development or test environment using the selected profile. | `$rumo-remote-ops Use the selected profile to plan artifact deployment to the existing development or test environment without executing it.` | `/rumo-remote-ops Use the selected profile to plan artifact deployment to the existing development or test environment without executing it.` |
+| When you want to | Codex | Claude Code |
+| --- | --- | --- |
+| Pin down a vague request | `$rumo-clarify` | `/rumo-clarify` |
+| Break agreed work into verifiable tasks | `$rumo-plan` | `/rumo-plan` |
+| Implement test-first | `$rumo-test` | `/rumo-test` |
+| Find the cause of a bug, read-only | `$rumo-debug` | `/rumo-debug` |
+| Check the change before calling it done | `$rumo-verify` | `/rumo-verify` |
+| Review a diff without editing | `$rumo-review` | `/rumo-review` |
+| Commit, land, or push | `$rumo-git-commit` | `/rumo-git-commit` |
 
-## Getting started
+Clients also pick skills automatically from their descriptions; naming one is optional except for manual-only skills.
 
-If you have just cloned this repository, read [GETTING_STARTED.md](GETTING_STARTED.md).
-It covers installation, validation, direct skill invocation, optional local Profiles,
-and credential boundaries.
+## Default Skills
 
-Clone the public repository first:
+Installed by default.
+
+| Skill | Purpose |
+| --- | --- |
+| `rumo-clarify` | One round of short questions with recommended answers when a request is unclear; critical decisions are never defaulted |
+| `rumo-plan` | Short spec and verifiable task breakdown, or a durable engineering decision record |
+| `rumo-coding-guidelines` | Baseline discipline: real code paths, only requested and necessary work, verified results |
+| `rumo-test` | Evidence planning, test-first implementation, and high-assurance spec-and-evidence work |
+| `rumo-debug` | Reproduce, localize, and prove a root cause; read-only unless the fix is requested |
+| `rumo-verify` | Exact change scope and the smallest sufficient checks before claiming done; building repository gates |
+| `rumo-review` | Read-only review, an explicit review-fix loop, or a simplification audit |
+| `rumo-git-commit` | Commits, branch landing, history cleanup, releases, and pushes following repository conventions |
+| `rumo-interface` | Compatible evolution of APIs, messages, configuration, and stored formats, with HTTP contract checks |
+| `rumo-lifecycle-safety` | Ownership, retry, cancellation, timeout, shutdown, and cleanup for long-lived work |
+| `rumo-database-change-safety` | Authorized, backed-up, bounded, and reversible database writes |
+| `rumo-filesystem-safety` | Deletion and bulk cleanup scaled to the blast radius |
+| `rumo-remote-ops` | Remote Linux queries and changes, service deployment, backup and restore, and artifact deployment |
+| `rumo-prose` | Comments, errors, logs, UI strings, docs, and agent-facing files that keep every fact |
+| `rumo-handoff` | A self-contained handoff document for another session or client (manual only) |
+| `rumo-project-profile` | Resolve and validate private project profiles for other skills (manual only) |
+
+## Optional Extras
+
+Not installed by default. Add them with `-Extras` (PowerShell) or `--extras` (shell).
+
+| Skill | Purpose |
+| --- | --- |
+| `rumo-diagram` | Mermaid business flowcharts and confirmed engineering topology diagrams with preview and export |
+| `rumo-document-writing` | Formal Word delivery documents |
+| `rumo-frontend` | Frontend page work, local dev-server troubleshooting, and requested browser evidence |
+| `rumo-offline-delivery-audit` | Offline package integrity, provenance, installation, rollback, and acceptance limits |
+| `rumo-daily-report` | Incremental Chinese daily reports in a dated text file (manual only) |
+| `rumo-linux-inspect` | Read-only Linux hardware inventory or memory inspection (manual only) |
+| `rumo-imagegen` | One image through a user-configured OpenAI-compatible endpoint (manual only) |
+
+## Install
 
 ```powershell
 git clone https://github.com/rumoii/rumo-engineering-skills.git
@@ -40,104 +75,33 @@ cd rumo-engineering-skills
 ./install.sh --no-pull
 ```
 
-If a client already has a same-name `rumo-*` link from another checkout, the
-installer stops before changing any client. Use `-ReplaceForeignLinks` or
-`--replace-foreign-links` only when you intentionally want to switch that
-client to this public checkout.
+The installer validates the repository, then links the default skills into every detected client (Codex, Claude Code, and the shared `~/.agents` directory). It manages only `rumo-*` links and leaves other skills alone. Start a new agent session afterwards so the client reloads its skill list. [GETTING_STARTED.md](GETTING_STARTED.md) covers client detection and profiles.
 
-The installers manage only `rumo-*` links and preserve skills from other
-namespaces and sources. Start a new agent session after installation so the
-skill catalog is reloaded.
-
-## Skill catalog
-
-- `rumo-project-profile`: resolves and validates private project configuration for other skills (manual only).
-- `rumo-handoff`: self-contained handoff document so another session or client can continue (manual only).
-- `rumo-clarify`: lightweight requirement clarification: one round of questions with recommended answers, critical decisions never defaulted.
-- `rumo-debug`: evidence-led defect diagnosis across source, runtime, data, middleware, deployment, and clients.
-- `rumo-coding-guidelines`: baseline constraints for minimal, path-grounded, verified code changes.
-- `rumo-interface`: compatible, secure, retry-safe, bounded, and operable HTTP/JSON API design and review.
-- `rumo-review`: one-pass read-only engineering review.
-- `rumo-verify`: exact change-scope inspection and smallest sufficient checks.
-- `rumo-test`: risk-based test and acceptance evidence planning.
-- `rumo-lifecycle-safety`: safe ownership, retry, cancellation, timeout, shutdown, and cleanup.
-- `rumo-database-change-safety`: bounded database change planning, authorization, backup, verification, and rollback.
-- `rumo-filesystem-safety`: tiered file and directory deletion with boundary checks and no ad hoc backups.
-- `rumo-plan`: durable records for material engineering decisions.
-- `rumo-prose`: prose quality for code, diagnostics, logs, repository docs, prompts, and UI strings.
-- `rumo-daily-report`: cross-session incremental Chinese daily reports in a date-based TXT file (manual only).
-- `rumo-git-commit`: commit, branch landing, history cleanup, release, and push workflow following repository conventions.
-- `rumo-frontend`: page development, local dev-server troubleshooting, and requested browser evidence (optional extra).
-- `rumo-remote-ops`: profile-driven bounded deployment planning and guidance with backup, verification, and rollback.
-- `rumo-offline-delivery-audit`: offline artifact integrity, provenance, install, rollback, and acceptance limits.
-- `rumo-linux-inspect`: read-only Linux hardware inventory or memory inspection (optional extra, manual only).
-- `rumo-document-writing`: formal Word-document authoring and quality control.
-- `rumo-diagram`: Mermaid business flowcharts and confirmed topology diagrams with preview and export (optional extra).
-- `rumo-imagegen`: one-image generation through a configured OpenAI-compatible endpoint (manual only).
-
-## Validate
+Manage extras:
 
 ```powershell
-py -3 scripts\verify_skills.py
-py -3 -m unittest discover -s scripts\tests -p "test_*.py"
+.\install.ps1 -NoPull -ListExtras
+.\install.ps1 -NoPull -Extras rumo-diagram,rumo-frontend
+.\install.ps1 -NoPull -RemoveExtras rumo-frontend
 ```
 
 ```bash
-python3 scripts/verify_skills.py
-python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+./install.sh --no-pull --list-extras
+./install.sh --no-pull --extras rumo-diagram,rumo-frontend
+./install.sh --no-pull --remove-extras rumo-frontend
 ```
 
-Run the focused helper-script suite before contributing or releasing:
+Installed extras stay installed when you rerun the installer without options.
 
-```powershell
-py -3 scripts\run_auxiliary_tests.py
-```
+### Upgrading From Earlier Versions
 
-```bash
-python3 scripts/run_auxiliary_tests.py
-```
+Rerun the installer from this checkout. Links to retired or renamed skills are removed, and the installer prints where each one went: which skill replaced it, that it was retired, or that it is now optional and how to reinstall it with `-Extras`. Links that point into this checkout are replaced without `-ReplaceForeignLinks`; links from other checkouts or real directories still stop the installer before any change.
 
-On Windows without the `py` launcher, replace `py -3` with `python`.
+Optional environment variables: `RUMO_SKILLS_REPO` (stable checkout), `RUMO_SKILLS_REMOTE` (clone URL), `RUMO_SKILL_PROFILES_REPO` (private profiles checkout), `RUMO_PROJECT_PROFILE` (explicit profile ID), and `CODEX_HOME`, `CLAUDE_HOME`, `AGENTS_HOME` (custom client homes). Pass `-ProfilesRepo <path>` or `--profiles-repo <path>` to persist a profiles checkout in `~/.rumo-engineering-skills/config.json`.
 
-The validator checks naming, frontmatter (including the common Agent Skills length limits), UI metadata, relative links, JSON syntax, catalog inventories, likely secrets, and tracked credential files. To block private project vocabulary, list terms in `~/.rumo-engineering-skills/forbidden-terms.txt` (or the file named by `RUMO_FORBIDDEN_TERMS_FILE`), one per line, with a `re:` prefix for regular expressions. Keep that file out of the repository; a match reports only the file path, never the term.
+## Project Profiles
 
-Clients select skills from `SKILL.md` `name` and `description` only. `agents/openai.yaml` is optional Codex UI metadata that other clients ignore.
-
-## Install
-
-Run the installer from a stable checkout. It validates before replacing links and manages only `rumo-*` entries, preserving unrelated skills. It syncs only detected clients (Codex, Claude Code, and the shared `~/.agents` directory); see [GETTING_STARTED.md](GETTING_STARTED.md) for detection rules. If no client is detected, it fails without changing anything.
-
-```powershell
-.\install.ps1 -NoPull
-```
-
-```bash
-./install.sh --no-pull
-```
-
-Optional environment variables:
-
-- `RUMO_SKILLS_REPO`: stable local checkout of this repository.
-- `RUMO_SKILLS_REMOTE`: clone URL override.
-- `RUMO_SKILL_PROFILES_REPO`: private project profiles checkout.
-- `RUMO_PROJECT_PROFILE`: explicit profile ID when automatic matching is ambiguous.
-- `CODEX_HOME`, `CLAUDE_HOME`, `AGENTS_HOME`: custom client homes.
-
-To persist a private Profiles checkout for future resolver calls, pass
-`-ProfilesRepo <path>` to the PowerShell installer or
-`--profiles-repo <path>` to the shell installer. The path is stored in the
-user-level Rumo configuration file; credentials remain outside this repository.
-The configuration file is `~/.rumo-engineering-skills/config.json`.
-
-Default remote: `https://github.com/rumoii/rumo-engineering-skills.git`.
-
-The PowerShell installer creates junctions on native Windows. The shell installer creates symbolic links on macOS, Linux, and WSL. Re-run the installer after adding, removing, or renaming skills.
-
-## Optional project profiles
-
-Profiles are optional; use them when a task needs private project configuration.
-
-Project-specific repository names, component inventories, hosts, service names, install roots, and credentials belong in a local profile or an optional private profiles checkout. Use the bundled `rumo-project-profile` initializer to create a local profile; set `RUMO_SKILL_PROFILES_REPO` only when using a shared private checkout.
+Profiles are optional. Repository names, component inventories, hosts, service names, install roots, and credentials belong in a local profile or a private profiles checkout, never in this repository.
 
 ```powershell
 py -3 skills\rumo-project-profile\scripts\init_profile.py --profile my-project
@@ -147,15 +111,29 @@ py -3 skills\rumo-project-profile\scripts\init_profile.py --profile my-project
 python3 skills/rumo-project-profile/scripts/init_profile.py --profile my-project
 ```
 
+## Validate
+
+```powershell
+py -3 scripts\verify_skills.py
+py -3 -m unittest discover -s scripts\tests -p "test_*.py"
+py -3 scripts\run_auxiliary_tests.py
+```
+
+```bash
+python3 scripts/verify_skills.py
+python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+python3 scripts/run_auxiliary_tests.py
+```
+
+On Windows without the `py` launcher, use `python`. The validator checks names, frontmatter, UI metadata, relative links, catalog inventories, the migration table and stale skill names, default-skill size, stray license files, JSON syntax, likely secrets, and tracked credential files. To block private vocabulary, list terms in `~/.rumo-engineering-skills/forbidden-terms.txt` (or the file named by `RUMO_FORBIDDEN_TERMS_FILE`), one per line, with a `re:` prefix for regular expressions; keep that file out of the repository.
+
 ## Security
 
-- Never commit `pwd.md`, credential `.env` files, tokens, private keys, or certificates containing private material.
-- Never print secret values from installers, profile resolution, evidence scripts, tests, or reports.
-- Keep project-specific profiles private and verify remote visibility before every push.
-- Access only localhost or explicitly identified development/test environments by default. Production requires exact authorization and remains read-only unless the user separately authorizes a mutation.
+- Never commit passwords, credential files, tokens, private keys, or certificates with private material.
+- Never print secret values from installers, profile resolution, scripts, tests, or reports.
+- By default, access only localhost or environments explicitly identified as development or test. Production needs exact authorization and stays read-only unless a change is separately approved.
 
-See [SECURITY.md](SECURITY.md) for private vulnerability and disclosure
-reporting. Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md).
+See [SECURITY.md](SECURITY.md) for vulnerability reporting and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution rules.
 
 ## License
 
