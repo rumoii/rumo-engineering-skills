@@ -24,7 +24,7 @@ Reproduce at the cheapest layer that shows the symptom. If it does not reproduce
 1. Find the visible entry point: route, screen, command, scheduled job, message, import, or protocol action.
 2. Trace callers and contracts through every layer that applies, and identify which process and artifact actually own the behavior in that environment.
 3. State one falsifiable hypothesis, then collect the narrowest logs, read-only queries, cache or queue state, and deployment facts that confirm or refute it. Read [references/workflows.md](references/workflows.md) to pick the route.
-4. For cross-process behavior, prove both the producer and the consumer side. For deployment or identity problems, compare process arguments, ports, configuration, and active artifact versions before blaming application logic.
+4. For cross-process behavior, prove both the producer and the consumer side; when the fix changes what one side sends or expects, plan it with `rumo-interface`. For deployment or identity problems, compare process arguments, ports, configuration, and active artifact versions before blaming application logic.
 
 ## 4. Minimize
 

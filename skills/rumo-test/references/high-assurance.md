@@ -51,11 +51,11 @@ Use the repository's existing tools and aggregate entry point where they exist. 
 | Dependency, license, capability, secret scans | dependencies or execution capabilities changed |
 | Repeat or order-shuffle runs | flakiness could invalidate results |
 
-Every check must fail closed. A checker written for this task must first be shown failing on a known-bad input. That proves only that case; do not overstate it.
+Every check must fail closed. A checker written for this task must first be shown failing on a known-bad input. That proves only that case; do not overstate it. When coverage runs, every uncovered changed line gets a test or a stated reason; a percentage alone settles nothing.
 
-When mutating code by hand, keep a copy of each touched file, restore the exact original bytes after every mutant, and confirm the worktree diff matches the pre-mutation state before moving on. A mutant that survives is a missing assertion or an equivalent change; say which, with the reason.
+When mutating code by hand, let version control hold the original bytes (a stash, a saved diff restored with `git restore`, or a temporary worktree); if a copy is unavoidable, keep a single one outside the repository, never a `.bak` or `.orig` beside the file. Restore the exact original after every mutant and confirm the worktree diff matches the pre-mutation state before moving on. A mutant that survives is a missing assertion or an equivalent change; say which, with the reason.
 
-Create one repository-native entry point that reruns every selected check from clean inputs and exits non-zero if any fails. Keep it in the repository's working tree; commit it only when the user asks for a commit. Delete stale reports before running, record the source revision tested, and pin tool versions. Personal paths, scratch scripts, and leftover outputs are not evidence.
+Create one repository-native entry point that reruns every selected check from clean inputs, stops with a non-zero exit at the first required failure, and before reporting success confirms that every selected check actually ran. It must not touch unrelated user files. Keep it in the repository's working tree; commit it only when the user asks for a commit. Delete stale reports before running, record the source revision tested, and pin tool versions. Personal paths, scratch scripts, and leftover outputs are not evidence.
 
 A check that did not run is never a pass. Label it:
 

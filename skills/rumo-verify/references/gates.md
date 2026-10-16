@@ -40,7 +40,7 @@ Reject goals like "improve quality" until they become a deterministic condition.
 
 Add tests or fixtures showing that a minimal valid state passes, each class of invalid state fails for the intended reason, missing and malformed inputs fail, diagnostics point at the repair location, and path handling and clean checkouts work. When a write mode exists, show it is idempotent and separate from check mode.
 
-Run the gate, its tests, the aggregate command that includes it, and `git diff --check`. Where feasible, prove the aggregate entry point fails on a deliberately invalid temporary fixture, never by corrupting the user's working tree.
+Run the gate, its tests, the aggregate command that includes it, a parse or lint of the CI configuration you touched, and `git diff --check`. Where feasible, prove the aggregate entry point fails on a deliberately invalid temporary fixture, never by corrupting the user's working tree.
 
 ## Report
 

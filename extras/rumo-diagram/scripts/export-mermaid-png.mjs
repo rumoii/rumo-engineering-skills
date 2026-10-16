@@ -231,7 +231,7 @@ async function buildTempHtmlFromMd(args) {
     `const basename = params.get("basename") || ${JSON.stringify(base)};`,
   );
 
-  const dir = await mkdtemp(join(tmpdir(), "rumo-mermaid-"));
+  const dir = await mkdtemp(join(tmpdir(), "rumo-diagram-"));
   const htmlPath = join(dir, "preview.html");
   await writeFile(htmlPath, html, "utf8");
   // Optional: also place md beside html for fetch parity
