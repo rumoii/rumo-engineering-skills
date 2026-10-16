@@ -1,5 +1,5 @@
 {
-  "name": "rumo-mermaid-diagram-runtime",
+  "name": "rumo-diagram-runtime",
   "version": "0.0.0",
   "private": true,
   "type": "module",
