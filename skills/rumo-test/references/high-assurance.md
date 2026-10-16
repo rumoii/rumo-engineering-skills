@@ -25,7 +25,7 @@ Before touching implementation files:
    - **Must not:** invariants that must hold no matter what.
    - **Failure model (high risk):** how this could fail in production and what would detect each failure.
    - **Checks:** the evidence layers that will be run and why each is needed.
-   - **Changes to the setup:** new dependencies, helpers, branches, environment changes, and persistent files. Prefer existing tooling.
+   - **Changes to the setup:** new dependencies, helpers, branches, environment changes, and persistent files. Prefer existing tooling. Listing a tool or dependency here does not authorize installing it or editing dependency manifests; that needs its own go-ahead.
 4. Show the spec and get approval of that exact version. A clarifying answer is input, not approval: revise, note why, ask again.
 5. After approval, only append to the spec. If a requirement proves wrong or missing, stop, record the revision, and get it approved before continuing.
 
@@ -53,7 +53,9 @@ Use the repository's existing tools and aggregate entry point where they exist. 
 
 Every check must fail closed. A checker written for this task must first be shown failing on a known-bad input. That proves only that case; do not overstate it.
 
-Commit one repository-native entry point that reruns every selected check from clean inputs and exits non-zero if any fails. Delete stale reports before running, record the source revision tested, and pin tool versions. Personal paths, scratch scripts, and leftover outputs are not evidence.
+When mutating code by hand, keep a copy of each touched file, restore the exact original bytes after every mutant, and confirm the worktree diff matches the pre-mutation state before moving on. A mutant that survives is a missing assertion or an equivalent change; say which, with the reason.
+
+Create one repository-native entry point that reruns every selected check from clean inputs and exits non-zero if any fails. Keep it in the repository's working tree; commit it only when the user asks for a commit. Delete stale reports before running, record the source revision tested, and pin tool versions. Personal paths, scratch scripts, and leftover outputs are not evidence.
 
 A check that did not run is never a pass. Label it:
 
@@ -77,7 +79,12 @@ While a required check fails, the result is blocked. Never weaken an assertion, 
 
 ## Optional Independent Verification
 
-When the user or a policy requires it and a fresh-context helper is available, give the helper the spec, the final source revision, and the evidence report, and ask it to attack the claims without fixing anything. A verdict on an older revision does not carry over to later edits. Allow at most two rounds unless the user approves more, and report the outcome as passed, failed, blocked, or not performed.
+Use this only when the user or a policy asks for it and a helper with a fresh context is available. It adds an adversarial check; it never replaces the user's spec approval.
+
+1. **Blind pass.** Hand the helper only the task as the user stated it (with approved scope changes), the approved spec, the exact source revision, and the check entry point. Withhold the build conversation, the evidence report or its draft, your suspected weak spots, and expected answers. The helper may read any code and test. It reruns the entry point and attacks: whether the claimed source is what actually runs, gaps between spec and task, tests that pass trivially or mock away the logic, new mutants or inputs the builder did not pick, custom checkers' known-bad paths, and requirements without a falsifying check or checks without a requirement. It always returns its list of attacks, even when nothing survives.
+2. **Comparison pass.** Only after the blind record is frozen, give the helper the evidence report. Compare revisions, commands, numbers, omissions, and mappings. Any mismatch suspends the affected claim until it is reconciled.
+3. **Findings.** The helper fixes nothing. A wrong behavior or a checker that cannot fail goes back through the spec, test, and check loop, then a new helper context reviews the new revision. An overclaim in the spec or report is corrected and disclosed. A gap in the spec, or a disputed classification, goes to the user.
+4. **Rounds and verdict.** Allow at most two rounds unless the user approves more; hitting the limit leaves open findings open. Report passed, failed, blocked (inputs, tools, or fresh context missing), or not performed (a stated confidence downgrade). A verdict covers one exact revision; any later edit to code or checkers resets it to not performed.
 
 ## Non-Negotiables
 
