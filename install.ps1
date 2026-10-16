@@ -5,6 +5,9 @@ param(
   [string]$ClaudeHome = $env:CLAUDE_HOME,
   [string]$AgentsHome = $env:AGENTS_HOME,
   [string]$Remote = $(if ($env:RUMO_SKILLS_REMOTE) { $env:RUMO_SKILLS_REMOTE } else { "https://github.com/rumoii/rumo-engineering-skills.git" }),
+  [string[]]$Extras = @(),
+  [string[]]$RemoveExtras = @(),
+  [switch]$ListExtras,
   [switch]$NoPull,
   [switch]$DryRun,
   [switch]$ReplaceForeignLinks
@@ -54,25 +57,82 @@ function Get-LinkTarget {
   catch { return [string]$Target }
 }
 
+function Split-NameList {
+  param([string[]]$Values)
+  return @($Values | ForEach-Object { $_ -split "," } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+}
+
+function Get-SkillDirs {
+  param([Parameter(Mandatory = $true)][string]$Root)
+  if (-not (Test-Path $Root -PathType Container)) { return @() }
+  return @(Get-ChildItem -Path $Root -Directory | Where-Object { $_.Name -like "rumo-*" } | Sort-Object Name)
+}
+
+function Test-PathWithin {
+  param([string]$Path, [Parameter(Mandatory = $true)][string]$Root)
+  if (-not $Path) { return $false }
+  $Prefix = ([IO.Path]::GetFullPath($Root)).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+  return $Path.StartsWith($Prefix, [StringComparison]::OrdinalIgnoreCase)
+}
+
+function Test-OwnedLinkTarget {
+  param([string]$Target)
+  return (Test-PathWithin $Target $RepoSkills) -or (Test-PathWithin $Target $RepoExtras)
+}
+
+function Get-RumoLinks {
+  param([Parameter(Mandatory = $true)][string]$TargetSkillsPath)
+  return @(Get-ChildItem -Path $TargetSkillsPath -Force -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -like "rumo-*" -and $_.LinkType -in @("SymbolicLink", "Junction") })
+}
+
+function Get-DesiredSkillDirs {
+  param([Parameter(Mandatory = $true)][string]$TargetSkillsPath)
+  # Default skills, requested extras, and extras this checkout already installed here.
+  $Selected = [System.Collections.Generic.SortedSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+  foreach ($Name in $ExtraNames) { [void]$Selected.Add($Name) }
+  foreach ($Link in (Get-RumoLinks $TargetSkillsPath)) {
+    if ($ExtraDirs.ContainsKey($Link.Name) -and (Test-PathWithin (Get-LinkTarget $Link) $RepoExtras)) {
+      [void]$Selected.Add($Link.Name)
+    }
+  }
+  foreach ($Name in $RemoveExtraNames) { [void]$Selected.Remove($Name) }
+
+  $Desired = [ordered]@{}
+  foreach ($Dir in $CoreDirs) { $Desired[$Dir.Name] = $Dir.FullName }
+  foreach ($Name in $Selected) { $Desired[$Name] = $ExtraDirs[$Name] }
+  return $Desired
+}
+
+function Get-RemovalNotice {
+  param([Parameter(Mandatory = $true)][string]$Name)
+  if ($RemoveExtraNames -contains $Name) { return "Removed optional skill $Name." }
+  if ($ExtraDirs.ContainsKey($Name)) { return "$Name is optional now; reinstall it with -Extras $Name." }
+  if ($Migrations.ContainsKey($Name)) {
+    $Successor = $Migrations[$Name]
+    if ($Successor -eq "-") { return "$Name was retired." }
+    if ($ExtraDirs.ContainsKey($Successor)) { return "$Name moved into optional $Successor; install it with -Extras $Successor." }
+    return "$Name was replaced by $Successor."
+  }
+  return "Removed stale link $Name."
+}
+
 function Assert-SkillLinksSafe {
-  param(
-    [Parameter(Mandatory = $true)][string]$RepoSkillsPath,
-    [Parameter(Mandatory = $true)][string[]]$TargetSkillsPaths
-  )
+  param([Parameter(Mandatory = $true)][string[]]$TargetSkillsPaths)
   $Issues = [System.Collections.Generic.List[string]]::new()
-  $SkillDirs = Get-ChildItem -Path $RepoSkillsPath -Directory | Where-Object { $_.Name -like "rumo-*" }
   foreach ($TargetSkillsPath in $TargetSkillsPaths) {
-    foreach ($SkillDir in $SkillDirs) {
-      $LinkPath = Join-Path $TargetSkillsPath $SkillDir.Name
+    $Desired = Get-DesiredSkillDirs $TargetSkillsPath
+    foreach ($Name in $Desired.Keys) {
+      $LinkPath = Join-Path $TargetSkillsPath $Name
       $Existing = Get-Item -LiteralPath $LinkPath -Force -ErrorAction SilentlyContinue
       if (-not $Existing) { continue }
       if ($Existing.LinkType -notin @("SymbolicLink", "Junction")) {
         $Issues.Add("$LinkPath exists as a real file or directory")
         continue
       }
-      $Expected = [IO.Path]::GetFullPath($SkillDir.FullName)
+      $Expected = [IO.Path]::GetFullPath($Desired[$Name])
       $Actual = Get-LinkTarget $Existing
-      if ($Actual -and -not [StringComparer]::OrdinalIgnoreCase.Equals($Actual, $Expected) -and -not $ReplaceForeignLinks) {
+      if ($Actual -and -not (Test-OwnedLinkTarget $Actual) -and -not $ReplaceForeignLinks) {
         $Issues.Add("$LinkPath points to $Actual (expected $Expected); use -ReplaceForeignLinks to replace it")
       }
     }
@@ -83,13 +143,14 @@ function Assert-SkillLinksSafe {
 }
 
 function Sync-SkillLinks {
-  param([Parameter(Mandatory = $true)][string]$RepoSkillsPath, [Parameter(Mandatory = $true)][string]$TargetSkillsPath)
+  param([Parameter(Mandatory = $true)][string]$TargetSkillsPath)
+  $Desired = Get-DesiredSkillDirs $TargetSkillsPath
   Invoke-Step "New-Item -ItemType Directory -Force -Path `"$TargetSkillsPath`"" {
     New-Item -ItemType Directory -Force -Path $TargetSkillsPath | Out-Null
   }
-  $SkillDirs = Get-ChildItem -Path $RepoSkillsPath -Directory | Where-Object { $_.Name -like "rumo-*" }
-  foreach ($SkillDir in $SkillDirs) {
-    $LinkPath = Join-Path $TargetSkillsPath $SkillDir.Name
+  foreach ($Name in $Desired.Keys) {
+    $LinkPath = Join-Path $TargetSkillsPath $Name
+    $Source = $Desired[$Name]
     $Existing = Get-Item -LiteralPath $LinkPath -Force -ErrorAction SilentlyContinue
     if ($Existing) {
       if ($Existing.LinkType -notin @("SymbolicLink", "Junction")) {
@@ -97,20 +158,28 @@ function Sync-SkillLinks {
       }
       Invoke-Step "Remove link `"$LinkPath`"" { Remove-SkillLink $Existing }
     }
-    Invoke-Step "New-Item -ItemType Junction -Path `"$LinkPath`" -Target `"$($SkillDir.FullName)`"" {
-      New-Item -ItemType Junction -Path $LinkPath -Target $SkillDir.FullName | Out-Null
+    Invoke-Step "New-Item -ItemType Junction -Path `"$LinkPath`" -Target `"$Source`"" {
+      New-Item -ItemType Junction -Path $LinkPath -Target $Source | Out-Null
     }
   }
-  Get-ChildItem -Path $TargetSkillsPath -Force -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -like "rumo-*" -and $_.LinkType -in @("SymbolicLink", "Junction") } |
-    ForEach-Object {
-      $Target = Get-LinkTarget $_
-      $RepoPrefix = ([IO.Path]::GetFullPath($RepoSkillsPath)).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
-      if ($Target -and $Target.StartsWith($RepoPrefix, [StringComparison]::OrdinalIgnoreCase) -and -not (Test-Path $Target)) {
-        $StaleLink = $_
-        Invoke-Step "Remove stale link `"$($StaleLink.FullName)`"" { Remove-SkillLink $StaleLink }
-      }
-    }
+  foreach ($Link in (Get-RumoLinks $TargetSkillsPath)) {
+    if ($Desired.Contains($Link.Name) -or -not (Test-OwnedLinkTarget (Get-LinkTarget $Link))) { continue }
+    Write-Host (Get-RemovalNotice $Link.Name)
+    Invoke-Step "Remove link `"$($Link.FullName)`"" { Remove-SkillLink $Link }
+  }
+}
+
+function Show-Extras {
+  if ($ExtraDirs.Count -eq 0) {
+    Write-Host "No optional skills are available in $Repo."
+    return
+  }
+  Write-Host "Optional skills (install with -Extras <name>[,<name>]):"
+  foreach ($Name in ($ExtraDirs.Keys | Sort-Object)) {
+    $SkillText = Get-Content -LiteralPath (Join-Path $ExtraDirs[$Name] "SKILL.md") -Raw -Encoding UTF8
+    $Description = if ($SkillText -match "(?m)^description:\s*(.+?)\s*$") { $Matches[1].Trim('"', "'") } else { "" }
+    Write-Host "  $Name  $Description"
+  }
 }
 
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw "Git is required." }
@@ -120,6 +189,16 @@ $Repo = [IO.Path]::GetFullPath($Repo)
 $CodexHome = if ($CodexHome) { $CodexHome } else { Join-Path $HOME ".codex" }
 $ClaudeHome = if ($ClaudeHome) { $ClaudeHome } else { Join-Path $HOME ".claude" }
 $AgentsHome = if ($AgentsHome) { $AgentsHome } else { Join-Path $HOME ".agents" }
+$RepoSkills = Join-Path $Repo "skills"
+$RepoExtras = Join-Path $Repo "extras"
+$ExtraDirs = @{}
+foreach ($Dir in (Get-SkillDirs $RepoExtras)) { $ExtraDirs[$Dir.Name] = $Dir.FullName }
+
+if ($ListExtras) {
+  if (-not (Test-Path $RepoSkills)) { throw "Skills repository not found: $Repo. Install once before listing optional skills." }
+  Show-Extras
+  exit 0
+}
 
 if (Test-Path (Join-Path $Repo ".git")) {
   if (-not $NoPull) {
@@ -138,9 +217,31 @@ if (Test-Path (Join-Path $Repo ".git")) {
   if ($DryRun) { Write-Host "Dry-run stopped after previewing clone."; exit 0 }
 }
 
-$RepoSkills = Join-Path $Repo "skills"
 if (-not (Test-Path $RepoSkills)) { throw "Skills directory not found: $RepoSkills" }
 Invoke-SkillValidation $Repo
+
+$CoreDirs = @(Get-SkillDirs $RepoSkills)
+$ExtraDirs = @{}
+foreach ($Dir in (Get-SkillDirs $RepoExtras)) { $ExtraDirs[$Dir.Name] = $Dir.FullName }
+$Migrations = @{}
+$MigrationsFile = Join-Path $Repo "scripts\skill-migrations.tsv"
+if (Test-Path $MigrationsFile -PathType Leaf) {
+  foreach ($Line in (Get-Content -LiteralPath $MigrationsFile -Encoding UTF8)) {
+    if (-not $Line.Trim() -or $Line.StartsWith("#")) { continue }
+    $Parts = $Line -split "`t"
+    if ($Parts.Count -eq 2) { $Migrations[$Parts[0]] = $Parts[1] }
+  }
+}
+$ExtraNames = @(Split-NameList $Extras)
+$RemoveExtraNames = @(Split-NameList $RemoveExtras)
+foreach ($Name in @($ExtraNames + $RemoveExtraNames)) {
+  if (-not $ExtraDirs.ContainsKey($Name)) {
+    throw "Unknown optional skill: $Name. Run with -ListExtras to see available names; no links were changed."
+  }
+}
+foreach ($Name in $ExtraNames) {
+  if ($RemoveExtraNames -contains $Name) { throw "$Name was passed to both -Extras and -RemoveExtras; no links were changed." }
+}
 
 if ($ProfilesRepoExplicit) {
   $ProfileConfig = Join-Path $Repo "skills\rumo-project-profile\scripts\profile_config.py"
@@ -162,7 +263,7 @@ if ($SyncAgents) { $TargetSkillsPaths.Add((Join-Path $AgentsHome "skills")) }
 if ($TargetSkillsPaths.Count -eq 0) {
   throw "No supported agent client was detected; no links were changed. Pass -CodexHome, -ClaudeHome, or -AgentsHome to choose a target explicitly."
 }
-Assert-SkillLinksSafe $RepoSkills $TargetSkillsPaths
+Assert-SkillLinksSafe $TargetSkillsPaths
 if ($ProfilesRepoExplicit -and -not $DryRun) {
   if (Get-Command py -ErrorAction SilentlyContinue) { & py -3 $ProfileConfig --profiles-repo $ProfilesRepo }
   elseif (Get-Command python3 -ErrorAction SilentlyContinue) { & python3 $ProfileConfig --profiles-repo $ProfilesRepo }
@@ -170,7 +271,7 @@ if ($ProfilesRepoExplicit -and -not $DryRun) {
   if ($LASTEXITCODE -ne 0) { throw "Profiles repository configuration failed; no skill links were changed." }
 }
 foreach ($TargetSkillsPath in $TargetSkillsPaths) {
-  Sync-SkillLinks $RepoSkills $TargetSkillsPath
+  Sync-SkillLinks $TargetSkillsPath
 }
 if (-not $SyncCodex) { Write-Host "Codex was not detected; skipping." }
 if (-not $SyncClaude) { Write-Host "Claude Code was not detected; skipping." }

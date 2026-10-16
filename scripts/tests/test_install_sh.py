@@ -8,6 +8,8 @@ import subprocess
 import tempfile
 import unittest
 
+from scripts.tests.skill_fixture import CORE_SKILLS, build_fixture_repo
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SH = shutil.which("sh")
@@ -81,9 +83,9 @@ class InstallShellTests(unittest.TestCase):
             codex_home = temp_root / "codex"
             claude_home = temp_root / "claude"
             agents_home = temp_root / "agents"
-            foreign = temp_root / "personal-skills" / "rumo-code-review"
+            foreign = temp_root / "personal-skills" / "rumo-git-commit"
             foreign.mkdir(parents=True)
-            conflict = claude_home / "skills" / "rumo-code-review"
+            conflict = claude_home / "skills" / "rumo-git-commit"
             conflict.parent.mkdir(parents=True)
             conflict.symlink_to(foreign, target_is_directory=True)
 
@@ -104,9 +106,9 @@ class InstallShellTests(unittest.TestCase):
             codex_home = temp_root / "codex"
             claude_home = temp_root / "claude"
             agents_home = temp_root / "agents"
-            foreign = temp_root / "personal-skills" / "rumo-code-review"
+            foreign = temp_root / "personal-skills" / "rumo-git-commit"
             foreign.mkdir(parents=True)
-            conflict = codex_home / "skills" / "rumo-code-review"
+            conflict = codex_home / "skills" / "rumo-git-commit"
             conflict.parent.mkdir(parents=True)
             conflict.symlink_to(foreign, target_is_directory=True)
 
@@ -120,7 +122,7 @@ class InstallShellTests(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertEqual(
-                conflict.resolve(), (REPO_ROOT / "skills" / "rumo-code-review").resolve()
+                conflict.resolve(), (REPO_ROOT / "skills" / "rumo-git-commit").resolve()
             )
 
     def test_real_directory_is_never_replaced(self) -> None:
@@ -129,7 +131,7 @@ class InstallShellTests(unittest.TestCase):
             codex_home = temp_root / "codex"
             claude_home = temp_root / "claude"
             agents_home = temp_root / "agents"
-            conflict = codex_home / "skills" / "rumo-code-review"
+            conflict = codex_home / "skills" / "rumo-git-commit"
             conflict.mkdir(parents=True)
             marker = conflict / "keep.txt"
             marker.write_text("keep\n", encoding="utf-8")
@@ -229,15 +231,21 @@ class InstallShellTests(unittest.TestCase):
         bin_dir = temp_root / "bin"
         bin_dir.mkdir()
         for command in (
+            "awk",
             "basename",
             "dirname",
             "git",
+            "grep",
+            "head",
             "ln",
             "mkdir",
             "python3",
             "readlink",
             "rm",
+            "sed",
             "sh",
+            "sort",
+            "tr",
         ):
             source = shutil.which(command)
             self.assertIsNotNone(source, command)
@@ -270,7 +278,7 @@ class InstallShellTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn("Codex was not detected; skipping.", result.stdout)
             self.assertFalse((temp_root / ".codex").exists())
-            self.assert_link_targets(claude_home / "skills", ["rumo-code-review"])
+            self.assert_link_targets(claude_home / "skills", ["rumo-git-commit"])
 
     def test_no_detected_client_stops_without_changes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -359,6 +367,152 @@ class InstallShellTests(unittest.TestCase):
             link = skills_dir / name
             self.assertTrue(link.is_symlink(), link)
             self.assertEqual(link.resolve(), (REPO_ROOT / "skills" / name).resolve())
+
+
+@unittest.skipUnless(SH and os.name != "nt", "POSIX sh is not available on this host")
+class InstallShellExtrasTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_root = Path(self.temp_dir.name)
+        self.repo = build_fixture_repo(self.temp_root)
+        # Name every client home so detection never reaches the real user profile.
+        self.homes = {
+            "codex": self.temp_root / "codex",
+            "claude": self.temp_root / "claude",
+            "agents": self.temp_root / "agents",
+        }
+
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    def run_installer(self, *extra: str) -> subprocess.CompletedProcess[str]:
+        command = [SH, str(self.repo / "install.sh"), "--repo", str(self.repo), "--no-pull"]
+        for client, home in self.homes.items():
+            command.extend((f"--{client}-home", str(home)))
+        command.extend(extra)
+        return subprocess.run(
+            command,
+            cwd=self.repo,
+            env={**os.environ, "HOME": str(self.temp_root)},
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def create_link(self, link: Path, target: Path) -> None:
+        link.parent.mkdir(parents=True, exist_ok=True)
+        link.symlink_to(target, target_is_directory=True)
+
+    def installed(self, client: str) -> list[str]:
+        skills = self.homes[client] / "skills"
+        return sorted(path.name for path in skills.iterdir()) if skills.is_dir() else []
+
+    def assert_links_to(self, client: str, name: str, root: str) -> None:
+        link = self.homes[client] / "skills" / name
+        self.assertEqual(link.resolve(), (self.repo / root / name).resolve(), name)
+
+    def test_default_install_links_only_default_skills(self) -> None:
+        result = self.run_installer()
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for client in self.homes:
+            self.assertEqual(self.installed(client), sorted(CORE_SKILLS))
+
+    def test_list_extras_changes_nothing(self) -> None:
+        result = self.run_installer("--list-extras")
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("rumo-gamma  Use when testing optional skill rumo-gamma.", result.stdout)
+        self.assertIn("rumo-delta", result.stdout)
+        for home in self.homes.values():
+            self.assertFalse(home.exists())
+
+    def test_extras_are_installed_preserved_and_removed(self) -> None:
+        result = self.run_installer("--extras", "rumo-gamma,rumo-delta")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assert_links_to("codex", "rumo-gamma", "extras")
+        self.assert_links_to("claude", "rumo-delta", "extras")
+
+        result = self.run_installer()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(
+            self.installed("claude"), sorted((*CORE_SKILLS, "rumo-delta", "rumo-gamma"))
+        )
+
+        result = self.run_installer("--remove-extras", "rumo-gamma")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Removed optional skill rumo-gamma.", result.stdout)
+        self.assertEqual(self.installed("codex"), sorted((*CORE_SKILLS, "rumo-delta")))
+
+    def test_unknown_extra_fails_before_any_change(self) -> None:
+        for name in ("rumo-missing", "rumo-gamma/../../skills/rumo-alpha"):
+            result = self.run_installer("--extras", name)
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Unknown optional skill", result.stderr)
+            for home in self.homes.values():
+                self.assertFalse(home.exists())
+
+    def test_same_name_in_extras_and_remove_extras_fails(self) -> None:
+        result = self.run_installer(
+            "--extras", "rumo-gamma", "--remove-extras", "rumo-gamma"
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("passed to both", result.stderr)
+        for home in self.homes.values():
+            self.assertFalse(home.exists())
+
+    def test_upgrade_from_previous_layout_migrates_links(self) -> None:
+        for home in self.homes.values():
+            skills = home / "skills"
+            for name in ("rumo-old-alpha", "rumo-old-tool", "rumo-gone", "rumo-gamma"):
+                self.create_link(skills / name, self.repo / "skills" / name)
+
+        result = self.run_installer()
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("rumo-old-alpha was replaced by rumo-alpha.", result.stdout)
+        self.assertIn(
+            "rumo-old-tool moved into optional rumo-gamma; install it with --extras rumo-gamma.",
+            result.stdout,
+        )
+        self.assertIn("rumo-gone was retired.", result.stdout)
+        self.assertIn("rumo-gamma is optional now", result.stdout)
+        for client in self.homes:
+            self.assertEqual(self.installed(client), sorted(CORE_SKILLS))
+
+    def test_upgrade_moves_same_name_skill_to_requested_extra(self) -> None:
+        for home in self.homes.values():
+            self.create_link(home / "skills" / "rumo-gamma", self.repo / "skills" / "rumo-gamma")
+
+        result = self.run_installer("--extras", "rumo-gamma")
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for client in self.homes:
+            self.assert_links_to(client, "rumo-gamma", "extras")
+
+    def test_foreign_extra_link_stops_all_clients(self) -> None:
+        foreign = self.temp_root / "personal" / "rumo-gamma"
+        foreign.mkdir(parents=True)
+        self.create_link(self.homes["claude"] / "skills" / "rumo-gamma", foreign)
+
+        result = self.run_installer("--extras", "rumo-gamma")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Skill link preflight failed", result.stderr)
+        self.assertEqual(
+            (self.homes["claude"] / "skills" / "rumo-gamma").resolve(), foreign.resolve()
+        )
+        self.assertFalse(self.homes["codex"].exists())
+
+    def test_dry_run_with_extras_changes_nothing(self) -> None:
+        result = self.run_installer("--extras", "rumo-gamma", "--dry-run")
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("rumo-gamma", result.stdout)
+        for home in self.homes.values():
+            self.assertFalse(home.exists())
 
 
 if __name__ == "__main__":
