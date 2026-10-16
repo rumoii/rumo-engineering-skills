@@ -39,6 +39,12 @@ BOUNDARIES = (
         r"(?:write-capable|persistent).*database|database.*writes?",
         r"read-only.*(?:diagnosis|investigation)",
     ),
+    (
+        "rumo-filesystem-safety",
+        "rumo-database-change-safety",
+        r"database.*(?:cleanup|data)",
+        r"(?:files?|directories).*(?:delet|clean)",
+    ),
 )
 
 
