@@ -1,6 +1,6 @@
 ---
 name: rumo-git-commit
-description: Use when the user explicitly asks to commit, tag, release, push, clean up history, or land a worktree or feature branch. Follow repository conventions for branch selection, commit language, message format, verification, and release versioning.
+description: Use when the user explicitly asks to commit, tag, release, push, clean up history, or land a worktree or feature branch. Follow repository conventions for branch selection, commit language, message format, verification, and release versioning. Do not use merely because work is finished; without an explicit request, stop after rumo-verify.
 ---
 
 # Git Commit
