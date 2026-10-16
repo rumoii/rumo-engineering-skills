@@ -56,5 +56,21 @@ python3 scripts/run_auxiliary_tests.py
 git diff --check
 ```
 
+## Trigger evals
+
+`evals/` holds trigger cases for `claude plugin eval`: each case is a
+realistic request plus graders asserting which skill fires and which
+look-alike does not. The unit tests check only the suite's structure; running
+it calls a model and costs money, so it stays out of CI. Run it after changing
+a `description` (Claude Code 2.1.269 or later):
+
+```bash
+claude plugin eval . --runs 1 --ablation none --no-publish
+```
+
+Use `--case <name>` for one case and `--runs 3` before trusting a borderline
+result. Results land in the ignored `evals/results/`. Add a case when a
+request picks the wrong skill.
+
 Pull requests should explain the user scenario, changed behavior, verification
 performed, and any environment or acceptance boundary that was not exercised.
