@@ -126,7 +126,7 @@ Simple tasks can be executed directly, but changes must still stay surgical.
 - Use [`rumo-database-change-safety`](../rumo-database-change-safety/SKILL.md) for write-capable schema migrations, data repairs, cleanup, resets, and rollback.
 - Use [`rumo-filesystem-safety`](../rumo-filesystem-safety/SKILL.md) when a change must delete or bulk-clean files, caches, or build outputs.
 - Use the optional `rumo-offline-delivery-audit` extra, when installed, for installable offline artifacts, dependency closure, provenance, and field-acceptance limits.
-- Use [`rumo-prose-standard`](../rumo-prose-standard/SKILL.md) for comments, diagnostics, UI strings, and repository documentation.
+- Use [`rumo-prose`](../rumo-prose/SKILL.md) for comments, diagnostics, UI strings, and repository documentation.
 - Use [`rumo-engineering-decision`](../rumo-engineering-decision/SKILL.md) only when a material cross-module obligation needs durable rationale.
 
 ## Provenance

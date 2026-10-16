@@ -14,6 +14,31 @@ product, repository layout, host, or deployment environment.
 - Preserve unrelated files and avoid generated dependencies such as
   `node_modules`.
 
+## Skill structure
+
+Follow [skills/rumo-prose/references/agent-docs.md](skills/rumo-prose/references/agent-docs.md).
+In short:
+
+- The `description` names the triggering situations, the look-alikes that must
+  not trigger, and the skill to use instead.
+- The body runs: purpose, modes (if any), workflow with checkpoints, stop
+  conditions, evidence and output. Red flags and shortcut rebuttals are
+  optional and belong only where agents tend to skip steps.
+- Aim for about 80 lines in a default skill's `SKILL.md`; move detail into
+  `references/` and state when each reference must be read. Authorization
+  rules and stop conditions stay in the body.
+- Write every skill in your own words. Do not copy text from other projects.
+
+## Default skills and extras
+
+- `skills/` holds the default set that the installers always link.
+- `extras/` holds optional skills that users install with `-Extras` or
+  `--extras`. A default skill must not link to an extra; mention it by name and
+  say what to do when it is not installed.
+- When a skill is renamed, merged, or retired, add a line to
+  `scripts/skill-migrations.tsv` so installers can explain the change and the
+  validator can reject stale references.
+
 ## Validate changes
 
 Windows:

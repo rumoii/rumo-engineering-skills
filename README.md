@@ -66,7 +66,7 @@ skill catalog is reloaded.
 - `rumo-repository-gates`: deterministic repository-owned CI and static checks.
 - `rumo-engineering-decision`: durable records for material engineering decisions.
 - `rumo-find-simplifications`: evidence-led discovery of removable engineering complexity.
-- `rumo-prose-standard`: prose quality for code, diagnostics, logs, repository docs, prompts, and UI strings.
+- `rumo-prose`: prose quality for code, diagnostics, logs, repository docs, prompts, and UI strings.
 - `rumo-daily-report`: cross-session incremental Chinese daily reports in a date-based TXT file (manual only).
 - `rumo-git-commit`: commit, branch landing, history cleanup, release, and push workflow following repository conventions.
 - `rumo-frontend`: page development, local dev-server troubleshooting, and requested browser evidence (optional extra).

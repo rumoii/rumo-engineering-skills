@@ -57,7 +57,7 @@ cd rumo-engineering-skills
 - `rumo-repository-gates`: 建立确定性的仓库 CI 和静态校验门禁。
 - `rumo-engineering-decision`: 记录需要长期保留的重要工程决策。
 - `rumo-find-simplifications`: 基于使用方和兼容性证据寻找可移除的工程复杂度。
-- `rumo-prose-standard`: 规范注释、诊断、日志、仓库文档、提示词和界面文字。
+- `rumo-prose`: 规范注释、诊断、日志、仓库文档、提示词和界面文字。
 - `rumo-daily-report`: 跨会话增量生成按日期保存的中文工程日报(仅手动调用)。
 - `rumo-git-commit`: 按仓库约定完成提交、分支落地、历史整理、发布和推送。
 - `rumo-frontend`: 前端页面开发、本地开发服务排障与按需采集浏览器证据(可选扩展)。

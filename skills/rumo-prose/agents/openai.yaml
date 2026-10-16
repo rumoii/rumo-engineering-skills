@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Prose"
+  short_description: "审查和精简注释、报错、日志、界面文案、仓库文档及技能与 AGENTS 文件"
+  default_prompt: "Use $rumo-prose to review or improve prose in the specified repository scope without losing required facts."
