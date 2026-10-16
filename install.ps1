@@ -330,6 +330,10 @@ if (-not $SyncCodex) { Write-Host "Codex was not detected; skipping." }
 if (-not $SyncClaude) { Write-Host "Claude Code was not detected; skipping." }
 if (-not $SyncAgents) { Write-Host "A shared agent client was not detected; skipping." }
 
+if ($DryRun) {
+  Write-Host "Dry run finished; nothing was changed."
+  exit 0
+}
 Write-Host "Rumo skills installation completed."
 Write-Host "Repository: $Repo"
 Write-Host "Recommended: set RUMO_SKILLS_REPO=$Repo"

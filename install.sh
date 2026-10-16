@@ -314,6 +314,10 @@ if [ "$SYNC_AGENTS" -eq 1 ]; then sync_links "$AGENTS_HOME_DIR/skills"
 else echo 'A shared agent client was not detected; skipping.'
 fi
 
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo 'Dry run finished; nothing was changed.'
+  exit 0
+fi
 echo "Rumo skills installed from $REPO_PATH"
 echo "Set RUMO_SKILLS_REPO=$REPO_PATH for later updates."
 if [ -n "$PROFILES_REPO" ]; then echo "Project profiles: $PROFILES_REPO"

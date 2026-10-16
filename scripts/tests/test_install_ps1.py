@@ -518,6 +518,8 @@ class InstallPowerShellExtrasTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("rumo-gamma", result.stdout)
+        self.assertIn("Dry run finished; nothing was changed.", result.stdout)
+        self.assertNotIn("installation completed", result.stdout)
         for home in self.homes.values():
             self.assertFalse(home.exists())
 
