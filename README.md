@@ -44,7 +44,7 @@ Installed by default.
 | `rumo-filesystem-safety` | Deletion and bulk cleanup scaled to the blast radius |
 | `rumo-remote-ops` | Remote Linux queries and changes, service deployment, backup and restore, and artifact deployment |
 | `rumo-prose` | Comments, errors, logs, UI strings, docs, and agent-facing files that keep every fact |
-| `rumo-frontend` | Frontend page work, local dev-server troubleshooting, and requested browser evidence |
+| `rumo-frontend` | Frontend page work and new interface design with accessibility checks, local dev-server troubleshooting, and requested browser evidence |
 | `rumo-handoff` | A self-contained handoff document for another session or client (manual only) |
 | `rumo-project-profile` | Resolve and validate private project profiles for other skills |
 

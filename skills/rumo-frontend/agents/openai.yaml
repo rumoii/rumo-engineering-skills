@@ -1,4 +1,4 @@
 interface:
   display_name: "Rumo Frontend"
-  short_description: "前端页面开发、本地开发服务排障与按需采集可追溯的浏览器证据"
-  default_prompt: "Use $rumo-frontend to work on the specified page, start or repair the local dev server, or capture the requested browser evidence."
+  short_description: "前端页面开发与新界面设计、可访问性检查、本地开发服务排障、按需采集浏览器证据"
+  default_prompt: "Use $rumo-frontend to work on or design the specified page, start or repair the local dev server, or capture the requested browser evidence."

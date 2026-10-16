@@ -1,6 +1,6 @@
 ---
 name: rumo-frontend
-description: Use when building or refactoring frontend pages in an existing application, starting or troubleshooting a local frontend development server (package scripts, backend proxy, ports, certificates, micro-frontends), or when explicitly asked to capture browser evidence such as before-and-after screenshots, state sequences, DOM evidence, or a short GIF. Do not capture persistent visual evidence merely because frontend code changed.
+description: Use when building, refactoring, or designing frontend pages and components, including a new interface with no existing pattern to follow or a request to improve visual quality or accessibility; starting or troubleshooting a local frontend development server (package scripts, backend proxy, ports, certificates, micro-frontends); or capturing browser evidence such as screenshots or a short GIF when explicitly asked. Do not capture persistent visual evidence merely because frontend code changed.
 ---
 
 # Rumo Frontend
@@ -9,9 +9,12 @@ Choose the mode that matches the request and read its reference before acting.
 
 | Mode | Use for | Reference |
 | --- | --- | --- |
-| UI | Page work, component reuse, layout and visual consistency | [references/ui.md](references/ui.md), plus [page-patterns.md](references/page-patterns.md) and [visual-consistency.md](references/visual-consistency.md) when aligning layouts |
+| UI | Changing pages in an existing application: component reuse, layout, visual consistency | [references/ui.md](references/ui.md), plus [page-patterns.md](references/page-patterns.md) and [visual-consistency.md](references/visual-consistency.md) when aligning layouts |
+| New design | A page, component, or application with no existing pattern to follow, or an explicit request to make the interface look better | [references/design-quality.md](references/design-quality.md) and [page-patterns.md](references/page-patterns.md) |
 | Dev server | Starting, configuring, or repairing a local development server | [references/dev-server.md](references/dev-server.md) |
 | Browser evidence | Persistent screenshots, state sequences, DOM evidence, or GIFs the user asked for | [references/browser-evidence.md](references/browser-evidence.md) |
+
+An established design system or adjacent page always outranks the defaults in `design-quality.md`. Before handing back any UI or new-design change, check it against [references/accessibility.md](references/accessibility.md).
 
 ## Shared Boundaries
 
