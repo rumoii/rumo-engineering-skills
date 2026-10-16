@@ -148,7 +148,6 @@ else echo 'Python 3 is required.' >&2; exit 1
 fi
 check_extra_names
 
-
 resolve_link_target() {
   link_path="$1"
   target=$(readlink "$link_path")

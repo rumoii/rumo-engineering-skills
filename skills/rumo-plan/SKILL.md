@@ -21,7 +21,7 @@ Unclear goals or acceptance criteria go to `rumo-clarify` first. A decision reco
 1. Inspect the real entry points, owners, tests, and repository instructions for the affected area.
 2. Write the spec in a few lines each: goal, non-goals, constraints, acceptance criteria, and open decisions with recommended answers.
 3. Break the work into tasks. Each task names the files or modules it touches, the check that proves it done, and what it depends on. Prefer thin end-to-end slices over layer-by-layer batches.
-4. Mark tasks that need separate authorization: database writes, deployments, pushes, deletions, paid services.
+4. Mark tasks that need separate authorization: commits, tags, pushes, deployments, database writes, deletions, credential changes, dependency installs, and paid services.
 5. Show the plan. When the user already authorized this scope and the plan adds no new decision, continue; otherwise wait for approval of that exact version, pausing only the tasks that depend on the open decision or authorization. A clarifying answer revises the plan; it is not approval.
 6. While implementing, stop and revise the plan when a task turns out wrong or a hidden requirement appears; do not silently drift.
 
