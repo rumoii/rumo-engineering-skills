@@ -400,6 +400,23 @@ class InstallPowerShellExtrasTests(unittest.TestCase):
         for home in self.homes.values():
             self.assertFalse(home.exists())
 
+    def test_help_prints_usage_without_changes(self) -> None:
+        for flag in ("-Help", "-h", "--help"):
+            result = self.run_installer(flag)
+
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("-Extras", result.stdout)
+            self.assertIn("List optional skills without changing anything.", result.stdout)
+            for home in self.homes.values():
+                self.assertFalse(home.exists())
+
+    def test_positional_argument_fails_without_changes(self) -> None:
+        result = self.run_installer("stray")
+
+        self.assertNotEqual(result.returncode, 0)
+        for home in self.homes.values():
+            self.assertFalse(home.exists())
+
     def test_list_extras_does_not_require_git(self) -> None:
         path = os.pathsep.join(
             entry

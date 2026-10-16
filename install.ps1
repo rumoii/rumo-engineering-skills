@@ -38,6 +38,9 @@ Print operations without changing links.
 .PARAMETER ReplaceForeignLinks
 Replace same-name links that point into another repository.
 
+.PARAMETER Help
+Print this help and exit without checking or changing anything.
+
 .EXAMPLE
 .\install.ps1 -NoPull
 
@@ -47,6 +50,8 @@ Replace same-name links that point into another repository.
 .EXAMPLE
 .\install.ps1 -NoPull -Extras rumo-diagram,rumo-frontend
 #>
+# Named parameters only: a stray word such as --help must fail instead of becoming -Repo.
+[CmdletBinding(PositionalBinding = $false)]
 param(
   [string]$Repo = $env:RUMO_SKILLS_REPO,
   [string]$ProfilesRepo = "",
@@ -59,8 +64,14 @@ param(
   [switch]$ListExtras,
   [switch]$NoPull,
   [switch]$DryRun,
-  [switch]$ReplaceForeignLinks
+  [switch]$ReplaceForeignLinks,
+  [Alias("h")][switch]$Help
 )
+
+if ($Help) {
+  Get-Help $PSCommandPath -Detailed | Out-String -Width 120 | Write-Host
+  exit 0
+}
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
