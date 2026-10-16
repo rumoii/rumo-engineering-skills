@@ -45,7 +45,7 @@ Installed by default.
 | `rumo-remote-ops` | Remote Linux queries and changes, service deployment, backup and restore, and artifact deployment |
 | `rumo-prose` | Comments, errors, logs, UI strings, docs, and agent-facing files that keep every fact |
 | `rumo-handoff` | A self-contained handoff document for another session or client (manual only) |
-| `rumo-project-profile` | Resolve and validate private project profiles for other skills (manual only) |
+| `rumo-project-profile` | Resolve and validate private project profiles for other skills |
 
 ## Optional Extras
 

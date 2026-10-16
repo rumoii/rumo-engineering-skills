@@ -45,7 +45,7 @@ clarify -> plan -> test -> verify -> review -> git-commit
 | `rumo-remote-ops` | 远程 Linux 查询与变更、服务部署、备份恢复和制品部署 |
 | `rumo-prose` | 保留全部事实的注释、报错、日志、界面文案、文档与 agent 文件 |
 | `rumo-handoff` | 生成自包含的交接文档，便于其他会话或客户端接力(仅手动调用) |
-| `rumo-project-profile` | 为其他技能解析和校验私有项目 Profile(仅手动调用) |
+| `rumo-project-profile` | 为其他技能解析和校验私有项目 Profile |
 
 ## 可选扩展
 

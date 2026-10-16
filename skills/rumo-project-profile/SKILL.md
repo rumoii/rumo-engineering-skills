@@ -1,7 +1,6 @@
 ---
 name: rumo-project-profile
-description: Resolve and validate optional private project profiles for other Rumo skills. Use explicitly when a workflow needs project-specific repository, frontend, backend, runtime, data, document, or credential configuration.
-disable-model-invocation: true
+description: Resolve and validate optional private project profiles for other Rumo skills. Use when a workflow needs project-specific repository, frontend, backend, runtime, data, document, or credential configuration that the current repository does not provide, or when creating or checking a profile. Do not use for ordinary repository discovery.
 ---
 
 # Project Profile

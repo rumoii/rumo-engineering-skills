@@ -87,7 +87,7 @@ $rumo-review 检查当前分支的未提交修改。
 $rumo-verify 我改完了，帮我确认可以提交。
 ```
 
-`rumo-handoff`、`rumo-project-profile`，以及扩展里的 `rumo-daily-report`、`rumo-linux-inspect`、`rumo-imagegen` 是仅手动调用的技能：不会被客户端自动选用，使用时必须点名，例如 `$rumo-handoff 整理交接文档`。
+`rumo-handoff`，以及扩展里的 `rumo-daily-report`、`rumo-linux-inspect`、`rumo-imagegen` 是仅手动调用的技能：不会被客户端自动选用，使用时必须点名，例如 `$rumo-handoff 整理交接文档`。
 
 ## 4. 项目 Profile(可选)
 

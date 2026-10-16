@@ -23,7 +23,7 @@ Every skill uses the `rumo-` namespace and stays independent of any company, pro
 | `rumo-remote-ops` | Remote Linux queries and changes, service deployment, backup and restore, artifact deployment |
 | `rumo-prose` | Prose quality for code, diagnostics, docs, UI strings, and agent-facing files |
 | `rumo-handoff` | Self-contained handoff documents (manual only) |
-| `rumo-project-profile` | Private project profile resolution and validation (manual only) |
+| `rumo-project-profile` | Private project profile resolution and validation |
 
 ## Extras
 
