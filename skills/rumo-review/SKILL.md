@@ -1,0 +1,65 @@
+---
+name: rumo-review
+description: Use for a read-only code review of uncommitted changes, a branch diff, a commit, or a named scope; for an explicitly requested review-fix-repeat loop until no blocking findings remain; or for an explicitly requested simplification audit of removable complexity. Report correctness, security, lifecycle, compatibility, operations, and test risks with file-and-line evidence. Do not use to run pre-handoff checks; use rumo-verify instead.
+---
+
+# Rumo Review
+
+Lead with actionable findings, not a tour of the diff.
+
+## Modes
+
+| Mode | Trigger | Edits code |
+| --- | --- | --- |
+| Review (default) | Any review request | No |
+| Loop | The user explicitly asks to review, fix, and repeat; read [references/loop.md](references/loop.md) | Yes, must-fix items only |
+| Simplify | The user explicitly asks for simplification or removable-complexity findings; read [references/simplify.md](references/simplify.md) | No |
+
+## Settle The Target
+
+1. Read the repository guidance and the nearest module instructions.
+2. Pick one target: uncommitted changes, a diff against a confirmed base, a commit, or the user's scope.
+3. Record repository, branch, HEAD, worktree status, and, for branch comparisons, the base and merge base.
+4. Inspect committed, staged, unstaged, and untracked changes separately; a three-dot diff hides dirty layers.
+5. Review each repository on its own.
+
+Do not guess the base from branch names. Use the request, repository guidance, upstream tracking, or merge-request metadata, and ask only when none of them settles it.
+
+## What To Look For
+
+Read enough surrounding code and current consumers to judge, in this order:
+
+1. **Correctness:** wrong conditions, missing states, broken error paths, stale data, behavior that contradicts the request.
+2. **Security and data safety:** authorization, ownership and tenant isolation, secret exposure, injection, unsafe file or process handling, destructive migrations, missing rollback.
+3. **Lifecycle and concurrency:** races, duplicate work, cancellation, retry, timeout, resource ownership, disposal order, partial failure.
+4. **Cross-layer contracts:** request and response shapes, DTOs, schema and queries, messages and cache state, generated or deployed artifacts.
+5. **Compatibility and operations:** supported branches, existing data, upgrades, configuration precedence, platforms, topology, observability.
+6. **Test quality:** tests must exercise the affected production route; a mock-only assertion, compile, HTTP 200, or coverage number is not proof.
+
+## Evidence Standard
+
+- Trace both sides of every changed interface and every production consumer in scope.
+- Keep source behavior, built artifacts, deployed state, and field acceptance apart.
+- Treat tests and comments as evidence to weigh, not authority over production behavior.
+- Report only issues this change introduces or materially exposes; old debt is out of scope.
+- Check that a suggested fix direction is feasible, but do not edit code in review mode.
+
+## Report
+
+Findings first, by severity:
+
+- **P0:** immediate security, data-loss, or system-wide failure risk.
+- **P1:** required behavior broken or a likely production failure.
+- **P2:** material correctness, compatibility, lifecycle, or test gap.
+- **P3:** non-blocking clarity or maintainability; include only when useful.
+
+Each finding names the repository, file and line, the consequence, the triggering condition, and the evidence. Then open questions and assumptions, then a short scope and verification note. If nothing actionable turned up, say so and name the runtime, platform, deployment, or field boundaries that remain untested.
+
+## Shortcuts And Rebuttals
+
+| Tempting shortcut | Why it fails |
+| --- | --- |
+| "The tests pass, so it's fine." | Check whether the tests touch the changed route at all. |
+| "I'll mention this old problem too." | Findings outside the change bury the ones that matter. |
+| "Probably main is the base." | A wrong base reviews the wrong diff; confirm it. |
+| "Quick fix while reviewing." | Review mode is read-only unless the user asked for the loop. |

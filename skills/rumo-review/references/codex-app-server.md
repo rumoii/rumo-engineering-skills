@@ -1,6 +1,6 @@
 # Codex App Server
 
-This file applies only to environments where `codex app-server` is available. Otherwise, use the client-neutral [Review Backends](../SKILL.md#review-backends) in the main skill.
+This file applies only to environments where `codex app-server` is available. Otherwise, use the client-neutral [review backends](loop.md#review-backends) in the loop reference.
 
 ## Codex App Server Script
 

@@ -7,7 +7,7 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | `rumo-backup-restore` | Backup coverage, consistency, protected storage, and layered recovery verification |
 | `rumo-debug` | Evidence-led root-cause investigation across source and runtime boundaries |
 | `rumo-verify` | Exact change-scope inspection and smallest-sufficient verification |
-| `rumo-code-review` | One-pass read-only engineering review |
+| `rumo-review` | One-pass read-only engineering review |
 | `rumo-coding-guidelines` | Minimal, path-grounded, assumption-aware, verified code changes |
 | `rumo-http-api` | Compatible, secure, retry-safe, bounded, and operable HTTP/JSON API design and review |
 | `rumo-daily-report` | Cross-session incremental Chinese daily reports in a date-based TXT file (manual only) |
@@ -16,7 +16,6 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | `rumo-document-writing` | Formal delivery DOCX authoring, revision, formatting, and quality control |
 | `rumo-plan` | Durable engineering decisions, alternatives, compatibility, and rollback |
 | `rumo-diagram` | Mermaid flowcharts and confirmed topology diagrams with preview and export (optional extra) |
-| `rumo-find-simplifications` | Evidence-led discovery of removable or consolidatable complexity |
 | `rumo-frontend` | Page development, local dev-server troubleshooting, and requested browser evidence (optional extra) |
 | `rumo-git-commit` | Commit, branch landing, history cleanup, release, and push workflow |
 | `rumo-imagegen` | One-image generation through a configured OpenAI-compatible endpoint (manual only) |
@@ -32,4 +31,3 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | `rumo-clarify` | lightweight requirement clarification: one round of questions with recommended answers, critical decisions never defaulted |
 | `rumo-prose` | Prose quality for comments, diagnostics, logs, docs, prompts, and UI strings |
 | `rumo-remote-ops-safety` | Lightweight remote Linux queries, bounded changes, access protection, and execution reconciliation |
-| `rumo-review-fix-loop` | Iterative review, blocking-finding repair, verification, and re-review |

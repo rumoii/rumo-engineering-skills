@@ -24,7 +24,7 @@ def main() -> int:
         (sys.executable, "extras/rumo-daily-report/scripts/test_daily_report.py"),
         (sys.executable, "skills/rumo-insight/scripts/test_analyze_sessions.py"),
         (sys.executable, "skills/rumo-insight/scripts/test_summarize_evidence.py"),
-        (sys.executable, "skills/rumo-review-fix-loop/scripts/test_app_server_review.py"),
+        (sys.executable, "skills/rumo-review/scripts/test_app_server_review.py"),
         (sys.executable, "extras/rumo-linux-inspect/scripts/remote_memory_inspection.py", "--dry-run", "--host", "<host>"),
     )
     for command in commands:

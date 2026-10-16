@@ -10,10 +10,16 @@ from scripts.verify_skills import parse_frontmatter
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BOUNDARIES = (
     (
-        "rumo-code-review",
-        "rumo-review-fix-loop",
-        r"(?:iterative|repeated).*review.*(?:fix|repair)",
-        r"(?:one-pass|read-only).*review",
+        "rumo-review",
+        "rumo-verify",
+        r"(?:pre-handoff|before handoff).*checks|checks.*(?:handoff|ready)",
+        r"code review|review",
+    ),
+    (
+        "rumo-plan",
+        "rumo-clarify",
+        r"unclear.*(?:goal|requirement)|(?:goal|requirement).*unclear",
+        r"spec|task breakdown|plan",
     ),
     (
         "rumo-test",
@@ -73,17 +79,17 @@ class SkillBoundariesTest(unittest.TestCase):
                 )
 
     def test_accepts_counterpart_or_pair_specific_exclusion(self) -> None:
-        self.assertTrue(has_boundary("Use rumo-review-fix-loop instead.", "rumo-review-fix-loop", "unused"))
-        self.assertTrue(has_boundary("Do not use for iterative review-and-fix loops.", "rumo-review-fix-loop", BOUNDARIES[0][2]))
-        self.assertTrue(has_boundary("Use exact diff verification instead.", "rumo-verify", BOUNDARIES[1][2]))
+        self.assertTrue(has_boundary("Use rumo-verify instead.", "rumo-verify", "unused"))
+        self.assertTrue(has_boundary("Do not use to run pre-handoff checks.", "rumo-verify", BOUNDARIES[0][2]))
+        self.assertTrue(has_boundary("Use exact diff verification instead.", "rumo-verify", BOUNDARIES[2][2]))
 
     def test_rejects_missing_boundary_or_unrelated_exclusion(self) -> None:
         for description in (
             "Use for ordinary code reviews.",
-            "Do not use for deleting files. Supports iterative review-and-fix loops.",
+            "Do not use for deleting files. Supports pre-handoff checks.",
         ):
             with self.subTest(description=description):
-                self.assertFalse(has_boundary(description, "rumo-review-fix-loop", BOUNDARIES[0][2]))
+                self.assertFalse(has_boundary(description, "rumo-verify", BOUNDARIES[0][2]))
 
 
 if __name__ == "__main__":

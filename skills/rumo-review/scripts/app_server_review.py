@@ -44,7 +44,7 @@ def format_duration(seconds: float) -> str:
 
 
 def print_progress(message: str) -> None:
-    print(f"[rumo-review-fix-loop] {message}", file=sys.stderr, flush=True)
+    print(f"[rumo-review] {message}", file=sys.stderr, flush=True)
 
 
 def extract_visible_text(value: Any, *, parent_key: str = "") -> list[str]:
@@ -93,7 +93,7 @@ def print_intermediate_text(item_type: str, text: str, max_chars: int) -> None:
     print_progress(f"intermediate visible text item={item_type or '-'} chars={len(text)}")
     print(truncated, file=sys.stderr, flush=True)
     if len(text) > max_chars:
-        print(f"[rumo-review-fix-loop] intermediate text truncated at {max_chars} chars", file=sys.stderr, flush=True)
+        print(f"[rumo-review] intermediate text truncated at {max_chars} chars", file=sys.stderr, flush=True)
 
 
 @dataclass
@@ -570,7 +570,7 @@ def main() -> int:
         client.request(
             "initialize",
             {
-                "clientInfo": {"name": "rumo-review-fix-loop", "version": "1.0.0", "title": "Rumo Review Fix Loop"},
+                "clientInfo": {"name": "rumo-review", "version": "1.0.0", "title": "Rumo Review"},
                 "capabilities": {
                     "experimentalApi": False,
                     "requestAttestation": False,
@@ -646,7 +646,7 @@ def main() -> int:
             )
         else:
             print(review_text)
-            print(f"\n[rumo-review-fix-loop] blocking finding detected: {'yes' if has_blocking else 'no'}", file=sys.stderr)
+            print(f"\n[rumo-review] blocking finding detected: {'yes' if has_blocking else 'no'}", file=sys.stderr)
         return 2 if has_blocking else 0
     except ReviewWaitError as exc:
         if args.json:

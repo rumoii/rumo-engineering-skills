@@ -64,7 +64,7 @@ Windows 没有 `py` 启动器时，把 `py -3` 换成 `python`。下文的 Pytho
 ## 3. 不需要项目配置时，直接使用技能
 
 Profile 不是使用技能的前置条件。可以直接在客户端中提出任务。显式点名技能时，
-Codex 用 `$rumo-code-review`，Claude Code 用 `/rumo-code-review`；也可以只用自然语言描述，
+Codex 用 `$rumo-review`，Claude Code 用 `/rumo-review`；也可以只用自然语言描述，
 由客户端根据技能描述自动选择。
 
 `rumo-daily-report`、`rumo-insight`、`rumo-imagegen`、`rumo-linux-inspect`、
@@ -74,7 +74,7 @@ Codex 用 `$rumo-code-review`，Claude Code 用 `/rumo-code-review`；也可以�
 下面的示例按 Codex 写法：
 
 ```text
-请使用 $rumo-code-review，检查当前分支的未提交修改。
+请使用 $rumo-review，检查当前分支的未提交修改。
 ```
 
 ```text

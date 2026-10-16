@@ -5,7 +5,7 @@ description: Use when implementing, fixing, or reviewing asynchronous or long-li
 
 # Rumo Lifecycle Safety
 
-Make every long-lived operation answer who owns it, when it becomes visible, how it stops, and what remains after failure. Apply `rumo-coding-guidelines` before changing code and use `rumo-code-review` for a review-only request.
+Make every long-lived operation answer who owns it, when it becomes visible, how it stops, and what remains after failure. Apply `rumo-coding-guidelines` before changing code and use `rumo-review` for a review-only request.
 
 ## Establish Authority
 
