@@ -31,6 +31,11 @@ Tests are evidence for claims. A large suite, a coverage number, an HTTP 200, or
 4. Refactor only while green, without touching behavioral assertions. An assertion change that alters accepted behavior goes back to step 1.
 5. Never edit the implementation and its assertion together to manufacture a pass.
 
+Example, for a bug where refunds can exceed the amount paid:
+
+- Strong: `refund_rejects_amount_above_paid_total` creates a paid order through the real service, requests a larger refund, and asserts both the rejection error and that no refund row was stored. It failed before the fix with a stored refund.
+- Weak: a test that mocks `issue_refund` and asserts it was called. It passed before the fix, so it proves nothing about the bug.
+
 ## High Assurance
 
 Read [references/high-assurance.md](references/high-assurance.md) in full before starting. In short: an approved spec before any implementation, test-first for every behavior, one entry point that reruns every selected check from clean inputs, and a final evidence report from a single fresh run after the last edit. Spec approval authorizes implementation and local checks only; commits, tags, pushes, deployments, database writes, deletions, credential changes, dependency installs, paid services, and any other separately controlled action keep their own approvals.

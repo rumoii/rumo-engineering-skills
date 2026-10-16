@@ -36,6 +36,25 @@ When the user asks to dig in, go deeper, or keep asking, switch to rounds: each 
 
 Write an understanding summary of at most ten lines: goal, in scope and out of scope, acceptance criteria, assumptions, and blockers. Then implement directly for a small task, or move to `rumo-plan` for multi-step or cross-module work.
 
+## Example
+
+Request: "Add an export feature to the order list."
+
+Good round, after reading the code:
+
+```text
+Understanding: an export button on the order list page.
+Found: the customer list already exports CSV through the shared export helper.
+
+1. Format? Recommended: CSV, like the customer list. Excel would add a dependency.
+2. Which rows? Recommended: the current filter result. All orders would need a background job.
+3. Who may export? Recommended: anyone who can view the list. Restricting it adds a permission.
+
+Reply "ok" to accept all three, or answer by number, e.g. "2: all orders".
+```
+
+Weak round: "Which framework is the frontend? Where is the order list? CSV or Excel or both? What file name? Which columns? Which date format? ..." It asks facts the code answers, offers no recommendations, and buries the one decision that changes the design.
+
 ## Authority
 
 Answers to clarifying questions do not widen what the agent may do. Authorization the user already gave explicitly is not asked again.

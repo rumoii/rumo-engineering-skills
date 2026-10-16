@@ -37,6 +37,16 @@ Run the checks and read the output; an exit code alone is not the whole story. D
 
 List the verified scope, each command with its actual result, skipped or unavailable checks and why, evidence boundaries (source versus artifact versus deployment versus field), and whether later edits invalidated earlier results.
 
+```text
+Scope: branch fix/refund-limit vs main, 2 commits, no uncommitted files.
+- pytest tests/orders/test_refund.py: 7 passed
+- ruff check services/refund.py: no issues
+- git diff --check: clean
+Not run: refund flow against the test environment (needs a deployment the user has not approved).
+```
+
+A report that says "all tests pass, should be good to merge" names no scope, no commands, and no gaps; it is not evidence.
+
 ## Stop Conditions
 
 - A required check cannot run because credentials, software, platform, or access is missing: report the missing boundary; never mark it passed.

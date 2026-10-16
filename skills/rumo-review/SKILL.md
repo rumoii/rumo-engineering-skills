@@ -57,6 +57,17 @@ Findings first, by severity:
 
 Each finding names the repository, file and line, the consequence, the triggering condition, and the evidence. Then open questions and assumptions, then a short scope and verification note. If nothing actionable turned up, say so and name the runtime, platform, deployment, or field boundaries that remain untested.
 
+A finding that can be acted on:
+
+```text
+P1 services/refund.py:88 - the refund amount comes from the request body, not the stored order.
+Trigger: a client sends an amount above what was paid.
+Consequence: refunds larger than the payment succeed.
+Evidence: line 88 passes request.amount to issue_refund; order.paid_total (line 71) is never compared.
+```
+
+Not a finding: "Consider more error handling; the code could be cleaner; tests look fine." It names no location, trigger, or consequence, so nobody can verify or fix it.
+
 ## Shortcuts And Rebuttals
 
 | Tempting shortcut | Why it fails |
