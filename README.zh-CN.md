@@ -95,6 +95,18 @@ cd rumo-engineering-skills
 
 可选环境变量：`RUMO_SKILLS_REPO`(固定的本地仓库)、`RUMO_SKILLS_REMOTE`(克隆地址)、`RUMO_SKILL_PROFILES_REPO`(私有 Profile 仓库)、`RUMO_PROJECT_PROFILE`(显式指定 Profile)，以及 `CODEX_HOME`、`CLAUDE_HOME`、`AGENTS_HOME`(自定义客户端目录)。安装时加 `-ProfilesRepo <path>` 或 `--profiles-repo <path>` 可把 Profile 仓库路径保存到 `~/.rumo-engineering-skills/config.json`。
 
+### Claude Code 插件
+
+只用 Claude Code 时，也可以不 clone，直接把默认技能装成插件。在会话中执行(需要 Claude Code 2.1.275 或更高版本)：
+
+```text
+/plugin install rumo-engineering-skills --marketplace rumoii/rumo-engineering-skills
+```
+
+在终端里用 `claude plugin install rumo-engineering-skills --marketplace rumoii/rumo-engineering-skills`。插件里的技能名带前缀，例如 `rumo-engineering-skills:rumo-clarify`。插件只对 Claude Code 生效，不含扩展；其他客户端仍用安装器。
+
+同一台机器只选一种方式。安装器已经把技能链接进 `~/.claude/skills` 时再装插件，每个技能都会出现两次。更新插件：先执行 `claude plugin marketplace update rumo-engineering-skills`，再执行 `claude plugin update rumo-engineering-skills@rumo-engineering-skills`，然后开新会话。
+
 ## 项目 Profile
 
 Profile 是可选的。仓库名称、组件清单、主机、服务名、安装目录和凭据应放在本地 Profile 或私有 Profile 仓库中，绝不放进本仓库。

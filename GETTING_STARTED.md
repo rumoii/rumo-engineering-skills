@@ -35,6 +35,8 @@ cd /path/to/rumo-engineering-skills
 - 同名链接如果来自另一个仓库，安装器会先停下；确认要切换来源后再加 `-ReplaceForeignLinks` / `--replace-foreign-links`。
 - 安装完成后重新开一个客户端会话，让技能列表重新加载。
 
+只用 Claude Code 的话，也可以不跑安装器，改为把默认技能装成插件，见 README 的“Claude Code 插件”一节。两种方式只能选一种，否则技能会重复出现。
+
 ### 可选扩展
 
 图表、Word 文档、离线交付审计、日报、Linux 巡检、图片生成这几类技能默认不装，需要时再加：

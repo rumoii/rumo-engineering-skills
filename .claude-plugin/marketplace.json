@@ -1,0 +1,13 @@
+{
+  "name": "rumo-engineering-skills",
+  "description": "Rumo engineering skills for Claude Code.",
+  "owner": {
+    "name": "rumoii"
+  },
+  "plugins": [
+    {
+      "name": "rumo-engineering-skills",
+      "source": "."
+    }
+  ]
+}

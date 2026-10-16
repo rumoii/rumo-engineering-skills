@@ -95,6 +95,18 @@ Installed extras stay installed when you rerun the installer without options.
 
 Optional environment variables: `RUMO_SKILLS_REPO` (stable checkout), `RUMO_SKILLS_REMOTE` (clone URL), `RUMO_SKILL_PROFILES_REPO` (private profiles checkout), `RUMO_PROJECT_PROFILE` (explicit profile ID), and `CODEX_HOME`, `CLAUDE_HOME`, `AGENTS_HOME` (custom client homes). Pass `-ProfilesRepo <path>` or `--profiles-repo <path>` to persist a profiles checkout in `~/.rumo-engineering-skills/config.json`.
 
+### Claude Code Plugin
+
+Claude Code users can install the default skills as a plugin instead, without a clone. In a session (Claude Code 2.1.275 or later):
+
+```text
+/plugin install rumo-engineering-skills --marketplace rumoii/rumo-engineering-skills
+```
+
+From a shell, use `claude plugin install rumo-engineering-skills --marketplace rumoii/rumo-engineering-skills`. Plugin skills carry a prefix, such as `rumo-engineering-skills:rumo-clarify`. The plugin covers Claude Code only and has no extras; other clients use the installer.
+
+Choose one method per machine. If the installer already linked skills into `~/.claude/skills`, adding the plugin loads every skill twice. To update the plugin, run `claude plugin marketplace update rumo-engineering-skills`, then `claude plugin update rumo-engineering-skills@rumo-engineering-skills`, and start a new session.
+
 ## Project Profiles
 
 Profiles are optional. Repository names, component inventories, hosts, service names, install roots, and credentials belong in a local profile or a private profiles checkout, never in this repository.
