@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Clarify"
+  short_description: "需求不清时只问一轮带推荐答案的关键问题，关键决策不明则暂停"
+  default_prompt: "Use $rumo-clarify to settle the goal, scope, and acceptance criteria of this request with at most one round of questions."

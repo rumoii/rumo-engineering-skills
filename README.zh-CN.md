@@ -43,6 +43,7 @@ cd rumo-engineering-skills
 ## Skill 清单
 
 - `rumo-project-profile`: 为其他 Skill 解析和校验私密项目配置(仅手动调用)。
+- `rumo-clarify`: 轻量需求澄清：只问一轮带推荐答案的问题，关键决策不明则暂停。
 - `rumo-bug-root-cause`: 基于证据排查源码、运行时、数据、中间件、部署和客户端问题。
 - `rumo-coding-guidelines`: 约束代码修改保持范围明确、改动最小并经过验证。
 - `rumo-http-api`: 设计和审查兼容、安全、可重试、成本受控且可运维的 HTTP/JSON 接口。

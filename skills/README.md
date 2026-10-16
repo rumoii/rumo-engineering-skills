@@ -29,6 +29,7 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | `rumo-offline-delivery-audit` | Offline artifact integrity, provenance, installation, rollback, and acceptance limits |
 | `rumo-old-coder` | Evidence-first high-assurance development through an approved specification and reproducible gauntlet |
 | `rumo-project-profile` | Private project profile resolution and validation for other skills (manual only) |
+| `rumo-clarify` | lightweight requirement clarification: one round of questions with recommended answers, critical decisions never defaulted |
 | `rumo-prose` | Prose quality for comments, diagnostics, logs, docs, prompts, and UI strings |
 | `rumo-remote-ops-safety` | Lightweight remote Linux queries, bounded changes, access protection, and execution reconciliation |
 | `rumo-repository-gates` | Deterministic repository-owned CI and static gates |
