@@ -16,7 +16,7 @@ Choose the mode that matches the request and read its reference before acting.
 ## Shared Boundaries
 
 - Confirm the real repository, package manager, route, and intended backend before editing or starting anything. Use `rumo-project-profile` when project-specific commands, proxy rules, or design references exist.
-- Never point a development server or browser at an environment whose purpose is unclear. Operate only on localhost or an environment the user identified as development or test; production stays read-only unless the user authorizes the exact action.
+- Never point a development server or browser at an environment whose purpose is unclear. By default operate only on localhost or an environment the user identified as development or test. Production access needs the user's explicit go-ahead and stays read-only unless the user authorizes the exact change.
 - Preserve routes, APIs, permissions, keyboard behavior, and loading, empty, error, disabled, and validation states.
 - Use an isolated automation browser profile by default. Let the user type passwords and one-time codes; never extract credentials from a browser profile.
 - Keep evidence capture local. Committing, uploading, or publishing evidence is a separate action that needs explicit approval.

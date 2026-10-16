@@ -44,6 +44,7 @@ Installed by default.
 | `rumo-filesystem-safety` | Deletion and bulk cleanup scaled to the blast radius |
 | `rumo-remote-ops` | Remote Linux queries and changes, service deployment, backup and restore, and artifact deployment |
 | `rumo-prose` | Comments, errors, logs, UI strings, docs, and agent-facing files that keep every fact |
+| `rumo-frontend` | Frontend page work, local dev-server troubleshooting, and requested browser evidence |
 | `rumo-handoff` | A self-contained handoff document for another session or client (manual only) |
 | `rumo-project-profile` | Resolve and validate private project profiles for other skills |
 
@@ -55,7 +56,6 @@ Not installed by default. Add them with `-Extras` (PowerShell) or `--extras` (sh
 | --- | --- |
 | `rumo-diagram` | Mermaid business flowcharts and confirmed engineering topology diagrams with preview and export |
 | `rumo-document-writing` | Formal Word delivery documents |
-| `rumo-frontend` | Frontend page work, local dev-server troubleshooting, and requested browser evidence |
 | `rumo-offline-delivery-audit` | Offline package integrity, provenance, installation, rollback, and acceptance limits |
 | `rumo-daily-report` | Incremental Chinese daily reports in a dated text file (manual only) |
 | `rumo-linux-inspect` | Read-only Linux hardware inventory or memory inspection (manual only) |
@@ -81,14 +81,14 @@ Manage extras:
 
 ```powershell
 .\install.ps1 -NoPull -ListExtras
-.\install.ps1 -NoPull -Extras rumo-diagram,rumo-frontend
-.\install.ps1 -NoPull -RemoveExtras rumo-frontend
+.\install.ps1 -NoPull -Extras rumo-diagram,rumo-document-writing
+.\install.ps1 -NoPull -RemoveExtras rumo-document-writing
 ```
 
 ```bash
 ./install.sh --no-pull --list-extras
-./install.sh --no-pull --extras rumo-diagram,rumo-frontend
-./install.sh --no-pull --remove-extras rumo-frontend
+./install.sh --no-pull --extras rumo-diagram,rumo-document-writing
+./install.sh --no-pull --remove-extras rumo-document-writing
 ```
 
 Installed extras stay installed when you rerun the installer without options.

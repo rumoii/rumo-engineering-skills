@@ -22,6 +22,7 @@ Every skill uses the `rumo-` namespace and stays independent of any company, pro
 | `rumo-filesystem-safety` | Deletion and bulk cleanup scaled to the blast radius |
 | `rumo-remote-ops` | Remote Linux queries and changes, service deployment, backup and restore, artifact deployment |
 | `rumo-prose` | Prose quality for code, diagnostics, docs, UI strings, and agent-facing files |
+| `rumo-frontend` | Frontend page work, dev-server troubleshooting, and requested browser evidence |
 | `rumo-handoff` | Self-contained handoff documents (manual only) |
 | `rumo-project-profile` | Private project profile resolution and validation |
 
@@ -31,7 +32,6 @@ Every skill uses the `rumo-` namespace and stays independent of any company, pro
 | --- | --- |
 | `rumo-diagram` | Mermaid flowcharts and confirmed topology diagrams with preview and export |
 | `rumo-document-writing` | Formal Word delivery documents |
-| `rumo-frontend` | Frontend page work, dev-server troubleshooting, and requested browser evidence |
 | `rumo-offline-delivery-audit` | Offline package integrity, provenance, installation, rollback, and acceptance limits |
 | `rumo-daily-report` | Incremental Chinese daily reports (manual only) |
 | `rumo-linux-inspect` | Read-only Linux hardware inventory or memory inspection (manual only) |

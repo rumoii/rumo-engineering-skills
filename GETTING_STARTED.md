@@ -37,7 +37,7 @@ cd /path/to/rumo-engineering-skills
 
 ### 可选扩展
 
-图表、Word 文档、前端、离线交付审计、日报、Linux 巡检、图片生成这几类技能默认不装，需要时再加：
+图表、Word 文档、离线交付审计、日报、Linux 巡检、图片生成这几类技能默认不装，需要时再加：
 
 ```powershell
 .\install.ps1 -NoPull -ListExtras

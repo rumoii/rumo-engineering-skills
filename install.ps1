@@ -21,7 +21,7 @@ Shared agent skills home directory. Defaults to AGENTS_HOME, then ~/.agents.
 Clone URL used when the repository is absent. Defaults to RUMO_SKILLS_REMOTE.
 
 .PARAMETER Extras
-Also install these optional skills, for example rumo-diagram,rumo-frontend.
+Also install these optional skills, for example rumo-diagram,rumo-document-writing.
 
 .PARAMETER RemoveExtras
 Remove these optional skills.
@@ -48,7 +48,7 @@ Print this help and exit without checking or changing anything.
 .\install.ps1 -NoPull -ListExtras
 
 .EXAMPLE
-.\install.ps1 -NoPull -Extras rumo-diagram,rumo-frontend
+.\install.ps1 -NoPull -Extras rumo-diagram,rumo-document-writing
 #>
 # Named parameters only: a stray word such as --help must fail instead of becoming -Repo.
 [CmdletBinding(PositionalBinding = $false)]

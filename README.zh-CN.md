@@ -44,6 +44,7 @@ clarify -> plan -> test -> verify -> review -> git-commit
 | `rumo-filesystem-safety` | 按影响范围分级处理删除与批量清理 |
 | `rumo-remote-ops` | 远程 Linux 查询与变更、服务部署、备份恢复和制品部署 |
 | `rumo-prose` | 保留全部事实的注释、报错、日志、界面文案、文档与 agent 文件 |
+| `rumo-frontend` | 前端页面开发、本地开发服务排障与按需采集浏览器证据 |
 | `rumo-handoff` | 生成自包含的交接文档，便于其他会话或客户端接力(仅手动调用) |
 | `rumo-project-profile` | 为其他技能解析和校验私有项目 Profile |
 
@@ -55,7 +56,6 @@ clarify -> plan -> test -> verify -> review -> git-commit
 | --- | --- |
 | `rumo-diagram` | Mermaid 业务流程图与经确认的工程拓扑图，含预览与导出 |
 | `rumo-document-writing` | 正式的 Word 交付文档 |
-| `rumo-frontend` | 前端页面开发、本地开发服务排障与按需采集浏览器证据 |
 | `rumo-offline-delivery-audit` | 离线交付包的完整性、溯源、安装、回滚与验收边界 |
 | `rumo-daily-report` | 按日期文本文件增量生成中文日报(仅手动调用) |
 | `rumo-linux-inspect` | 只读采集 Linux 硬件配置或巡检内存(仅手动调用) |
@@ -81,14 +81,14 @@ cd rumo-engineering-skills
 
 ```powershell
 .\install.ps1 -NoPull -ListExtras
-.\install.ps1 -NoPull -Extras rumo-diagram,rumo-frontend
-.\install.ps1 -NoPull -RemoveExtras rumo-frontend
+.\install.ps1 -NoPull -Extras rumo-diagram,rumo-document-writing
+.\install.ps1 -NoPull -RemoveExtras rumo-document-writing
 ```
 
 ```bash
 ./install.sh --no-pull --list-extras
-./install.sh --no-pull --extras rumo-diagram,rumo-frontend
-./install.sh --no-pull --remove-extras rumo-frontend
+./install.sh --no-pull --extras rumo-diagram,rumo-document-writing
+./install.sh --no-pull --remove-extras rumo-document-writing
 ```
 
 已安装的扩展在不带参数重跑安装器时会保留。
