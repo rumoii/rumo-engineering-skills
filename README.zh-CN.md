@@ -16,7 +16,7 @@
 | 审查 | 对当前未提交修改进行一次审查，保持文件不变。 | `$rumo-review 审查当前未提交修改，不修改文件。` | `/rumo-review 审查当前未提交修改，不修改文件。` |
 | 实现 | 以最小必要改动实现当前需求，并完成针对性验证。 | `$rumo-coding-guidelines 实现当前需求，保持最小必要改动并完成针对性验证。` | `/rumo-coding-guidelines 实现当前需求，保持最小必要改动并完成针对性验证。` |
 | 验证 | 核对当前准确变更范围，并报告实际运行的检查。 | `$rumo-verify 验证当前变更，并报告实际运行的检查。` | `/rumo-verify 验证当前变更，并报告实际运行的检查。` |
-| 部署 | 使用选定 Profile，为现有开发或测试环境规划有边界的制品部署。 | `$rumo-incremental-deploy 使用选定 Profile，规划向现有开发或测试环境部署制品，不执行部署。` | `/rumo-incremental-deploy 使用选定 Profile，规划向现有开发或测试环境部署制品，不执行部署。` |
+| 部署 | 使用选定 Profile，为现有开发或测试环境规划有边界的制品部署。 | `$rumo-remote-ops 使用选定 Profile，规划向现有开发或测试环境部署制品，不执行部署。` | `/rumo-remote-ops 使用选定 Profile，规划向现有开发或测试环境部署制品，不执行部署。` |
 
 ## 快速开始
 
@@ -58,10 +58,7 @@ cd rumo-engineering-skills
 - `rumo-daily-report`: 跨会话增量生成按日期保存的中文工程日报(仅手动调用)。
 - `rumo-git-commit`: 按仓库约定完成提交、分支落地、历史整理、发布和推送。
 - `rumo-frontend`: 前端页面开发、本地开发服务排障与按需采集浏览器证据(可选扩展)。
-- `rumo-incremental-deploy`: 依据 Profile 规划并指导有边界的制品部署、备份、验证和回滚。
-- `rumo-remote-ops-safety`: 轻量执行远程 Linux 查询，保护 SSH 变更入口并核实中断后的执行状态。
-- `rumo-linux-service-deploy`: 安装、升级或卸载 Linux 服务，提前准备恢复办法并完成真实功能验收。
-- `rumo-backup-restore`: 明确备份范围、一致性与受限存储，分层验证数据及服务恢复。
+- `rumo-remote-ops`: 依据 Profile 规划并指导有边界的制品部署、备份、验证和回滚。
 - `rumo-offline-delivery-audit`: 审计离线制品完整性、来源、安装、回滚和验收边界。
 - `rumo-linux-inspect`: 只读采集 Linux 硬件配置或巡检内存与性能(可选扩展，仅手动调用)。
 - `rumo-document-writing`: 编写和检查正式 Word 交付文档。

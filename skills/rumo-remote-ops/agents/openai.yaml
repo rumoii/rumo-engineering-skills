@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Remote Ops"
+  short_description: "远程 Linux 查询与变更、服务部署、备份恢复和制品部署，先核对目标与恢复手段"
+  default_prompt: "Use $rumo-remote-ops to carry out the authorized remote task with bounded checks, access protection, recovery preparation, and verified results."

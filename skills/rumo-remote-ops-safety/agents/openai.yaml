@@ -1,4 +1,0 @@
-interface:
-  display_name: "Rumo Remote Ops Safety"
-  short_description: "远程查询保持轻量，变更前核对目标与授权，保护连接并核实中断后的执行状态"
-  default_prompt: "Use $rumo-remote-ops-safety to carry out the authorized remote task with bounded checks, access protection, and verified results."

@@ -18,7 +18,7 @@ Use the matching instruction in your agent session after installation.
 | Review | Review the current uncommitted changes once without editing files. | `$rumo-review Review the current uncommitted changes without editing files.` | `/rumo-review Review the current uncommitted changes without editing files.` |
 | Implement | Implement the requested feature with minimal changes and focused verification. | `$rumo-coding-guidelines Implement the requested feature with minimal changes and focused verification.` | `/rumo-coding-guidelines Implement the requested feature with minimal changes and focused verification.` |
 | Verify | Check the exact current change and report the checks actually run. | `$rumo-verify Verify the current change and report the checks actually run.` | `/rumo-verify Verify the current change and report the checks actually run.` |
-| Deploy | Plan bounded artifact deployment to an existing development or test environment using the selected profile. | `$rumo-incremental-deploy Use the selected profile to plan artifact deployment to the existing development or test environment without executing it.` | `/rumo-incremental-deploy Use the selected profile to plan artifact deployment to the existing development or test environment without executing it.` |
+| Deploy | Plan bounded artifact deployment to an existing development or test environment using the selected profile. | `$rumo-remote-ops Use the selected profile to plan artifact deployment to the existing development or test environment without executing it.` | `/rumo-remote-ops Use the selected profile to plan artifact deployment to the existing development or test environment without executing it.` |
 
 ## Getting started
 
@@ -67,10 +67,7 @@ skill catalog is reloaded.
 - `rumo-daily-report`: cross-session incremental Chinese daily reports in a date-based TXT file (manual only).
 - `rumo-git-commit`: commit, branch landing, history cleanup, release, and push workflow following repository conventions.
 - `rumo-frontend`: page development, local dev-server troubleshooting, and requested browser evidence (optional extra).
-- `rumo-incremental-deploy`: profile-driven bounded deployment planning and guidance with backup, verification, and rollback.
-- `rumo-remote-ops-safety`: lightweight remote Linux queries and bounded SSH changes with access protection and execution reconciliation.
-- `rumo-linux-service-deploy`: Linux service installation, upgrade, and removal with recovery preparation and functional acceptance.
-- `rumo-backup-restore`: explicit backup coverage, consistency, protected storage, and layered recovery verification.
+- `rumo-remote-ops`: profile-driven bounded deployment planning and guidance with backup, verification, and rollback.
 - `rumo-offline-delivery-audit`: offline artifact integrity, provenance, install, rollback, and acceptance limits.
 - `rumo-linux-inspect`: read-only Linux hardware inventory or memory inspection (optional extra, manual only).
 - `rumo-document-writing`: formal Word-document authoring and quality control.

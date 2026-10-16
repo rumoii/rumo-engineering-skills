@@ -1,13 +1,8 @@
----
-name: rumo-incremental-deploy
-description: Use when planning or guiding a bounded deployment of selected application artifacts to an existing development or test environment. Resolve build, artifact, destination, service, backup, restart, verification, and rollback commands from an explicit project profile.
----
-
-# Incremental Deploy
+# Artifact Deployment
 
 Incremental deployment is profile-driven. Do not infer build commands, artifact layout, remote roots, service names, or default hosts from repository names.
 
-Use [`rumo-project-profile`](../rumo-project-profile/SKILL.md) and require a `backend.json` or `runtime.json` section that identifies:
+Use [`rumo-project-profile`](../../rumo-project-profile/SKILL.md) and require a `backend.json` or `runtime.json` section that identifies:
 
 - the build command and working directory;
 - source artifacts and their owning modules;

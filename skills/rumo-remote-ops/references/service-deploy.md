@@ -1,24 +1,19 @@
----
-name: rumo-linux-service-deploy
-description: Use when installing, configuring, upgrading, or removing a Linux service managed by systemd or Docker Compose. Establish recovery before changing an existing service and verify runtime, data, exposure, and real functionality. Use rumo-incremental-deploy for bounded application-artifact deployment into an existing environment.
----
-
-# Rumo Linux Service Deploy
+# Service Deployment
 
 Deliver the requested service behavior through the existing supported deployment method. Installation or a successful start command alone is not acceptance.
 
 ## Discover And Bound The Change
 
 - Read workspace rules, the local host record, and existing deployment scripts or runbooks. Discover the OS, service manager, installation owner, current version, configuration, data locations, account, and listeners relevant to the task.
-- Use [Remote Ops Safety](../rumo-remote-ops-safety/SKILL.md) for SSH access and remote change protection; reuse established session facts rather than repeat preflight for each command.
+- Follow the session and change rules in [SKILL.md](../SKILL.md) for SSH access and remote change protection; reuse established session facts rather than repeat preflight for each command.
 - Establish the requested result and authorization, including any restart, port exposure, privilege change, migration, or data removal. Continue within that scope without repeated confirmation.
-- Reuse a working installation and deployment method. Do not install Docker, introduce a public dashboard, or replace an existing deployment stack merely because a generic example does so. Read [deployment and acceptance](references/deployment-and-acceptance.md) for the selected runtime.
+- Reuse a working installation and deployment method. Do not install Docker, introduce a public dashboard, or replace an existing deployment stack merely because a generic example does so. Read [deployment and acceptance](deployment-and-acceptance.md) for the selected runtime.
 
 ## Prepare Recovery Before Mutation
 
 Identify the before-state and concrete recovery action. First installation may be recovered by stopping and removing only the new service resources while preserving data. Upgrades need a usable old version/configuration and a decision about persistent-data compatibility.
 
-Read [upgrade, rollback, and removal](references/upgrade-rollback-and-removal.md) for an existing-service change, incompatible migration, failed deployment, or uninstall. Use [Backup Restore](../rumo-backup-restore/SKILL.md) when recovery requires configuration or persistent-data backups, and [Database Change Safety](../rumo-database-change-safety/SKILL.md) before database writes. Do not create ad hoc backup files beside application files.
+Read [upgrade, rollback, and removal](upgrade-rollback-and-removal.md) for an existing-service change, incompatible migration, failed deployment, or uninstall. Use [backup and restore](backup-restore.md) when recovery requires configuration or persistent-data backups, and [Database Change Safety](../../rumo-database-change-safety/SKILL.md) before database writes. Do not create ad hoc backup files beside application files.
 
 ## Execute And Accept
 
@@ -45,4 +40,4 @@ Before recreating/replacing a container or switching its mounts, locate and pres
 
 Report source/version, changed resources, actual checks, functional result, data and exposure boundaries, recovery readiness, and unverified behavior. Update affected facts in the designated local host record with time and evidence, without creating a duplicate inventory.
 
-For uninstall, preserve configuration, persistent data, and credentials by default. Use [Filesystem Safety](../rumo-filesystem-safety/SKILL.md) when deletion is explicitly in scope. Use [Project Profile](../rumo-project-profile/SKILL.md) only when private automation parameters are needed; existing explicit documentation can supply the facts.
+For uninstall, preserve configuration, persistent data, and credentials by default. Use [Filesystem Safety](../../rumo-filesystem-safety/SKILL.md) when deletion is explicitly in scope. Use [Project Profile](../../rumo-project-profile/SKILL.md) only when private automation parameters are needed; existing explicit documentation can supply the facts.

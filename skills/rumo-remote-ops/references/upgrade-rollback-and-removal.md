@@ -4,7 +4,7 @@
 
 Before changing an existing service, record the current usable version/image, selected configuration and overrides, persistent data locations, and a scoped recovery method. Retain the actual old artifact or ensure its verified source remains available. A tag called `previous` or a Git parent is not automatically the deployed version.
 
-Identify whether the change affects only binaries/configuration or also writes durable state. Back up replaced configuration in a designated restricted location when needed. Coordinate database backups and compatibility with [Database Change Safety](../../rumo-database-change-safety/SKILL.md), and backup coverage with [Backup Restore](../../rumo-backup-restore/SKILL.md).
+Identify whether the change affects only binaries/configuration or also writes durable state. Back up replaced configuration in a designated restricted location when needed. Coordinate database backups and compatibility with [Database Change Safety](../../rumo-database-change-safety/SKILL.md), and backup coverage with [backup and restore](backup-restore.md).
 
 For a first deployment, describe how to stop and remove newly introduced runtime resources while preserving persistent state and unrelated dependencies. An empty pre-install backup is not proof that the entire installation can be undone.
 

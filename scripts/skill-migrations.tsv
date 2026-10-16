@@ -18,3 +18,7 @@ rumo-review-fix-loop	rumo-review
 rumo-find-simplifications	rumo-review
 rumo-interface-evolution	rumo-interface
 rumo-http-api	rumo-interface
+rumo-remote-ops-safety	rumo-remote-ops
+rumo-linux-service-deploy	rumo-remote-ops
+rumo-backup-restore	rumo-remote-ops
+rumo-incremental-deploy	rumo-remote-ops

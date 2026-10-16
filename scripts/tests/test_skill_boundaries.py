@@ -28,10 +28,10 @@ BOUNDARIES = (
         r"(?:test|evidence).*planning|planning.*(?:test|evidence)",
     ),
     (
-        "rumo-incremental-deploy",
-        "rumo-linux-service-deploy",
-        r"(?:installing|configuring|removing|provisioning).*Linux service",
-        r"(?:application[- ]artifact|selected.*artifact).*deploy",
+        "rumo-remote-ops",
+        "rumo-database-change-safety",
+        r"database.*writes?",
+        r"(?:remote|SSH|host).*(?:change|query)",
     ),
     (
         "rumo-debug",

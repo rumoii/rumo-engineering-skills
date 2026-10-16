@@ -16,7 +16,7 @@ Follow the selected backup tool and application procedure. Recheck target resolu
 
 When returning an independent backup to a host, receive it in an approved temporary recovery location and verify identity, integrity, decryption, and metadata before placing selected content at the live destination. Upload permission alone does not authorize extraction over existing files, database imports, or service cutover.
 
-Use [Database Change Safety](../../rumo-database-change-safety/SKILL.md) before importing or restoring a persistent database, including one on a test host. Use [Remote Ops Safety](../../rumo-remote-ops-safety/SKILL.md) for access changes or uncertain remote execution, and [Linux Service Deploy](../../rumo-linux-service-deploy/SKILL.md) when activating the restored service is in scope.
+Use [Database Change Safety](../../rumo-database-change-safety/SKILL.md) before importing or restoring a persistent database, including one on a test host. Follow [SKILL.md](../SKILL.md) for access changes or uncertain remote execution, and [service deployment](service-deploy.md) when activating the restored service is in scope.
 
 Stop dependent steps after an error. Inspect what was written; do not retry against a broader directory or another database. Preserve source backups and the protected current state until acceptance. Any cleanup remains bounded to authorized targets.
 

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Rumo Incremental Deploy"
-  short_description: "按私有项目配置生成并指导开发或测试环境的增量部署计划"
-  default_prompt: "Use $rumo-incremental-deploy to resolve the private project profile, produce the selected artifact, and prepare a bounded development or test deployment plan with verification."

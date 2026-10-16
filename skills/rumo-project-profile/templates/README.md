@@ -12,7 +12,7 @@ exists, then fill in only the sections needed by the skills you use:
 - `documents.json`: document types, templates, and writing conventions.
 - `references/`: detailed project notes linked from the JSON files.
 
-When `rumo-incremental-deploy` needs reusable project facts, a project may add
+When `rumo-remote-ops` needs reusable project facts, a project may add
 an illustrative entry such as this to `runtime.json` and adapt the field names
 to its maintained conventions:
 
