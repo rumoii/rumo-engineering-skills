@@ -1,0 +1,6 @@
+interface:
+  display_name: "Rumo Linux Inspect"
+  short_description: "只读采集 Linux 硬件配置或巡检内存与性能风险，保留原始证据"
+  default_prompt: "Use $rumo-linux-inspect to run a read-only hardware inventory or memory inspection on the specified Linux host."
+policy:
+  allow_implicit_invocation: false

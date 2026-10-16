@@ -19,13 +19,13 @@ def main() -> int:
         return 2
 
     commands = (
-        (node, "skills/rumo-engineering-topology-diagram/scripts/test-topology-skill.mjs"),
-        (node, "skills/rumo-imagegen/scripts/generate.test.mjs"),
-        (sys.executable, "skills/rumo-daily-report/scripts/test_daily_report.py"),
+        (node, "extras/rumo-diagram/scripts/test-topology-skill.mjs"),
+        (node, "extras/rumo-imagegen/scripts/generate.test.mjs"),
+        (sys.executable, "extras/rumo-daily-report/scripts/test_daily_report.py"),
         (sys.executable, "skills/rumo-insight/scripts/test_analyze_sessions.py"),
         (sys.executable, "skills/rumo-insight/scripts/test_summarize_evidence.py"),
         (sys.executable, "skills/rumo-review-fix-loop/scripts/test_app_server_review.py"),
-        (sys.executable, "skills/rumo-remote-memory-inspection/quick_validate.py"),
+        (sys.executable, "extras/rumo-linux-inspect/scripts/remote_memory_inspection.py", "--dry-run", "--host", "<host>"),
     )
     for command in commands:
         print(f"+ {' '.join(command)}", flush=True)

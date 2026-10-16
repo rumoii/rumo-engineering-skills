@@ -8,8 +8,8 @@ import unittest
 
 SCRIPT = (
     Path(__file__).resolve().parents[2]
-    / "skills"
-    / "rumo-remote-memory-inspection"
+    / "extras"
+    / "rumo-linux-inspect"
     / "scripts"
     / "remote_memory_inspection.py"
 )

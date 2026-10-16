@@ -60,20 +60,16 @@ cd rumo-engineering-skills
 - `rumo-prose-standard`: 规范注释、诊断、日志、仓库文档、提示词和界面文字。
 - `rumo-daily-report`: 跨会话增量生成按日期保存的中文工程日报(仅手动调用)。
 - `rumo-git-commit`: 按仓库约定完成提交、分支落地、历史整理、发布和推送。
-- `rumo-frontend-dev`: 排查本地前端启动、代理、端口、证书和运行时配置。
-- `rumo-frontend-ui`: 开发前端页面、复用组件、统一布局并执行视觉质量检查。
-- `rumo-browser-evidence`: 生成可追溯的截图、页面状态、DOM 证据和可选 GIF。
+- `rumo-frontend`: 前端页面开发、本地开发服务排障与按需采集浏览器证据(可选扩展)。
 - `rumo-incremental-deploy`: 依据 Profile 规划并指导有边界的制品部署、备份、验证和回滚。
 - `rumo-remote-ops-safety`: 轻量执行远程 Linux 查询，保护 SSH 变更入口并核实中断后的执行状态。
 - `rumo-linux-service-deploy`: 安装、升级或卸载 Linux 服务，提前准备恢复办法并完成真实功能验收。
 - `rumo-backup-restore`: 明确备份范围、一致性与受限存储，分层验证数据及服务恢复。
 - `rumo-offline-delivery-audit`: 审计离线制品完整性、来源、安装、回滚和验收边界。
 - `rumo-old-coder`: 通过已批准的可执行规格和可复现验证链完成高可靠开发。
-- `rumo-remote-memory-inspection`: 对远程 Linux 内存和性能问题进行只读检查。
-- `rumo-linux-hardware-inventory`: 只读采集 Linux 硬件信息并生成简洁交付结果(仅手动调用)。
+- `rumo-linux-inspect`: 只读采集 Linux 硬件配置或巡检内存与性能(可选扩展，仅手动调用)。
 - `rumo-document-writing`: 编写和检查正式 Word 交付文档。
-- `rumo-engineering-topology-diagram`: 建模、预览、导出和校验工程架构与拓扑图。
-- `rumo-mermaid-diagram`: 创建 Mermaid 业务流程图并导出 PNG 或 SVG。
+- `rumo-diagram`: Mermaid 业务流程图与经确认的工程拓扑图，含预览与导出(可选扩展)。
 - `rumo-imagegen`: 通过用户配置的 OpenAI 兼容接口生成一张图片(仅手动调用)。
 - `rumo-insight`: 基于本地 Codex 会话历史证据分析工程工作方式(仅支持 Codex 数据，仅手动调用)。
 

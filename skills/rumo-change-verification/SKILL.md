@@ -53,7 +53,7 @@ Source checks do not prove built or deployed artifacts. Package checks do not pr
 - Use `rumo-database-change-safety` before executing a migration, repair, cleanup, reset, or rollback against an existing database.
 - Use `rumo-review-fix-loop` only for an explicitly requested iterative review gate.
 - Use `rumo-git-commit` after verification when the user asks to commit, tag, land, or push.
-- Use `rumo-browser-evidence` when the required output is a persistent screenshot or interaction artifact.
+- Use the browser-evidence mode of the optional `rumo-frontend` extra, when installed, when the required output is a persistent screenshot or interaction artifact.
 
 ## Report
 

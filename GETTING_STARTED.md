@@ -67,7 +67,7 @@ Profile 不是使用技能的前置条件。可以直接在客户端中提出任
 Codex 用 `$rumo-code-review`，Claude Code 用 `/rumo-code-review`；也可以只用自然语言描述，
 由客户端根据技能描述自动选择。
 
-`rumo-daily-report`、`rumo-insight`、`rumo-imagegen`、`rumo-linux-hardware-inventory`、
+`rumo-daily-report`、`rumo-insight`、`rumo-imagegen`、`rumo-linux-inspect`、
 `rumo-project-profile` 是仅手动调用的技能，不会被自然语言自动触发，也不占用会话的技能列表。
 使用时必须点名，例如 `$rumo-daily-report 整理日报`（Claude Code 为 `/rumo-daily-report 整理日报`）。
 
@@ -78,7 +78,7 @@ Codex 用 `$rumo-code-review`，Claude Code 用 `/rumo-code-review`；也可以�
 ```
 
 ```text
-请使用 $rumo-frontend-ui，分析当前页面的布局问题，但先不要修改代码。
+请使用 $rumo-frontend，分析当前页面的布局问题，但先不要修改代码。
 ```
 
 ```text
@@ -125,7 +125,7 @@ python3 skills/rumo-project-profile/scripts/verify_profile.py \
 
 ```text
 请使用 $rumo-project-profile 读取 my-project 的项目配置，
-再使用 $rumo-frontend-dev 帮我分析本地启动问题。
+再使用 $rumo-frontend 帮我分析本地启动问题。
 ```
 
 ## 5. 凭据和私有信息

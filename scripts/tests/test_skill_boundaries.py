@@ -22,12 +22,6 @@ BOUNDARIES = (
         r"(?:test|evidence).*planning|planning.*(?:test|evidence)",
     ),
     (
-        "rumo-mermaid-diagram",
-        "rumo-engineering-topology-diagram",
-        r"architecture|(?:deployment|network).*topology",
-        r"(?:process|decision).*flows?|flowcharts?",
-    ),
-    (
         "rumo-incremental-deploy",
         "rumo-linux-service-deploy",
         r"(?:installing|configuring|removing|provisioning).*Linux service",

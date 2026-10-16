@@ -59,7 +59,7 @@ For every planned command or scenario, name the claim and risk it covers. Remove
 
 Do not default to the whole repository suite. Do not omit a focused test because CI will eventually run broadly. Use `rumo-change-verification` after implementation to map the exact diff back to this plan.
 
-Apply `rumo-lifecycle-safety` for async or resource behavior, `rumo-interface-evolution` for compatibility matrices, and `rumo-browser-evidence` when persistent visual evidence is requested.
+Apply `rumo-lifecycle-safety` for async or resource behavior, `rumo-interface-evolution` for compatibility matrices, and the browser-evidence mode of the optional `rumo-frontend` extra, when installed, when persistent visual evidence is requested.
 
 ## Report
 

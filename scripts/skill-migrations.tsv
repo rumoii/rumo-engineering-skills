@@ -1,0 +1,8 @@
+# Retired skill name<TAB>successor ("-" when retired without a successor)
+rumo-browser-evidence	rumo-frontend
+rumo-engineering-topology-diagram	rumo-diagram
+rumo-frontend-dev	rumo-frontend
+rumo-frontend-ui	rumo-frontend
+rumo-linux-hardware-inventory	rumo-linux-inspect
+rumo-mermaid-diagram	rumo-diagram
+rumo-remote-memory-inspection	rumo-linux-inspect

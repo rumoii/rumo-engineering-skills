@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Diagram"
+  short_description: "绘制 Mermaid 业务流程图或经确认的工程拓扑图，并导出预览与图片"
+  default_prompt: "Use $rumo-diagram to choose the Mermaid flow or topology workflow, confirm the facts, and deliver the diagram with preview and export."
