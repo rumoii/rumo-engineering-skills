@@ -32,7 +32,7 @@ For every route, state actor, action, resource, owner, and tenant or product bou
 
 ### Retries And Idempotency
 
-Classify each operation: naturally idempotent, deduplicated, compensating, deliberately at-most-once, or unsafe to repeat. When duplicate effects matter, require an idempotency key or an operation identity. Store the key with the request fingerprint and the original result; reject the same key with different input. Claim the key in the same atomic step as the effect, or state the crash window that remains. A timeout or 5xx leaves the caller unsure, so tell them how to find out what happened or repeat safely.
+Classify each operation: naturally idempotent, deduplicated, compensating, deliberately at-most-once, or unsafe to repeat. When duplicate effects matter, require an idempotency key or an operation identity. Scope every key to the authenticated principal, tenant, operation, and endpoint, so the same client key from another caller or route never matches. Store the key with the request fingerprint and the original result; reject the same key with different input, and re-check authorization before replaying a stored result. Claim the key in the same atomic step as the effect, or state the crash window that remains. A timeout or 5xx leaves the caller unsure, so tell them how to find out what happened or repeat safely.
 
 ### Cost And Incident Control
 
@@ -60,7 +60,7 @@ No version negotiation before a real incompatible version exists. No idempotency
 
 ## Verification
 
-Exercise the assembled route and serializer, not only helpers. Depending on the change, cover: unauthenticated, forbidden, cross-tenant, wrong-owner, and indirect lookups; duplicate, concurrent, timed-out, and retried requests, including same key with different body; empty, boundary, maximum, invalid-cursor, changing-collection, and stable-order pagination; 429 with recovery headers, body limits, result caps, and expensive combinations; old and new clients per the compatibility matrix; and logs, metrics, audit records, and off switches where incident control is claimed. Source tests do not prove gateway policy, generated clients, or field integrations that were not exercised.
+Exercise the assembled route and serializer, not only helpers. Depending on the change, cover: unauthenticated, forbidden, cross-tenant, wrong-owner, and indirect lookups; duplicate, concurrent, timed-out, and retried requests, including same key with different body and the same key from another tenant, principal, or operation; empty, boundary, maximum, invalid-cursor, changing-collection, and stable-order pagination; 429 with recovery headers, body limits, result caps, and expensive combinations; old and new clients per the compatibility matrix; and logs, metrics, audit records, and off switches where incident control is claimed. Source tests do not prove gateway policy, generated clients, or field integrations that were not exercised.
 
 ## Review Output
 
