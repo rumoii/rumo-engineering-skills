@@ -28,7 +28,7 @@ cd /path/to/rumo-engineering-skills
 |--------|----------|----------|
 | Codex | `codex` 命令、`~/.codex`，或显式 `CODEX_HOME` / `-CodexHome` / `--codex-home` | `~/.codex/skills` |
 | Claude Code | `claude` 命令、`~/.claude`，或显式 `CLAUDE_HOME` / `-ClaudeHome` / `--claude-home` | `~/.claude/skills` |
-| 共享 agents 目录 | `grok` 命令、`~/.grok`，或显式 `AGENTS_HOME` / `-AgentsHome` / `--agents-home` | `~/.agents/skills` |
+| 共享 agents 目录 | `~/.agents` 已存在、`grok` 命令、`~/.grok`，或显式 `AGENTS_HOME` / `-AgentsHome` / `--agents-home` | `~/.agents/skills` |
 
 - 未检测到的客户端会跳过；一个都没检测到时直接失败，不做任何改动。
 - 安装器只管理 `rumo-*` 链接，不会删除其他来源的技能。

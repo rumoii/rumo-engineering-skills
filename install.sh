@@ -278,7 +278,7 @@ if [ "$CLAUDE_HOME_EXPLICIT" -eq 1 ] || command -v claude >/dev/null 2>&1 || [ -
 else
   SYNC_CLAUDE=0
 fi
-if [ "$AGENTS_HOME_EXPLICIT" -eq 1 ] || command -v grok >/dev/null 2>&1 || [ -d "$HOME/.grok" ]; then
+if [ "$AGENTS_HOME_EXPLICIT" -eq 1 ] || [ -d "$AGENTS_HOME_DIR" ] || command -v grok >/dev/null 2>&1 || [ -d "$HOME/.grok" ]; then
   SYNC_AGENTS=1
   preflight_links "$AGENTS_HOME_DIR/skills" || PREFLIGHT_STATUS=1
 else

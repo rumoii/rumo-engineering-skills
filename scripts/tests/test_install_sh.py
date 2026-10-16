@@ -280,6 +280,26 @@ class InstallShellTests(unittest.TestCase):
             self.assertFalse((temp_root / ".codex").exists())
             self.assert_link_targets(claude_home / "skills", ["rumo-git-commit"])
 
+    def test_existing_shared_agents_home_is_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            (temp_root / ".agents").mkdir()
+            bin_dir = self.minimal_bin(temp_root)
+
+            result = subprocess.run(
+                [SH, str(REPO_ROOT / "install.sh"), "--repo", str(REPO_ROOT), "--no-pull"],
+                cwd=REPO_ROOT,
+                env={"HOME": str(temp_root), "PATH": str(bin_dir)},
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assert_link_targets(temp_root / ".agents" / "skills", ["rumo-git-commit"])
+            self.assertFalse((temp_root / ".codex").exists())
+            self.assertFalse((temp_root / ".claude").exists())
+
     def test_no_detected_client_stops_without_changes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_root = Path(temp_dir)

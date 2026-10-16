@@ -205,6 +205,25 @@ class InstallPowerShellTests(unittest.TestCase):
                 )
             )
 
+    def test_existing_shared_agents_home_is_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            user_home = Path(temp_dir) / "user-home"
+            (user_home / ".agents").mkdir(parents=True)
+
+            result = self.run_installer(
+                {}, environment=self.isolated_environment(user_home)
+            )
+
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertTrue(
+                os.path.samefile(
+                    user_home / ".agents" / "skills" / "rumo-git-commit",
+                    REPO_ROOT / "skills" / "rumo-git-commit",
+                )
+            )
+            self.assertFalse((user_home / ".codex").exists())
+            self.assertFalse((user_home / ".claude").exists())
+
     def test_no_detected_client_stops_without_changes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             user_home = Path(temp_dir) / "user-home"

@@ -308,7 +308,7 @@ if ($ProfilesRepoExplicit) {
 
 $SyncCodex = $CodexHomeExplicit -or (Get-Command codex -ErrorAction SilentlyContinue) -or (Test-Path $CodexHome)
 $SyncClaude = $ClaudeHomeExplicit -or (Get-Command claude -ErrorAction SilentlyContinue) -or (Test-Path $ClaudeHome)
-$SyncAgents = $AgentsHomeExplicit -or (Get-Command grok -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME ".grok"))
+$SyncAgents = $AgentsHomeExplicit -or (Test-Path $AgentsHome) -or (Get-Command grok -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME ".grok"))
 $TargetSkillsPaths = [System.Collections.Generic.List[string]]::new()
 if ($SyncCodex) { $TargetSkillsPaths.Add((Join-Path $CodexHome "skills")) }
 if ($SyncClaude) { $TargetSkillsPaths.Add((Join-Path $ClaudeHome "skills")) }
