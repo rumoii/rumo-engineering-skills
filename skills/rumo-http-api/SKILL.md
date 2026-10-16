@@ -10,7 +10,7 @@ Design HTTP/JSON surfaces that are predictable for consumers, safe under retries
 
 This is not a substitute for a full application-security review, threat model, or infrastructure assessment.
 
-This skill owns HTTP-specific contract and operability decisions. Apply `rumo-interface-evolution` to existing endpoints and any change involving compatibility, producer-consumer inventory, mixed versions, rollout order, migration, deprecation, or rollback. Apply `rumo-old-coder` when the user requests the high-assurance SPEC and gauntlet workflow; put this skill's verified gates into that SPEC instead of running a parallel process.
+This skill owns HTTP-specific contract and operability decisions. Apply `rumo-interface-evolution` to existing endpoints and any change involving compatibility, producer-consumer inventory, mixed versions, rollout order, migration, deprecation, or rollback. Apply `rumo-test` when the user requests the high-assurance SPEC and gauntlet workflow; put this skill's verified gates into that SPEC instead of running a parallel process.
 
 For review-only requests, remain read-only and report only evidence-backed findings. A missing published guarantee means consumers cannot rely on a behavior; it does not prove that the server lacks an undocumented implementation.
 
@@ -117,7 +117,7 @@ Read [references/patterns.md](references/patterns.md) for implementation constra
 
 ## Verify The Surface
 
-Use `rumo-test-evidence` to map each claim to the lowest layer that can falsify it. Depending on the change, exercise:
+Use `rumo-test` to map each claim to the lowest layer that can falsify it. Depending on the change, exercise:
 
 - the assembled production route and serializer, not only helper methods;
 - unauthenticated, unauthorized, cross-tenant, wrong-owner, and indirect lookup cases;

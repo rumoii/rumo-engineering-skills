@@ -24,7 +24,7 @@ The adaptation retains the upstream decisions that materially improve HTTP/JSON 
 
 ## Generic Adaptation
 
-- The skill is named `rumo-http-api` because the capability is HTTP/JSON design and review, not the full `rumo-old-coder` assurance loop.
+- The skill is named `rumo-http-api` because the capability is HTTP/JSON design and review, not the full `rumo-test` assurance loop.
 - Compatibility details are narrowed to HTTP/JSON and compose with `rumo-interface-evolution`, which remains authoritative for producer-consumer inventory, mixed versions, rollout, migration, deprecation, and rollback.
 - Authentication advice does not prescribe one credential mechanism. The choice follows caller type, sensitivity, and existing infrastructure.
 - The original unconditional cursor and rate-limit defaults are calibrated by bounded collections, operation cost, established gateway behavior, and concrete incident risk.

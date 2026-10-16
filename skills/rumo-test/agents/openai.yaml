@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Test"
+  short_description: "按风险规划测试证据，测试先行实现，高风险改动走规格与可复现证据"
+  default_prompt: "Use $rumo-test to plan the smallest sufficient evidence for this behavior, or to implement it test-first."

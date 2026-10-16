@@ -59,7 +59,7 @@ skill catalog is reloaded.
 - `rumo-code-review`: one-pass read-only engineering review.
 - `rumo-review-fix-loop`: explicit iterative review, repair, verification, and re-review.
 - `rumo-change-verification`: exact change-scope inspection and smallest sufficient checks.
-- `rumo-test-evidence`: risk-based test and acceptance evidence planning.
+- `rumo-test`: risk-based test and acceptance evidence planning.
 - `rumo-lifecycle-safety`: safe ownership, retry, cancellation, timeout, shutdown, and cleanup.
 - `rumo-interface-evolution`: compatible API, message, configuration, and persisted-format evolution.
 - `rumo-database-change-safety`: bounded database change planning, authorization, backup, verification, and rollback.
@@ -76,7 +76,6 @@ skill catalog is reloaded.
 - `rumo-linux-service-deploy`: Linux service installation, upgrade, and removal with recovery preparation and functional acceptance.
 - `rumo-backup-restore`: explicit backup coverage, consistency, protected storage, and layered recovery verification.
 - `rumo-offline-delivery-audit`: offline artifact integrity, provenance, install, rollback, and acceptance limits.
-- `rumo-old-coder`: evidence-first high-assurance development through an approved specification and reproducible gauntlet.
 - `rumo-linux-inspect`: read-only Linux hardware inventory or memory inspection (optional extra, manual only).
 - `rumo-document-writing`: formal Word-document authoring and quality control.
 - `rumo-diagram`: Mermaid business flowcharts and confirmed topology diagrams with preview and export (optional extra).

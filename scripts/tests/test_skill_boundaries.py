@@ -16,9 +16,9 @@ BOUNDARIES = (
         r"(?:one-pass|read-only).*review",
     ),
     (
-        "rumo-test-evidence",
+        "rumo-test",
         "rumo-change-verification",
-        r"exact.*(?:change|diff)|(?:checks|commands).*actually run",
+        r"(?:exact|finished).*(?:change|diff)|(?:checks|commands).*actually run",
         r"(?:test|evidence).*planning|planning.*(?:test|evidence)",
     ),
     (

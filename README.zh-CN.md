@@ -50,7 +50,7 @@ cd rumo-engineering-skills
 - `rumo-code-review`: 执行一次只读的工程代码审查。
 - `rumo-review-fix-loop`: 按需循环执行审查、修复、验证和复审。
 - `rumo-change-verification`: 核对准确变更范围并选择最小充分验证。
-- `rumo-test-evidence`: 根据风险规划测试和验收证据。
+- `rumo-test`: 根据风险规划测试和验收证据。
 - `rumo-lifecycle-safety`: 处理资源所有权、重试、取消、超时、关闭和清理。
 - `rumo-interface-evolution`: 安全演进 API、消息、配置和持久化格式。
 - `rumo-database-change-safety`: 规划有边界的数据库变更、授权、备份、验证和回滚。
@@ -67,7 +67,6 @@ cd rumo-engineering-skills
 - `rumo-linux-service-deploy`: 安装、升级或卸载 Linux 服务，提前准备恢复办法并完成真实功能验收。
 - `rumo-backup-restore`: 明确备份范围、一致性与受限存储，分层验证数据及服务恢复。
 - `rumo-offline-delivery-audit`: 审计离线制品完整性、来源、安装、回滚和验收边界。
-- `rumo-old-coder`: 通过已批准的可执行规格和可复现验证链完成高可靠开发。
 - `rumo-linux-inspect`: 只读采集 Linux 硬件配置或巡检内存与性能(可选扩展，仅手动调用)。
 - `rumo-document-writing`: 编写和检查正式 Word 交付文档。
 - `rumo-diagram`: Mermaid 业务流程图与经确认的工程拓扑图，含预览与导出(可选扩展)。

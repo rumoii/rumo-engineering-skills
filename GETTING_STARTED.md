@@ -82,7 +82,7 @@ Codex 用 `$rumo-code-review`，Claude Code 用 `/rumo-code-review`；也可以�
 ```
 
 ```text
-请使用 $rumo-test-evidence，为这个接口变更设计最小充分的测试证据。
+请使用 $rumo-test，为这个接口变更设计最小充分的测试证据。
 ```
 
 技能会先根据当前仓库发现事实；没有 Profile 时，不会因为缺少项目配置而直接失败。

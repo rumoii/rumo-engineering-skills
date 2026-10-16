@@ -46,7 +46,7 @@ Source checks do not prove built or deployed artifacts. Package checks do not pr
 ## Integrations
 
 - Use `rumo-code-review` for semantic review; verification commands cannot replace it.
-- Use `rumo-test-evidence` to turn behavioral claims into the required evidence layers before selecting commands.
+- Use `rumo-test` to turn behavioral claims into the required evidence layers before selecting commands.
 - Use `rumo-lifecycle-safety` for background work, retry, cancellation, timeout, shutdown, or cleanup behavior.
 - Use `rumo-interface-evolution` for API, message, configuration, or persisted-format compatibility and rollout matrices.
 - Use `rumo-repository-gates` when the change adds or modifies a verifier, aggregate command, quality threshold, or CI job.

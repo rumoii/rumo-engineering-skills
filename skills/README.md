@@ -27,11 +27,10 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | `rumo-linux-inspect` | Read-only Linux hardware inventory or memory inspection (optional extra, manual only) |
 | `rumo-linux-service-deploy` | Linux service installation, upgrade, and removal with recovery and functional acceptance |
 | `rumo-offline-delivery-audit` | Offline artifact integrity, provenance, installation, rollback, and acceptance limits |
-| `rumo-old-coder` | Evidence-first high-assurance development through an approved specification and reproducible gauntlet |
+| `rumo-test` | Evidence-first high-assurance development through an approved specification and reproducible gauntlet |
 | `rumo-project-profile` | Private project profile resolution and validation for other skills (manual only) |
 | `rumo-clarify` | lightweight requirement clarification: one round of questions with recommended answers, critical decisions never defaulted |
 | `rumo-prose` | Prose quality for comments, diagnostics, logs, docs, prompts, and UI strings |
 | `rumo-remote-ops-safety` | Lightweight remote Linux queries, bounded changes, access protection, and execution reconciliation |
 | `rumo-repository-gates` | Deterministic repository-owned CI and static gates |
 | `rumo-review-fix-loop` | Iterative review, blocking-finding repair, verification, and re-review |
-| `rumo-test-evidence` | Risk-based test evidence across source, application, artifact, deployment, and field layers |
