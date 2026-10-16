@@ -28,7 +28,7 @@ BOUNDARIES = (
         r"(?:application[- ]artifact|selected.*artifact).*deploy",
     ),
     (
-        "rumo-bug-root-cause",
+        "rumo-debug",
         "rumo-database-change-safety",
         r"(?:write-capable|persistent).*database|database.*writes?",
         r"read-only.*(?:diagnosis|investigation)",

@@ -14,7 +14,7 @@ Use the matching instruction in your agent session after installation.
 
 | Scenario | Goal | Codex | Claude Code |
 | --- | --- | --- | --- |
-| Debug | Trace the current issue to an evidence-backed cause through read-only investigation. | `$rumo-bug-root-cause Investigate the current issue read-only and report the cause with evidence.` | `/rumo-bug-root-cause Investigate the current issue read-only and report the cause with evidence.` |
+| Debug | Trace the current issue to an evidence-backed cause through read-only investigation. | `$rumo-debug Investigate the current issue read-only and report the cause with evidence.` | `/rumo-debug Investigate the current issue read-only and report the cause with evidence.` |
 | Review | Review the current uncommitted changes once without editing files. | `$rumo-code-review Review the current uncommitted changes without editing files.` | `/rumo-code-review Review the current uncommitted changes without editing files.` |
 | Implement | Implement the requested feature with minimal changes and focused verification. | `$rumo-coding-guidelines Implement the requested feature with minimal changes and focused verification.` | `/rumo-coding-guidelines Implement the requested feature with minimal changes and focused verification.` |
 | Verify | Check the exact current change and report the checks actually run. | `$rumo-change-verification Verify the current change and report the checks actually run.` | `/rumo-change-verification Verify the current change and report the checks actually run.` |
@@ -53,7 +53,7 @@ skill catalog is reloaded.
 
 - `rumo-project-profile`: resolves and validates private project configuration for other skills (manual only).
 - `rumo-clarify`: lightweight requirement clarification: one round of questions with recommended answers, critical decisions never defaulted.
-- `rumo-bug-root-cause`: evidence-led defect diagnosis across source, runtime, data, middleware, deployment, and clients.
+- `rumo-debug`: evidence-led defect diagnosis across source, runtime, data, middleware, deployment, and clients.
 - `rumo-coding-guidelines`: baseline constraints for minimal, path-grounded, verified code changes.
 - `rumo-http-api`: compatible, secure, retry-safe, bounded, and operable HTTP/JSON API design and review.
 - `rumo-code-review`: one-pass read-only engineering review.

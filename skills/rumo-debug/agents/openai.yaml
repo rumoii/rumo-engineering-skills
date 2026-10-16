@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Debug"
+  short_description: "复现、定位并用证据链证明缺陷根因，默认只读，需要时再修复"
+  default_prompt: "Use $rumo-debug to reproduce and trace the reported defect read-only, then report the root cause with evidence."

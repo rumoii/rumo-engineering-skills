@@ -12,7 +12,7 @@
 
 | 场景 | 目标 | Codex | Claude Code |
 | --- | --- | --- | --- |
-| 排错 | 只读排查当前问题，基于证据追溯原因。 | `$rumo-bug-root-cause 只读排查当前问题，并提供原因与证据。` | `/rumo-bug-root-cause 只读排查当前问题，并提供原因与证据。` |
+| 排错 | 只读排查当前问题，基于证据追溯原因。 | `$rumo-debug 只读排查当前问题，并提供原因与证据。` | `/rumo-debug 只读排查当前问题，并提供原因与证据。` |
 | 审查 | 对当前未提交修改进行一次审查，保持文件不变。 | `$rumo-code-review 审查当前未提交修改，不修改文件。` | `/rumo-code-review 审查当前未提交修改，不修改文件。` |
 | 实现 | 以最小必要改动实现当前需求，并完成针对性验证。 | `$rumo-coding-guidelines 实现当前需求，保持最小必要改动并完成针对性验证。` | `/rumo-coding-guidelines 实现当前需求，保持最小必要改动并完成针对性验证。` |
 | 验证 | 核对当前准确变更范围，并报告实际运行的检查。 | `$rumo-change-verification 验证当前变更，并报告实际运行的检查。` | `/rumo-change-verification 验证当前变更，并报告实际运行的检查。` |
@@ -44,7 +44,7 @@ cd rumo-engineering-skills
 
 - `rumo-project-profile`: 为其他 Skill 解析和校验私密项目配置(仅手动调用)。
 - `rumo-clarify`: 轻量需求澄清：只问一轮带推荐答案的问题，关键决策不明则暂停。
-- `rumo-bug-root-cause`: 基于证据排查源码、运行时、数据、中间件、部署和客户端问题。
+- `rumo-debug`: 基于证据排查源码、运行时、数据、中间件、部署和客户端问题。
 - `rumo-coding-guidelines`: 约束代码修改保持范围明确、改动最小并经过验证。
 - `rumo-http-api`: 设计和审查兼容、安全、可重试、成本受控且可运维的 HTTP/JSON 接口。
 - `rumo-code-review`: 执行一次只读的工程代码审查。

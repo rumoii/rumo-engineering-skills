@@ -5,7 +5,7 @@ All skills use the `rumo-` namespace while remaining independent of a specific c
 | Skill | Purpose |
 | --- | --- |
 | `rumo-backup-restore` | Backup coverage, consistency, protected storage, and layered recovery verification |
-| `rumo-bug-root-cause` | Evidence-led root-cause investigation across source and runtime boundaries |
+| `rumo-debug` | Evidence-led root-cause investigation across source and runtime boundaries |
 | `rumo-change-verification` | Exact change-scope inspection and smallest-sufficient verification |
 | `rumo-code-review` | One-pass read-only engineering review |
 | `rumo-coding-guidelines` | Minimal, path-grounded, assumption-aware, verified code changes |

@@ -1,6 +1,6 @@
 ---
 name: rumo-database-change-safety
-description: Use when planning, reviewing, generating, testing, or executing a write-capable database change for applications, including schema migrations, backfills, data repairs, cleanup, resets, destructive SQL, and rollback. Start with read-only discovery, identify the exact database and owning application versions, require explicit authorization before changing any existing or persistent database, and prove backup, compatibility, bounded effects, post-change behavior, and rollback readiness. Use rumo-bug-root-cause instead for purely read-only database diagnosis.
+description: Use when planning, reviewing, generating, testing, or executing a write-capable database change for applications, including schema migrations, backfills, data repairs, cleanup, resets, destructive SQL, and rollback. Start with read-only discovery, identify the exact database and owning application versions, require explicit authorization before changing any existing or persistent database, and prove backup, compatibility, bounded effects, post-change behavior, and rollback readiness. Use rumo-debug instead for purely read-only database diagnosis.
 ---
 
 # Rumo Database Change Safety
@@ -161,7 +161,7 @@ For plan-only work, label every command as proposed and state that no database w
 
 ## Related Skills
 
-- Use [`rumo-bug-root-cause`](../rumo-bug-root-cause/SKILL.md) for read-only database investigation and root-cause tracing.
+- Use [`rumo-debug`](../rumo-debug/SKILL.md) for read-only database investigation and root-cause tracing.
 - Use [`rumo-change-verification`](../rumo-change-verification/SKILL.md) to select source, migration, compatibility, and service checks for a database-code change.
 - Use [`rumo-plan`](../rumo-plan/SKILL.md) when the schema transition or compatibility strategy needs a durable decision record.
 - Use the optional `rumo-offline-delivery-audit` extra, when installed, when migration and rollback assets are embedded in an offline package.

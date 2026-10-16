@@ -28,7 +28,7 @@ Read enough surrounding code and current consumers to evaluate these areas in or
 5. **Compatibility and operations:** supported release branches, existing data, upgrade paths, configuration precedence, platform behavior, deployment topology, and observability.
 6. **Verification quality:** tests must exercise the affected production route. A mock-only assertion, source compile, HTTP 200, or green coverage number does not prove the assembled or deployed behavior.
 
-Apply `rumo-coding-guidelines` as the baseline. Use `rumo-bug-root-cause` when the task is primarily diagnosis of an observed runtime symptom. Use `rumo-review-fix-loop` only when the user explicitly requests repeated review and repair.
+Apply `rumo-coding-guidelines` as the baseline. Use `rumo-debug` when the task is primarily diagnosis of an observed runtime symptom. Use `rumo-review-fix-loop` only when the user explicitly requests repeated review and repair.
 
 Apply `rumo-lifecycle-safety` to lifecycle-heavy changes, `rumo-interface-evolution` to producer-consumer changes, `rumo-test` when the evidence claim is unclear, and `rumo-repository-gates` when reviewing CI or static validation machinery.
 
