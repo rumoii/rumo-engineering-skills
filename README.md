@@ -22,7 +22,7 @@ Each step is a skill. Use only the ones a task needs: a one-line fix goes straig
 | Review a diff without editing | `$rumo-review` | `/rumo-review` |
 | Commit, land, push, or open a pull request | `$rumo-git-commit` | `/rumo-git-commit` |
 
-Clients also pick skills automatically from their descriptions; naming one is optional except for manual-only skills.
+Clients also pick skills automatically from their descriptions; naming one is optional except for manual-only skills. [Worked examples](GETTING_STARTED.md#完整案例) follow three requests from prompt to delivery.
 
 ## Default Skills
 

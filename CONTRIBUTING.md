@@ -108,9 +108,18 @@ Code's sandbox: on Windows run the suite under WSL2, and on Linux install
 `bubblewrap` and `socat`. `review-readonly` needs only `Edit Write` and runs
 anywhere.
 
+The `chain-*` cases cover requests that cross skills: a small edit that must
+stay light, a fully specified interface change, an authorization change, and
+diagnosis followed by a fix. They need only `Edit Write` and grade the
+resulting files and the final reply, so they show whether the skills keep a
+task proportionate and honest but not whether tests ran. The Codex
+`auth-change-verify` and `debug-then-fix` checks below cover execution for the
+same scenarios. Regex graders compile as JavaScript: pass flags such as `i` in
+the grader's `flags` field, never as a leading `(?i)`.
+
 ### Codex behavior checks
 
-`scripts/run_codex_behavior.py` runs the eight local cases in
+`scripts/run_codex_behavior.py` runs the local cases in
 `scripts/codex_behavior_cases.py` through the existing Codex CLI. It calls a
 model, so it is opt-in and stays out of CI. Unit tests for its evidence
 parser and fixtures run in the ordinary test suite without model calls.

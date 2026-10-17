@@ -10,9 +10,13 @@ from scripts.run_codex_behavior import completed_cart_test, evidence, file_state
 
 
 class LegacyGraderTest(unittest.TestCase):
-    def pattern(self, name: str, field: str) -> str:
+    def field(self, name: str, field: str) -> str:
         path = Path(__file__).resolve().parents[2] / "evals/verify-honest/graders" / name
-        return next(line[len(field) + 2:].strip("'") for line in path.read_text(encoding="utf-8").splitlines() if line.startswith(field + ": "))
+        return next((line[len(field) + 2:].strip("'") for line in path.read_text(encoding="utf-8").splitlines() if line.startswith(field + ": ")), "")
+
+    def pattern(self, name: str, field: str) -> "re.Pattern[str]":
+        import re
+        return re.compile(self.field(name, field), re.I if "i" in self.field(name, "flags") else 0)
 
     def test_false_success_examples_are_rejected(self) -> None:
         import re
@@ -170,6 +174,24 @@ class SampleTest(unittest.TestCase):
             audit = root / "audit"
             seed(audit, snapshot, CASES["review-existing"])
             self.assertEqual(subprocess.check_output(["git", "-C", str(audit), "status", "--porcelain"], text=True).strip(), "")
+
+    def test_fix_fixtures_start_from_the_intended_state(self) -> None:
+        import subprocess
+        import sys
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            snapshot = root / "snapshot"
+            (snapshot / "skills").mkdir(parents=True)
+            bom = root / "bom"
+            seed(bom, snapshot, CASES["debug-then-fix"])
+            result = subprocess.run([sys.executable, "-B", "-m", "unittest", "test_loader"], cwd=bom, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("'\\ufeffalpha' != 'alpha'", result.stderr)
+            orders = root / "orders"
+            seed(orders, snapshot, CASES["auth-change-verify"])
+            result = subprocess.run([sys.executable, "-B", "-m", "unittest", "discover", "-s", "tests", "-t", "."], cwd=orders, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Ran 1 test", result.stderr)
 
 
 class ProcessLifetimeTest(unittest.TestCase):

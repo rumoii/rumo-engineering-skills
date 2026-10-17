@@ -22,7 +22,7 @@ clarify -> plan -> test -> verify -> review -> git-commit
 | 只读评审差异 | `$rumo-review` | `/rumo-review` |
 | 提交、合入、推送或开 PR | `$rumo-git-commit` | `/rumo-git-commit` |
 
-客户端也会根据技能描述自动选择；除“仅手动调用”的技能外，点名不是必需的。
+客户端也会根据技能描述自动选择；除“仅手动调用”的技能外，点名不是必需的。[完整案例](GETTING_STARTED.md#完整案例)展示了三个请求从提出到交付的全过程。
 
 ## 默认技能
 

@@ -258,6 +258,10 @@ def run_case(args: argparse.Namespace, name: str, overrides: list[dict], setting
         checks["completed_failing_test"] = completed_cart_test(observed["commands"])
     if name == "risk-proportionate":
         checks["only_login_copy_changed"] = changed == ["login.html"] and (root / "login.html").read_text(encoding="utf-8") == '<button type="submit">进入工作台</button>\n'
+    if name == "auth-change-verify":
+        checks["only_service_and_tests_changed"] = set(changed) <= {"orders/service.py", "tests/test_service.py"}
+    if name == "debug-then-fix":
+        checks["only_loader_changed"] = changed == ["loader.py"]
     result = {
         "case": name, "snapshot": str(args.snapshot), "settings": settings, "runs": runs,
         "evidence_status": "valid" if valid else "invalid", "mechanical_checks": checks,

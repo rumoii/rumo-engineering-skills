@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: chain-specified-interface
+description: A fully specified response-field addition must update producer, consumer, and tests without asking again.
+context:
+  scaffold_script: fixture.sh

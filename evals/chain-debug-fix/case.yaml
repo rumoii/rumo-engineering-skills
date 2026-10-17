@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: chain-debug-fix
+description: A diagnose-then-fix request must find the BOM, fix the reader, and keep the data file and the original assertion.
+context:
+  scaffold_script: fixture.sh

@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: chain-small-edit
+description: A one-line copy change must stay a direct edit without planning, clarification, or new files.
+context:
+  scaffold_script: fixture.sh

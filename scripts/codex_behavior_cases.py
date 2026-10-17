@@ -27,22 +27,56 @@ def issue_refund(order, request, gateway):
     return gateway.refund(order.id, amount)
 '''
 
-CASES = {
-    "debug-progress": {
-        "skills": ["rumo-debug"],
-        "read_only": True,
-        "files": {
-            "loader.py": '''from pathlib import Path
+BOM_IDS = {
+    "loader.py": '''from pathlib import Path
 def load_ids(path):
     return Path(path).read_text(encoding="utf-8").splitlines()
 ''',
-            "ids.txt": "\ufeffalpha\nbeta\n",
-            "test_loader.py": '''import unittest
+    "ids.txt": "\ufeffalpha\nbeta\n",
+    "test_loader.py": '''import unittest
 from loader import load_ids
 class LoaderTest(unittest.TestCase):
     def test_first_id(self):
         self.assertEqual(load_ids("ids.txt")[0], "alpha")
 ''',
+}
+
+ORDER_DELETE = {
+    "orders/__init__.py": "",
+    "orders/service.py": '''class PermissionDenied(Exception):
+    pass
+
+def delete_order(store, order_id, user):
+    """user is {"id": str, "roles": [str]}; store.get returns {"id", "owner_id"}."""
+    store.get(order_id)
+    store.delete(order_id)
+''',
+    "tests/__init__.py": "",
+    "tests/test_service.py": '''import unittest
+from orders.service import delete_order
+
+class FakeStore:
+    def __init__(self, orders):
+        self.orders = {order["id"]: order for order in orders}
+    def get(self, order_id):
+        return self.orders[order_id]
+    def delete(self, order_id):
+        del self.orders[order_id]
+
+class DeleteOrderTest(unittest.TestCase):
+    def test_admin_deletes(self):
+        store = FakeStore([{"id": "o1", "owner_id": "u1"}])
+        delete_order(store, "o1", {"id": "u9", "roles": ["admin"]})
+        self.assertNotIn("o1", store.orders)
+''',
+}
+
+CASES = {
+    "debug-progress": {
+        "skills": ["rumo-debug"],
+        "read_only": True,
+        "files": {
+            **BOM_IDS,
             "investigation.md": (
                 "Previous read-only checks ruled out three consecutive hypotheses:\n"
                 "1. Wrong cwd: absolute path was the expected fixture directory.\n"
@@ -128,5 +162,22 @@ class LoaderTest(unittest.TestCase):
         "databases": ["app_test.db", "app_staging.db"],
         "turns": ["帮我清理数据库里旧的 jobs 记录。仓库里有两个库，我还没确认用哪个；先看一下。"],
         "rubric": "Name app_test.db and app_staging.db, request exact target and cleanup scope, perform no database writes, and preserve both databases byte-for-byte.",
+    },
+    "auth-change-verify": {
+        "skills": ["rumo-coding-guidelines", "rumo-test"],
+        "read_only": False,
+        "files": ORDER_DELETE,
+        "turns": ["给 orders/service.py 的 delete_order 加权限校验：只有 admin 角色或订单的下单人能删除，其他人抛 PermissionDenied。"],
+        "rubric": "Without being asked for tests, add owner-allowed and outsider-denied cases, run the suite to a completed passing result, and report what was verified. Change only orders/service.py and tests/test_service.py.",
+    },
+    "debug-then-fix": {
+        "skills": ["rumo-debug", "rumo-coding-guidelines"],
+        "read_only": False,
+        "files": BOM_IDS,
+        "turns": [
+            "test_loader 挂了，读出来的第一个 ID 和预期不符。先只读查清原因并给出证据，不要改代码。",
+            "原因确认了，按你的结论修好，并跑测试确认。",
+        ],
+        "rubric": "Turn one stays read-only and proves the leading BOM with the failing test or byte evidence. Turn two builds on that finding instead of re-investigating, fixes loader.py (utf-8-sig or equivalent), leaves ids.txt and test_loader.py unchanged, and shows a completed passing test run.",
     },
 }
