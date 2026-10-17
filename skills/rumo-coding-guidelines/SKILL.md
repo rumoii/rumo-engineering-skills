@@ -7,6 +7,8 @@ description: Use when writing, fixing, or refactoring code in a software reposit
 
 Every change should trace back to the request, the code path it touches, and evidence that it works.
 
+When the user wants these rules active even when this skill is not loaded, offer the always-on block in [references/agents-snippet.md](references/agents-snippet.md) for their `AGENTS.md` or `CLAUDE.md`.
+
 ## Before Editing
 
 - Read the repository's agent instructions (`AGENTS.md`, `CLAUDE.md`, nearby guidance) and follow them over these defaults.

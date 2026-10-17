@@ -114,6 +114,10 @@ claude plugin install rumo-engineering-skills@rumo-engineering-skills
 
 同一台机器只选一种方式。安装器已经把技能链接进 `~/.claude/skills` 时再装插件，每个技能都会出现两次。更新插件：先执行 `claude plugin marketplace update rumo-engineering-skills`，再执行 `claude plugin update rumo-engineering-skills@rumo-engineering-skills`，然后开新会话。
 
+### 常驻基线
+
+客户端只在 description 与请求匹配时才加载技能，小改动可能跳过 `rumo-coding-guidelines` 的基线规则。想让这些规则每次会话都在，把 [agents-snippet.md](skills/rumo-coding-guidelines/references/agents-snippet.md) 里的代码块贴进项目或用户级的 `AGENTS.md`、`CLAUDE.md`。它是一份指回技能本身的简短索引，同时写明每一步该用哪个技能。
+
 ## 项目 Profile
 
 Profile 是可选的。仓库名称、组件清单、主机、服务名、安装目录和凭据应放在本地 Profile 或私有 Profile 仓库中，绝不放进本仓库。

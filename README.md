@@ -114,6 +114,10 @@ Plugin skills carry a prefix, such as `rumo-engineering-skills:rumo-clarify`. Th
 
 Choose one method per machine. If the installer already linked skills into `~/.claude/skills`, adding the plugin loads every skill twice. To update the plugin, run `claude plugin marketplace update rumo-engineering-skills`, then `claude plugin update rumo-engineering-skills@rumo-engineering-skills`, and start a new session.
 
+### Always-On Baseline
+
+Clients load a skill only when its description matches the request, so a small edit can skip the baseline rules in `rumo-coding-guidelines`. To keep them in every session, paste the block from [agents-snippet.md](skills/rumo-coding-guidelines/references/agents-snippet.md) into a project's or your user-level `AGENTS.md` or `CLAUDE.md`. The block is a short index that points back to the skills; it also names which skill to use at each step.
+
 ## Project Profiles
 
 Profiles are optional. Repository names, component inventories, hosts, service names, install roots, and credentials belong in a local profile or a private profiles checkout, never in this repository.

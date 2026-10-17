@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
 
@@ -116,6 +117,20 @@ RULES = {
 }
 PINNED_ELSEWHERE = {"rumo-clarify"}
 
+# Each always-on snippet bullet must restate a rule a skill already owns, so the
+# pasted copy cannot grow rules of its own. Keys match the bullet; values are
+# (skill, phrase in that skill's body).
+SNIPPET = REPO_ROOT / "skills" / "rumo-coding-guidelines" / "references" / "agents-snippet.md"
+SNIPPET_SOURCES = {
+    "Read the real entry point and call chain": ("rumo-coding-guidelines", "Find the real entry point, call chain"),
+    "repository instructions override these defaults": ("rumo-coding-guidelines", "follow them over these defaults"),
+    "report unrelated problems instead of fixing them": ("rumo-coding-guidelines", "Report unrelated problems you notice instead of fixing them."),
+    "No speculative abstractions, drive-by refactors": ("rumo-coding-guidelines", "Do not reformat, rename, reorder, or refactor neighboring code."),
+    "apply the risk gate in rumo-test": ("rumo-coding-guidelines", "apply the high-assurance risk gate in `rumo-test` before editing"),
+    "use rumo-verify before handing back": ("rumo-coding-guidelines", "Use `rumo-verify` before claiming the change is ready."),
+}
+SNIPPET_INDEX_PREFIXES = ("- Flow:", "- Full rules:")
+
 
 def normalized_body(skill: str) -> str:
     text = (REPO_ROOT / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
@@ -134,6 +149,35 @@ class SkillRulesTest(unittest.TestCase):
             for rule in rules:
                 with self.subTest(skill=skill, rule=rule):
                     self.assertTrue(rule in body, f"{skill}: pinned rule missing from SKILL.md body")
+
+
+class AlwaysOnSnippetTest(unittest.TestCase):
+    def bullets(self) -> list[str]:
+        block = SNIPPET.read_text(encoding="utf-8").split("```markdown\n", 1)[1].split("```", 1)[0]
+        return [line for line in block.splitlines() if line.startswith("- ")]
+
+    def test_every_bullet_restates_an_owned_rule(self) -> None:
+        for bullet in self.bullets():
+            with self.subTest(bullet=bullet):
+                if bullet.startswith(SNIPPET_INDEX_PREFIXES):
+                    continue
+                sources = [value for key, value in SNIPPET_SOURCES.items() if key in bullet]
+                self.assertTrue(sources, "snippet bullet has no owning rule in SNIPPET_SOURCES")
+                for skill, phrase in sources:
+                    self.assertTrue(phrase in normalized_body(skill), f"{skill}: snippet source phrase missing")
+
+    def test_every_source_is_used(self) -> None:
+        text = " ".join(self.bullets())
+        for key in SNIPPET_SOURCES:
+            with self.subTest(key=key):
+                self.assertIn(key, text)
+
+    def test_index_names_existing_default_skills(self) -> None:
+        names = set(re.findall(r"rumo-[a-z-]+[a-z]", " ".join(self.bullets())))
+        self.assertTrue(names)
+        for name in sorted(names):
+            with self.subTest(skill=name):
+                self.assertTrue((REPO_ROOT / "skills" / name / "SKILL.md").is_file())
 
 
 if __name__ == "__main__":
