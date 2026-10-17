@@ -12,7 +12,9 @@ product, repository layout, host, or deployment environment.
   internal infrastructure details.
 - Add or update focused tests when changing scripts or deterministic rules.
 - When a skill gains a rule whose loss would let an agent overstep its
-  authority or overclaim a result, pin it in `scripts/tests/test_skill_rules.py`.
+  authority or overclaim a result, pin it in `scripts/tests/test_skill_rules.py`:
+  in `RULES` when it lives in `SKILL.md`, in `REFERENCE_RULES` when it lives in
+  a file under `references/`.
 - Preserve unrelated files and avoid generated dependencies such as
   `node_modules`.
 

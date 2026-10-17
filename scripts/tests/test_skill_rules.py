@@ -127,6 +127,55 @@ RULES = {
 }
 PINNED_ELSEWHERE = {"rumo-clarify"}
 
+# The same kind of rule, where it lives in a reference file the skill loads on
+# demand. rumo-test/references/high-assurance.md and rumo-review/references/loop.md
+# are pinned in test_skill_boundaries.py.
+REFERENCE_RULES = {
+    "rumo-remote-ops/references/access-changes-and-recovery.md": (
+        "preserving the old route until independent validation succeeds",
+        "Close the old route only after the new route is verified",
+        "keep an existing authorized administration path until the new account and privileges are verified",
+        "Stop further changes when validation fails or access is uncertain.",
+    ),
+    "rumo-remote-ops/references/connection-and-execution.md": (
+        "do not delete known-host entries or use `StrictHostKeyChecking=no` to silence the event",
+        "Do not replay migrations, restore jobs, file transfers with destructive options, or restarts just because the wrapper command failed.",
+    ),
+    "rumo-remote-ops/references/restore-and-verification.md": (
+        "Require explicit authorization for that scope before writing.",
+        "stop the restore mutation and report the missing prerequisite",
+        "do not retry against a broader directory or another database",
+    ),
+    "rumo-remote-ops/references/deployment-and-acceptance.md": (
+        "Do not use `docker compose down -v`, prune volumes, or grant privileged mode/host mounts to resolve a deployment failure without the corresponding explicit scope.",
+    ),
+    "rumo-remote-ops/references/upgrade-rollback-and-removal.md": (
+        "Never weaken health checks or fabricate successful data to finish acceptance.",
+        "Preserve configuration, persistent data, and credentials by default.",
+    ),
+    "rumo-remote-ops/references/service-deploy.md": (
+        "Execute rollback only when already authorized, applicable to current state, and safe for data created since deployment",
+    ),
+    "rumo-database-change-safety/references/procedure.md": (
+        "Do not improvise a repair on the live target.",
+    ),
+    "rumo-frontend/references/browser-evidence.md": (
+        "Do not commit, push, upload, edit a merge request, or publish to an asset branch unless the user explicitly requests that external action.",
+    ),
+    "rumo-frontend/references/dev-server.md": (
+        "Never silently point a development server at an environment whose purpose is unclear.",
+    ),
+    "rumo-plan/references/parallel-execution.md": (
+        "Stop on a conflict and ask; do not resolve it silently.",
+    ),
+    "rumo-review/references/codex-app-server.md": (
+        "Do not let the script apply fixes.",
+    ),
+    "rumo-debug/references/remote-investigation.md": (
+        "Stop and report the boundary when the environment purpose is unclear, credentials are unavailable, a query would require writes",
+    ),
+}
+
 # Each always-on snippet bullet must restate a rule a skill already owns, so the
 # pasted copy cannot grow rules of its own. Keys match the bullet; values are
 # (skill, phrase in that skill's body).
@@ -159,6 +208,13 @@ class SkillRulesTest(unittest.TestCase):
             for rule in rules:
                 with self.subTest(skill=skill, rule=rule):
                     self.assertTrue(rule in body, f"{skill}: pinned rule missing from SKILL.md body")
+
+    def test_pinned_reference_rules_remain(self) -> None:
+        for reference, rules in REFERENCE_RULES.items():
+            text = " ".join((REPO_ROOT / "skills" / reference).read_text(encoding="utf-8").split())
+            for rule in rules:
+                with self.subTest(reference=reference, rule=rule):
+                    self.assertTrue(rule in text, f"{reference}: pinned rule missing")
 
 
 class AlwaysOnSnippetTest(unittest.TestCase):
