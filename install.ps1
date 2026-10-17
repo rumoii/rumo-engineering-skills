@@ -38,6 +38,12 @@ Print operations without changing links.
 .PARAMETER ReplaceForeignLinks
 Replace same-name links that point into another repository.
 
+.PARAMETER Baseline
+Add the always-on baseline block to CLAUDE.md and AGENTS.md of each detected Claude Code and Codex home. Later runs keep it current.
+
+.PARAMETER RemoveBaseline
+Remove the always-on baseline block from those files.
+
 .PARAMETER Help
 Print this help and exit without checking or changing anything.
 
@@ -49,6 +55,9 @@ Print this help and exit without checking or changing anything.
 
 .EXAMPLE
 .\install.ps1 -NoPull -Extras rumo-diagram,rumo-document-writing
+
+.EXAMPLE
+.\install.ps1 -NoPull -Baseline
 #>
 # Named parameters only: a stray word such as --help must fail instead of becoming -Repo.
 [CmdletBinding(PositionalBinding = $false)]
@@ -65,6 +74,8 @@ param(
   [switch]$NoPull,
   [switch]$DryRun,
   [switch]$ReplaceForeignLinks,
+  [switch]$Baseline,
+  [switch]$RemoveBaseline,
   [Alias("h")][switch]$Help
 )
 
@@ -95,6 +106,23 @@ function Invoke-SkillValidation {
   elseif (Get-Command python -ErrorAction SilentlyContinue) { & python $Validator --repo-root $RepoPath }
   else { throw "Python 3 is required to validate skills before installation." }
   if ($LASTEXITCODE -ne 0) { throw "Skill validation failed; no skill links were changed." }
+}
+
+function Sync-BaselineBlock {
+  param([Parameter(Mandatory = $true)][string]$Target, [Parameter(Mandatory = $true)][string]$Mode)
+  if (-not (Test-Path $BaselineScript -PathType Leaf)) { return "skipped" }
+  $Arguments = @($BaselineScript, "--target", $Target, "--$Mode")
+  if ($DryRun) { $Arguments += "--dry-run" }
+  if (Get-Command py -ErrorAction SilentlyContinue) { $Output = & py -3 @Arguments }
+  elseif (Get-Command python3 -ErrorAction SilentlyContinue) { $Output = & python3 @Arguments }
+  else { $Output = & python @Arguments }
+  if ($LASTEXITCODE -ne 0) { throw "Baseline block update failed for $Target; skill links were already synced." }
+  $Action = "$Output".Trim()
+  if ($Action -in @("added", "updated", "removed")) {
+    $Prefix = if ($DryRun) { "Would update baseline" } else { "Baseline" }
+    Write-Host "$Prefix ($Action): $Target"
+  }
+  return $Action
 }
 
 function Remove-SkillLink {
@@ -261,6 +289,7 @@ $RemoveExtraNames = @(Split-NameList $RemoveExtras)
 foreach ($Name in $ExtraNames) {
   if ($RemoveExtraNames -contains $Name) { throw "$Name was passed to both -Extras and -RemoveExtras; nothing was changed." }
 }
+if ($Baseline -and $RemoveBaseline) { throw "-Baseline and -RemoveBaseline cannot be combined; nothing was changed." }
 
 if ($ListExtras) {
   if (-not (Test-Path $RepoSkills)) { throw "Skills repository not found: $Repo. Install once before listing optional skills." }
@@ -290,6 +319,11 @@ if (Test-Path (Join-Path $Repo ".git")) {
 
 if (-not (Test-Path $RepoSkills)) { throw "Skills directory not found: $RepoSkills" }
 Invoke-SkillValidation $Repo
+
+$BaselineScript = Join-Path $RepoSkills "rumo-coding-guidelines\scripts\baseline_block.py"
+if (($Baseline -or $RemoveBaseline) -and -not (Test-Path $BaselineScript -PathType Leaf)) {
+  throw "Baseline helper not found: $BaselineScript; nothing was changed."
+}
 
 $CoreDirs = @(Get-SkillDirs $RepoSkills)
 $ExtraDirs = @{}
@@ -330,6 +364,15 @@ if (-not $SyncCodex) { Write-Host "Codex was not detected; skipping." }
 if (-not $SyncClaude) { Write-Host "Claude Code was not detected; skipping." }
 if (-not $SyncAgents) { Write-Host "A shared agent client was not detected; skipping." }
 
+$BaselineMode = if ($Baseline) { "install" } elseif ($RemoveBaseline) { "remove" } else { "refresh" }
+$BaselineMissing = [System.Collections.Generic.List[string]]::new()
+$BaselineTargets = [System.Collections.Generic.List[string]]::new()
+if ($SyncCodex) { $BaselineTargets.Add((Join-Path $CodexHome "AGENTS.md")) }
+if ($SyncClaude) { $BaselineTargets.Add((Join-Path $ClaudeHome "CLAUDE.md")) }
+foreach ($Target in $BaselineTargets) {
+  if ((Sync-BaselineBlock $Target $BaselineMode) -eq "absent" -and $BaselineMode -eq "refresh") { $BaselineMissing.Add($Target) }
+}
+
 if ($DryRun) {
   Write-Host "Dry run finished; nothing was changed."
   exit 0
@@ -339,3 +382,9 @@ Write-Host "Repository: $Repo"
 Write-Host "Recommended: set RUMO_SKILLS_REPO=$Repo"
 if ($ProfilesRepo) { Write-Host "Project profiles: $ProfilesRepo" }
 else { Write-Host "Optional: set RUMO_SKILL_PROFILES_REPO to a private profiles checkout." }
+if ($BaselineMissing.Count -gt 0) {
+  Write-Host "Optional: rerun with -Baseline to keep the core rules always on in $($BaselineMissing -join ', '); see README."
+}
+if ($Baseline -and $SyncAgents) {
+  Write-Host "Clients reading only the shared agents directory have no user-level instruction file here; paste skills\rumo-coding-guidelines\references\agents-snippet.md into their instructions by hand."
+}

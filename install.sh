@@ -17,6 +17,9 @@ AGENTS_HOME_EXPLICIT=0
 RUN_PULL=1
 DRY_RUN=0
 REPLACE_FOREIGN_LINKS=0
+BASELINE_MODE=refresh
+BASELINE_FLAGS=0
+BASELINE_MISSING=""
 EXTRAS_REQUEST=""
 REMOVE_EXTRAS_REQUEST=""
 LIST_EXTRAS=0
@@ -35,7 +38,10 @@ usage() {
     '  --list-extras        List optional skills without changing anything.' \
     '  --no-pull            Do not update an existing checkout.' \
     '  --dry-run            Print operations without changing links.' \
-    '  --replace-foreign-links  Replace same-name links from another repository.'
+    '  --replace-foreign-links  Replace same-name links from another repository.' \
+    '  --baseline           Add the always-on baseline block to CLAUDE.md and AGENTS.md' \
+    '                       of each detected Claude Code and Codex home.' \
+    '  --remove-baseline    Remove that block.'
 }
 
 while [ "$#" -gt 0 ]; do
@@ -52,10 +58,31 @@ while [ "$#" -gt 0 ]; do
     --no-pull) RUN_PULL=0; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
     --replace-foreign-links) REPLACE_FOREIGN_LINKS=1; shift ;;
+    --baseline) BASELINE_MODE=install; BASELINE_FLAGS=$((BASELINE_FLAGS + 1)); shift ;;
+    --remove-baseline) BASELINE_MODE=remove; BASELINE_FLAGS=$((BASELINE_FLAGS + 1)); shift ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'Unknown option: %s\n' "$1" >&2; usage >&2; exit 1 ;;
   esac
 done
+
+sync_baseline() {
+  target=$1
+  [ -f "$BASELINE_SCRIPT" ] || return 0
+  set -- "$BASELINE_SCRIPT" --target "$target" "--$BASELINE_MODE"
+  [ "$DRY_RUN" -eq 0 ] || set -- "$@" --dry-run
+  if command -v python3 >/dev/null 2>&1; then action=$(python3 "$@") || action=failed
+  else action=$(python "$@") || action=failed
+  fi
+  case "$action" in
+    added|updated|removed)
+      if [ "$DRY_RUN" -eq 1 ]; then echo "Would update baseline ($action): $target"
+      else echo "Baseline ($action): $target"
+      fi ;;
+    absent) [ "$BASELINE_MODE" != refresh ] || BASELINE_MISSING="${BASELINE_MISSING:+$BASELINE_MISSING, }$target" ;;
+    unchanged) ;;
+    *) echo "Baseline block update failed for $target; skill links were already synced." >&2; exit 1 ;;
+  esac
+}
 
 run() {
   if [ "$DRY_RUN" -eq 1 ]; then
@@ -115,6 +142,10 @@ for name in $EXTRA_NAMES; do
 done
 IFS=$saved_ifs
 set +f
+if [ "$BASELINE_FLAGS" -gt 1 ]; then
+  echo '--baseline and --remove-baseline cannot be combined; nothing was changed.' >&2
+  exit 1
+fi
 
 if [ "$LIST_EXTRAS" -eq 1 ]; then
   [ -d "$REPO_PATH/skills" ] || { echo "Skills repository not found: $REPO_PATH. Install once before listing optional skills." >&2; exit 1; }
@@ -147,6 +178,11 @@ elif command -v python >/dev/null 2>&1; then python "$validator" --repo-root "$R
 else echo 'Python 3 is required.' >&2; exit 1
 fi
 check_extra_names
+BASELINE_SCRIPT="$REPO_PATH/skills/rumo-coding-guidelines/scripts/baseline_block.py"
+if [ "$BASELINE_MODE" != refresh ] && [ ! -f "$BASELINE_SCRIPT" ]; then
+  echo "Baseline helper not found: $BASELINE_SCRIPT; nothing was changed." >&2
+  exit 1
+fi
 
 resolve_link_target() {
   link_path="$1"
@@ -313,6 +349,8 @@ fi
 if [ "$SYNC_AGENTS" -eq 1 ]; then sync_links "$AGENTS_HOME_DIR/skills"
 else echo 'A shared agent client was not detected; skipping.'
 fi
+[ "$SYNC_CODEX" -eq 0 ] || sync_baseline "$CODEX_HOME_DIR/AGENTS.md"
+[ "$SYNC_CLAUDE" -eq 0 ] || sync_baseline "$CLAUDE_HOME_DIR/CLAUDE.md"
 
 if [ "$DRY_RUN" -eq 1 ]; then
   echo 'Dry run finished; nothing was changed.'
@@ -322,4 +360,10 @@ echo "Rumo skills installed from $REPO_PATH"
 echo "Set RUMO_SKILLS_REPO=$REPO_PATH for later updates."
 if [ -n "$PROFILES_REPO" ]; then echo "Project profiles: $PROFILES_REPO"
 else echo 'Optionally set RUMO_SKILL_PROFILES_REPO to a private profiles checkout.'
+fi
+if [ -n "$BASELINE_MISSING" ]; then
+  echo "Optional: rerun with --baseline to keep the core rules always on in $BASELINE_MISSING; see README."
+fi
+if [ "$BASELINE_MODE" = install ] && [ "$SYNC_AGENTS" -eq 1 ]; then
+  echo 'Clients reading only the shared agents directory have no user-level instruction file here; paste skills/rumo-coding-guidelines/references/agents-snippet.md into their instructions by hand.'
 fi

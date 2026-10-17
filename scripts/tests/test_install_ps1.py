@@ -14,6 +14,7 @@ from scripts.tests.skill_fixture import CORE_SKILLS, build_fixture_repo
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 POWERSHELL = shutil.which("powershell") or shutil.which("pwsh")
+BASELINE_START = "<!-- rumo-engineering-skills:baseline:start -->"
 
 
 @unittest.skipUnless(os.name == "nt" and POWERSHELL, "PowerShell is not available")
@@ -325,6 +326,58 @@ class InstallPowerShellTests(unittest.TestCase):
                 (user_home / ".rumo-engineering-skills" / "config.json").exists()
             )
 
+    def test_baseline_flags_add_keep_and_remove_the_block(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            user_home = temp_root / "user-home"
+            user_home.mkdir()
+            homes = {
+                "CodexHome": temp_root / "codex",
+                "ClaudeHome": temp_root / "claude",
+                "AgentsHome": temp_root / "agents",
+            }
+            claude_md = homes["ClaudeHome"] / "CLAUDE.md"
+            codex_md = homes["CodexHome"] / "AGENTS.md"
+            homes["ClaudeHome"].mkdir()
+            claude_md.write_bytes(b"# mine\n")
+            environment = self.isolated_environment(user_home)
+
+            def install(*extra: str) -> subprocess.CompletedProcess[str]:
+                return self.run_installer(homes, *extra, environment=environment)
+
+            result = install()
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("rerun with -Baseline", result.stdout)
+            self.assertEqual(claude_md.read_bytes(), b"# mine\n")
+            self.assertFalse(codex_md.exists())
+
+            result = install("-Baseline", "-DryRun")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("Would update baseline (added)", result.stdout)
+            self.assertEqual(claude_md.read_bytes(), b"# mine\n")
+            self.assertFalse(codex_md.exists())
+
+            result = install("-Baseline")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            installed = claude_md.read_text(encoding="utf-8")
+            self.assertTrue(installed.startswith("# mine\n\n" + BASELINE_START))
+            self.assertIn(BASELINE_START, codex_md.read_text(encoding="utf-8"))
+            self.assertIn("paste skills", result.stdout)
+
+            result = install()
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertNotIn("rerun with -Baseline", result.stdout)
+            self.assertEqual(claude_md.read_text(encoding="utf-8"), installed)
+
+            result = install("-Baseline", "-RemoveBaseline")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(claude_md.read_text(encoding="utf-8"), installed)
+
+            result = install("-RemoveBaseline")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(claude_md.read_bytes(), b"# mine\n")
+            self.assertNotIn(BASELINE_START, codex_md.read_text(encoding="utf-8"))
+
 
 @unittest.skipUnless(os.name == "nt" and POWERSHELL, "PowerShell is not available")
 class InstallPowerShellExtrasTests(unittest.TestCase):
@@ -539,6 +592,14 @@ class InstallPowerShellExtrasTests(unittest.TestCase):
         self.assertIn("rumo-gamma", result.stdout)
         self.assertIn("Dry run finished; nothing was changed.", result.stdout)
         self.assertNotIn("installation completed", result.stdout)
+        for home in self.homes.values():
+            self.assertFalse(home.exists())
+
+    def test_baseline_without_helper_fails_before_any_change(self) -> None:
+        result = self.run_installer("-Baseline")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Baseline helper not found", result.stdout + result.stderr)
         for home in self.homes.values():
             self.assertFalse(home.exists())
 

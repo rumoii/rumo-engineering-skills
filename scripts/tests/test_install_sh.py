@@ -13,6 +13,7 @@ from scripts.tests.skill_fixture import CORE_SKILLS, build_fixture_repo
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SH = shutil.which("sh")
+BASELINE_START = "<!-- rumo-engineering-skills:baseline:start -->"
 
 
 @unittest.skipUnless(SH and os.name != "nt", "POSIX sh is not available on this host")
@@ -382,6 +383,53 @@ class InstallShellTests(unittest.TestCase):
             self.assertIn("must contain a profiles directory", result.stderr)
             self.assertFalse((codex_home / "skills").exists())
 
+    def test_baseline_flags_add_keep_and_remove_the_block(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            codex_home = temp_root / "codex"
+            claude_home = temp_root / "claude"
+            claude_md = claude_home / "CLAUDE.md"
+            codex_md = codex_home / "AGENTS.md"
+            claude_home.mkdir()
+            claude_md.write_bytes(b"# mine\r\n")
+
+            def install(*extra: str) -> subprocess.CompletedProcess[str]:
+                return self.run_installer(
+                    temp_root, codex_home, claude_home, temp_root / "agents", *extra
+                )
+
+            result = install()
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("rerun with --baseline", result.stdout)
+            self.assertEqual(claude_md.read_bytes(), b"# mine\r\n")
+            self.assertFalse(codex_md.exists())
+
+            result = install("--baseline", "--dry-run")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("Would update baseline (added)", result.stdout)
+            self.assertEqual(claude_md.read_bytes(), b"# mine\r\n")
+            self.assertFalse(codex_md.exists())
+
+            result = install("--baseline")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            installed = claude_md.read_bytes()
+            self.assertTrue(installed.startswith(b"# mine\r\n\r\n" + BASELINE_START.encode()))
+            self.assertIn(BASELINE_START, codex_md.read_text(encoding="utf-8"))
+
+            result = install()
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertNotIn("rerun with --baseline", result.stdout)
+            self.assertEqual(claude_md.read_bytes(), installed)
+
+            result = install("--baseline", "--remove-baseline")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(claude_md.read_bytes(), installed)
+
+            result = install("--remove-baseline")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(claude_md.read_bytes(), b"# mine\r\n")
+            self.assertNotIn(BASELINE_START, codex_md.read_text(encoding="utf-8"))
+
     def assert_link_targets(self, skills_dir: Path, expected_names: list[str]) -> None:
         for name in expected_names:
             link = skills_dir / name
@@ -543,6 +591,14 @@ class InstallShellExtrasTests(unittest.TestCase):
         self.assertIn("rumo-gamma", result.stdout)
         self.assertIn("Dry run finished; nothing was changed.", result.stdout)
         self.assertNotIn("installed from", result.stdout)
+        for home in self.homes.values():
+            self.assertFalse(home.exists())
+
+    def test_baseline_without_helper_fails_before_any_change(self) -> None:
+        result = self.run_installer("--baseline")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Baseline helper not found", result.stderr)
         for home in self.homes.values():
             self.assertFalse(home.exists())
 

@@ -1,6 +1,6 @@
 # Always-On Baseline
 
-Clients load a skill only when its description matches the request, so small edits can skip `rumo-coding-guidelines`. Paste the block below into a project's or user's `AGENTS.md` or `CLAUDE.md` to keep the core rules in every session. It indexes the skills; it does not replace them.
+Clients load a skill only when its description matches the request, so small edits can skip `rumo-coding-guidelines`. Keep the block below in a project's or user's `AGENTS.md` or `CLAUDE.md` to keep the core rules in every session: run the installer with `-Baseline` / `--baseline`, run `scripts/baseline_block.py --target <file> --install` from this skill, or paste it by hand. It indexes the skills; it does not replace them.
 
 ```markdown
 ## Engineering baseline (rumo skills)
