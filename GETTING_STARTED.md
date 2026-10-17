@@ -85,6 +85,10 @@ skills:
 
 ## 2. 验证安装
 
+分三层确认，每层只证明自己那一层。
+
+**第一层：仓库结构有效。**
+
 ```powershell
 py -3 scripts\verify_skills.py
 ```
@@ -93,7 +97,27 @@ py -3 scripts\verify_skills.py
 python3 scripts/verify_skills.py
 ```
 
-Windows 没有 `py` 启动器时把 `py -3` 换成 `python`。看到 `Rumo skill validation passed` 即说明技能结构有效。
+Windows 没有 `py` 启动器时把 `py -3` 换成 `python`。看到 `Rumo skill validation passed` 说明技能文件本身没问题，但不说明已经装好。
+
+**第二层：安装状态正确。**
+
+用安装器时，检查客户端目录里的 `rumo-*` 链接都指向本仓库的 `skills/`(装了扩展的还有 `extras/`)。默认应有 17 个：
+
+```powershell
+Get-ChildItem "$HOME\.claude\skills" | Where-Object Name -like 'rumo-*' | Select-Object Name, LinkType, Target
+```
+
+```bash
+ls -l ~/.claude/skills | grep ' rumo-'
+```
+
+把 `.claude` 换成 `.codex` 或 `.agents` 可以检查其他目录。用插件时，执行 `claude plugin list`，确认 `rumo-engineering-skills` 已安装并启用。
+
+**第三层：新会话能调用。**
+
+重新开一个客户端会话，点名调用一个技能，例如 Codex 用 `$rumo-verify`，Claude Code 用 `/rumo-verify`，插件方式用 `/rumo-engineering-skills:rumo-verify`。技能正常执行说明客户端已加载它。
+
+点名调用成功不代表自动选择也没问题：客户端会不会根据自然语言描述选中正确的技能，这三层都不检查。
 
 ## 3. 开始使用
 

@@ -103,7 +103,14 @@ cd rumo-engineering-skills
 /plugin install rumo-engineering-skills --marketplace rumoii/rumo-engineering-skills
 ```
 
-在终端里用 `claude plugin install rumo-engineering-skills --marketplace rumoii/rumo-engineering-skills`。插件里的技能名带前缀，例如 `rumo-engineering-skills:rumo-clarify`。插件只对 Claude Code 生效，不含扩展；其他客户端仍用安装器。
+在终端里用 `claude plugin install rumo-engineering-skills --marketplace rumoii/rumo-engineering-skills`(需要 2.1.292 或更高版本)。更早的版本先添加插件市场再安装：
+
+```bash
+claude plugin marketplace add rumoii/rumo-engineering-skills
+claude plugin install rumo-engineering-skills@rumo-engineering-skills
+```
+
+插件里的技能名带前缀，例如 `rumo-engineering-skills:rumo-clarify`。插件只对 Claude Code 生效，不含扩展；其他客户端仍用安装器。
 
 同一台机器只选一种方式。安装器已经把技能链接进 `~/.claude/skills` 时再装插件，每个技能都会出现两次。更新插件：先执行 `claude plugin marketplace update rumo-engineering-skills`，再执行 `claude plugin update rumo-engineering-skills@rumo-engineering-skills`，然后开新会话。
 
@@ -134,6 +141,8 @@ python3 scripts/run_auxiliary_tests.py
 ```
 
 Windows 没有 `py` 启动器时改用 `python`。`install.sh` 的测试只在 Linux、macOS 或 WSL 中运行，在 Windows 上会被跳过。校验器检查命名、frontmatter、界面元数据、相对链接、按默认与扩展分组的目录清单、默认技能篇幅、多余的许可文件、JSON 语法、疑似密钥和被跟踪的凭据文件。如需拦截私有词汇，把词条写入 `~/.rumo-engineering-skills/forbidden-terms.txt`(或 `RUMO_FORBIDDEN_TERMS_FILE` 指定的文件)，每行一个，正则以 `re:` 开头；该文件不要放进仓库。
+
+这些命令检查的是仓库，不是安装结果。安装后先确认链接(`ls -l ~/.claude/skills`)或 `claude plugin list`，再开新会话点名调用一个技能，例如 `/rumo-verify`，插件方式为 `/rumo-engineering-skills:rumo-verify`。点名调用成功只说明客户端加载了技能，不说明客户端会自动选中它。
 
 ## 安全
 

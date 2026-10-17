@@ -103,7 +103,14 @@ Claude Code users can install the default skills as a plugin instead, without a 
 /plugin install rumo-engineering-skills --marketplace rumoii/rumo-engineering-skills
 ```
 
-From a shell, use `claude plugin install rumo-engineering-skills --marketplace rumoii/rumo-engineering-skills`. Plugin skills carry a prefix, such as `rumo-engineering-skills:rumo-clarify`. The plugin covers Claude Code only and has no extras; other clients use the installer.
+From a shell (Claude Code 2.1.292 or later), use `claude plugin install rumo-engineering-skills --marketplace rumoii/rumo-engineering-skills`. On older versions, add the marketplace first:
+
+```bash
+claude plugin marketplace add rumoii/rumo-engineering-skills
+claude plugin install rumo-engineering-skills@rumo-engineering-skills
+```
+
+Plugin skills carry a prefix, such as `rumo-engineering-skills:rumo-clarify`. The plugin covers Claude Code only and has no extras; other clients use the installer.
 
 Choose one method per machine. If the installer already linked skills into `~/.claude/skills`, adding the plugin loads every skill twice. To update the plugin, run `claude plugin marketplace update rumo-engineering-skills`, then `claude plugin update rumo-engineering-skills@rumo-engineering-skills`, and start a new session.
 
@@ -134,6 +141,8 @@ python3 scripts/run_auxiliary_tests.py
 ```
 
 On Windows without the `py` launcher, use `python`. The `install.sh` tests run only on Linux, macOS, or WSL and are skipped on Windows. The validator checks names, frontmatter, UI metadata, relative links, catalog inventories grouped into default skills and extras, default-skill size, stray license files, JSON syntax, likely secrets, and tracked credential files. To block private vocabulary, list terms in `~/.rumo-engineering-skills/forbidden-terms.txt` (or the file named by `RUMO_FORBIDDEN_TERMS_FILE`), one per line, with a `re:` prefix for regular expressions; keep that file out of the repository.
+
+These commands check the repository, not an installation. After installing, check the links (`ls -l ~/.claude/skills`) or `claude plugin list`, then start a new session and invoke a skill by name, such as `/rumo-verify` or, for the plugin, `/rumo-engineering-skills:rumo-verify`. A successful explicit call shows that the client loaded the skill; it does not show that the client will choose it automatically.
 
 ## Security
 
