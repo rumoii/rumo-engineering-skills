@@ -70,8 +70,8 @@ CLARIFY_DESCRIPTION_RULES = (
     r"Do not use when the request is already specific",
     r"for pure questions",
     r"for reviews",
-    r"at most one round",
-    r"only when the user asks",
+    r"Group.*questions",
+    r"newly exposed.*decisions",
 )
 CLARIFY_BODY_RULES = (
     r"Asking about a clear request is a failure",
@@ -79,8 +79,8 @@ CLARIFY_BODY_RULES = (
     r"recommended answer",
     r"accepts only the recommendations shown in this round",
     r"Critical.*do not default it",
-    r"Do not start a second round on your own",
-    r"gather every open decision it raises into one new round",
+    r"Follow up only when an earlier answer exposes a consequential decision",
+    r"Do not repeat settled questions",
     r"end on the questions, not on a completion report",
     r"Answers to clarifying questions do not widen what the agent may do",
 )
@@ -88,7 +88,7 @@ CLARIFY_BODY_RULES = (
 # The high-assurance gate fires without being named, but never widens authorization.
 HIGH_ASSURANCE_BODY_RULES = (
     r"Apply this risk gate on your own",
-    r"\*\*Enter directly\*\* when the change touches money, authentication, authorization, migrations, or irreversible effects",
+    r"\*\*Enter directly\*\* when the change alters monetary calculations, authentication or authorization decisions, database migrations, or irreversible behavior",
     r"\*\*Rate first\*\* when it touches durable data, concurrency, or public interfaces, or when the risk is unclear",
     r"Review-only, read-only diagnosis, and evidence-plan requests keep their own boundaries",
     r"Spec approval authorizes implementation and local checks only",
@@ -174,10 +174,25 @@ class SkillBoundariesTest(unittest.TestCase):
         for pattern in HIGH_ASSURANCE_REFERENCE_RULES:
             with self.subTest(reference_rule=pattern):
                 self.assertRegex(reference, pattern)
+        self.assertNotIn("**High:** money, authentication", reference)
+        self.assertNotIn("Create one repository-native entry point", reference)
+        self.assertNotIn("a user request for proof enter directly", reference)
         for skill_name in RISK_GATE_ENTRIES:
             with self.subTest(entry=skill_name):
                 text = (REPO_ROOT / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")
                 self.assertRegex(text, r"high-assurance risk gate[^.]*`rumo-test`|`rumo-test`[^.]*high-assurance risk gate")
+
+    def test_reasoning_loops_have_no_default_round_limit(self) -> None:
+        paths = (
+            "skills/rumo-debug/SKILL.md",
+            "skills/rumo-review/references/loop.md",
+            "skills/rumo-test/references/high-assurance.md",
+        )
+        for relative in paths:
+            with self.subTest(path=relative):
+                text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+                for removed in ("After three hypotheses", "after two fix attempts", "five cycles have run", "Allow at most two rounds"):
+                    self.assertNotIn(removed, text)
 
     def test_accepts_counterpart_or_pair_specific_exclusion(self) -> None:
         self.assertTrue(has_boundary("Use rumo-verify instead.", "rumo-verify", "unused"))

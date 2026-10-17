@@ -40,10 +40,10 @@ Read [references/remote-investigation.md](references/remote-investigation.md) be
 
 ## Stop Conditions
 
-- After three hypotheses in a row are refuted, or after a fix leaves the symptom in place twice, stop proposing hypotheses and stacking patches.
-- Return to step 1 and recheck the premises: environment, version, the artifact actually running, the data, and which component owns the behavior.
-- Report the hypotheses ruled out with their evidence, what remains suspect, and the information or access you need from the user.
-- When the fix would reach beyond the proven cause, such as a broad rewrite, a public interface, or stored data, stop and ask first.
+- Choose whether to continue, change strategy, or pause from new evidence, narrowing causes, reproducibility, remaining risk, and cost; there is no default hypothesis or fix-attempt limit. Respect the user's explicit budget and stopping instructions.
+- Continue while evidence advances the investigation inside the authorized scope. When failures repeat without information gain, stop that strategy and recheck the environment, version, running artifact, data, and owning component. Never repeat the same patch without new evidence.
+- If a different safe strategy can obtain the missing evidence, pursue it. Otherwise report the ruled-out hypotheses, remaining uncertainty, and the exact input, access, or external condition needed.
+- Ask before a fix needs a product decision or changes beyond the proven cause and existing authorization. Do not re-request approval for work already covered.
 
 ## Report
 

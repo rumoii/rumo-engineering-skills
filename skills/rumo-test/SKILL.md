@@ -13,7 +13,7 @@ Tests are evidence for claims. A large suite, a coverage number, an HTTP 200, or
 | --- | --- |
 | Evidence plan (default) | Deciding what to test, or whether existing tests are enough; works without writing code |
 | Test-first | Implementing a behavior change or bug fix |
-| High assurance | The risk gate below rates the change high, or the user asks for proof, a spec, or confidence without line-by-line review |
+| High assurance | The risk gate below rates the change high, or the user explicitly requests this mode |
 
 ## Evidence Plan
 
@@ -40,11 +40,11 @@ Example, for a bug where refunds can exceed the amount paid:
 
 Apply this risk gate on your own whenever you implement a change; the user does not need to name the mode.
 
-- **Enter directly** when the change touches money, authentication, authorization, migrations, or irreversible effects, or the user asks for proof, a spec, or confidence without line-by-line review.
-- **Rate first** when it touches durable data, concurrency, or public interfaces, or when the risk is unclear. Write a short rating against the risk levels in the reference, in the plan or the reply. High enters this mode; normal continues with test-first, and the report states the rating and why.
+- **Enter directly** when the change alters monetary calculations, authentication or authorization decisions, database migrations, or irreversible behavior, or the user explicitly requests high assurance. A wording change in those areas does not qualify by location alone; asking for a plan or reliable verification does not select this mode.
+- **Rate first** when it touches durable data, concurrency, or public interfaces, or when the risk is unclear. Judge the changed behavior, failure consequences, blast radius, compatibility, and reversibility. Low means no meaningful behavior change; normal means a bounded, reversible behavior change; high means serious data loss, isolation failure, incompatible durable state, or a broad failure that cannot be safely contained or reversed. Only high enters this mode; explain a non-obvious rating briefly.
 - Review-only, read-only diagnosis, and evidence-plan requests keep their own boundaries. The rating informs the advice; it does not authorize edits.
 
-Read [references/high-assurance.md](references/high-assurance.md) in full before starting. In short: an approved spec before any implementation, test-first for every behavior, one entry point that reruns every selected check from clean inputs, and a final evidence report from a single fresh run after the last edit. Spec approval authorizes implementation and local checks only; commits, tags, pushes, deployments, database writes, deletions, credential changes, dependency installs, paid services, and any other separately controlled action keep their own approvals.
+For high assurance, read [references/high-assurance.md](references/high-assurance.md) in full before starting: reuse a covering approved spec, implement test-first, reuse sufficient check commands, and report one fresh final run after the last edit. Low-risk wording or file-copy work needs proportionate inspection, not new tests or checkers. Spec approval authorizes implementation and local checks only; commits, tags, pushes, deployments, database writes, deletions, credential changes, dependency installs, paid services, and any other separately controlled action keep their own approvals.
 
 ## Rules For Every Mode
 

@@ -22,7 +22,7 @@ Prefer the most direct independent review surface; all of them feed the same loo
    - **Must fix:** P0, P1, P2, correctness bugs, data-loss or security issues, broken builds or tests, and findings explicitly marked as blocking.
    - **Consider:** P3, style, maintainability, unclear risk.
    - **Not actionable:** false positives (record why with file, line, or test evidence), items already fixed, items without enough evidence.
-3. Fix only the must-fix items, inside the reviewed change.
+3. Fix only the must-fix items, inside the reviewed target.
 4. Add the smallest regression test when a finding concerns behavior, data contracts, permissions, concurrency, or error handling.
 5. Run focused verification: the exact tests, compile or lint, `git diff --check`; widen only when the blast radius requires it.
 6. Review the same target again.
@@ -31,13 +31,14 @@ An unlabeled finding that clearly blocks acceptance counts as must fix. Do not l
 
 ## Stop Conditions
 
-Stop and report instead of continuing when:
+Choose the next cycle from new evidence, resolved findings, remaining risk, and cost; there is no default cycle or fix-attempt limit. Respect the user's explicit budget. When a finding recurs without information gain, stop that repair strategy, recheck its cause and the verification route, and use a different evidence-backed approach. If no safe approach can progress, report the missing input or condition instead of stacking patches.
+
+Stop and report when:
 
 - the latest review has no must-fix items (list remaining consider items separately);
-- the same finding returns after two fix attempts and the evidence is ambiguous;
-- a fix needs a product decision, contract change, data migration, deployment, credentials, or changes to unrelated work;
+- a fix needs a product decision, contract change, data migration, deployment, credentials, or changes outside existing authorization;
 - verification fails for a reason outside the change and cannot be isolated;
-- five cycles have run in one repository.
+- the user's budget is exhausted or they ask to stop.
 
 ## Safety
 

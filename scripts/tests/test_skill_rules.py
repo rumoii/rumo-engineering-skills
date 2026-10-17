@@ -30,7 +30,8 @@ RULES = {
     "rumo-debug": (
         "Investigation is read-only by default.",
         "Database writes always go through `rumo-database-change-safety`.",
-        "After three hypotheses in a row are refuted, or after a fix leaves the symptom in place twice",
+        "Never repeat the same patch without new evidence.",
+        "Respect the user's explicit budget",
         "stays read-only unless the user authorizes the exact change",
         "Keep source reasoning separate from runtime proof.",
     ),
@@ -106,7 +107,8 @@ RULES = {
         "Review (default) and Simplify modes never edit code; only Loop and Respond do, and only on an explicit request.",
         "Do not post replies, resolve threads, or request another review on the hosting platform unless the user asks.",
         "Do not guess the base from branch names.",
-        "Report only issues this change introduces or materially exposes",
+        "For a diff, report only issues this change introduces or materially exposes",
+        "For a named-scope audit, report existing actionable issues inside that scope",
         "Each finding names the repository, file and line, the consequence, the triggering condition, and the evidence.",
     ),
     "rumo-test": (

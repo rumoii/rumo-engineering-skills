@@ -30,13 +30,13 @@ Installed by default.
 
 | Skill | Purpose |
 | --- | --- |
-| `rumo-clarify` | One round of short questions with recommended answers when a request is unclear; critical decisions are never defaulted |
+| `rumo-clarify` | Group answerable questions with recommendations; follow up on newly exposed key decisions and never default critical ones |
 | `rumo-plan` | Short spec and verifiable task breakdown, task-by-task execution of an agreed plan, or a durable engineering decision record |
 | `rumo-coding-guidelines` | Baseline discipline: real code paths, only requested and necessary work, verified results |
 | `rumo-test` | Evidence planning, test-first implementation, and high-assurance spec-and-evidence work |
 | `rumo-debug` | Reproduce, localize, and prove a root cause; read-only unless the fix is requested |
 | `rumo-verify` | Exact change scope and the smallest sufficient checks before claiming done; building repository gates |
-| `rumo-review` | Read-only review, an explicit review-fix loop, a simplification audit, or addressing someone else's review feedback |
+| `rumo-review` | Read-only diff review or named-scope audit, an explicit review-fix loop, a simplification audit, or addressing review feedback |
 | `rumo-git-commit` | Commits, branch landing, history cleanup, releases, pushes, and pull requests following repository conventions |
 | `rumo-interface` | Compatible evolution of APIs, messages, configuration, and stored formats, with HTTP contract checks |
 | `rumo-lifecycle-safety` | Ownership, retry, cancellation, timeout, shutdown, and cleanup for long-lived work |

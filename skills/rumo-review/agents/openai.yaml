@@ -1,4 +1,4 @@
 interface:
   display_name: "Rumo Review"
-  short_description: "只读代码评审；明确要求时进入评审修复循环或做可删复杂度审计"
-  default_prompt: "Use $rumo-review to review the specified change and report evidence-backed findings without modifying code."
+  short_description: "只读评审差异或审计指定范围；明确要求时进入修复循环或简化审计"
+  default_prompt: "Use $rumo-review to review the specified diff or audit the named scope for existing actionable issues, with evidence and without modifying code."

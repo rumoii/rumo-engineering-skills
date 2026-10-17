@@ -1,6 +1,6 @@
 ---
 name: rumo-review
-description: Use for a read-only code review of uncommitted changes, a branch diff, a commit, or a named scope; for an explicitly requested review-fix-repeat loop until no blocking findings remain; for an explicitly requested simplification audit of removable complexity; or for addressing review feedback from someone else. Report correctness, security, lifecycle, compatibility, operations, and test risks with file-and-line evidence. Do not use to run pre-handoff checks; use rumo-verify instead.
+description: Use for a read-only code review of uncommitted changes, a branch diff, or a commit, or a named-scope audit of existing issues; for an explicitly requested review-fix-repeat loop until no blocking findings remain; for an explicitly requested simplification audit of removable complexity; or for addressing review feedback from someone else. Report correctness, security, lifecycle, compatibility, operations, and test risks with file-and-line evidence. Do not use to run pre-handoff checks; use rumo-verify instead.
 ---
 
 # Rumo Review
@@ -21,7 +21,7 @@ Review (default) and Simplify modes never edit code; only Loop and Respond do, a
 ## Settle The Target
 
 1. Read the repository guidance and the nearest module instructions.
-2. Pick one target: uncommitted changes, a diff against a confirmed base, a commit, or the user's scope.
+2. Pick one target: uncommitted changes, a diff against a confirmed base, a commit, or a named-scope audit of the current implementation. Use the user's stated target; ask only if it is materially ambiguous.
 3. Record repository, branch, HEAD, worktree status, and, for branch comparisons, the base and merge base.
 4. Inspect committed, staged, unstaged, and untracked changes separately; a three-dot diff hides dirty layers.
 5. Review each repository on its own.
@@ -46,7 +46,7 @@ When the target is a CI job, verifier, threshold, or other gate, also apply the 
 - Trace both sides of every changed interface and every production consumer in scope.
 - Keep source behavior, built artifacts, deployed state, and field acceptance apart.
 - Treat tests and comments as evidence to weigh, not authority over production behavior.
-- Report only issues this change introduces or materially exposes; old debt is out of scope.
+- For a diff, report only issues this change introduces or materially exposes; old debt is out of scope. For a named-scope audit, report existing actionable issues inside that scope, even on a clean HEAD. Do not expand either target into unrelated debt.
 - Check that a suggested fix direction is feasible, but do not edit code in review mode.
 
 ## Respond To Feedback

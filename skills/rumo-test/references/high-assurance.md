@@ -2,7 +2,7 @@
 
 Trust shifts from reading the code to two artifacts the user can check: a spec they approved before work began, and an evidence report produced by one clean, reproducible run after work ended. The evidence covers only what its checks exercise; it does not prove the spec is complete.
 
-Entry follows the risk gate in SKILL.md: money, authentication, authorization, migrations, irreversible effects, or a user request for proof enter directly; durable data, concurrency, public interfaces, or unclear risk get a rating first, and only a high rating enters. Review-only requests, wording changes, routine refactors, and ordinary bug fixes rated normal stay out of this mode.
+Entry follows the risk gate in SKILL.md, which owns the classification. Do not reclassify a change from the file name or domain alone. Review-only requests, wording changes, routine refactors, and ordinary bug fixes rated normal keep their own workflow boundaries.
 
 ## Flow
 
@@ -17,18 +17,15 @@ Before touching implementation files:
 
 0. If a spec the user already approved covers the whole task, reuse it and say so. Get approval again only for scope or key decisions it does not cover.
 1. Inspect entry points, callers, sources of truth, existing tests and aggregate checks, the dirty worktree, and repository instructions.
-2. Rate the risk:
-   - **Low:** trivial, no meaningful behavior surface.
-   - **Normal:** an ordinary behavior change or bug fix.
-   - **High:** money, authentication, authorization, durable data, concurrency, migrations, public interfaces, or irreversible effects.
-3. Write the spec at a path the user agrees on, with these parts:
+2. Record the risk and failure consequences using the gate in SKILL.md.
+3. Write the spec using the repository's convention, or keep it in the conversation when no persistent artifact is required, with these parts:
    - **Behaviors:** concrete scenarios with inputs and expected outcomes, including invalid and boundary cases.
    - **Must not:** invariants that must hold no matter what.
    - **Failure model (high risk):** how this could fail in production and what would detect each failure.
    - **Checks:** the evidence layers that will be run and why each is needed.
    - **Changes to the setup:** new dependencies, helpers, branches, environment changes, and persistent files. Prefer existing tooling. Listing a tool or dependency here does not authorize installing it or editing dependency manifests; that needs its own go-ahead.
-4. Show the spec and get approval of that exact version. A clarifying answer is input, not approval: revise, note why, ask again.
-5. After approval, only append to the spec. If a requirement proves wrong or missing, stop, record the revision, and get it approved before continuing.
+4. Show the spec. If existing authorization covers its scope and key decisions, continue; otherwise get approval for what is new. A clarifying answer resolves the named decision, not unrelated actions.
+5. Record material revisions and seek approval only for changes to scope or key decisions outside existing authorization. Do not pause for an implementation detail already covered.
 
 If the user explicitly wants an unattended run without the approval pause, write "spec approval: not obtained (unattended run)" in the spec and lower the confidence of the final claim.
 
@@ -46,7 +43,7 @@ Use the repository's existing tools and aggregate entry point where they exist. 
 | Full relevant suite | a regression could cross the edited module |
 | Types, lint, format | the repository already runs them |
 | Changed-line or branch coverage | tooling exists or the spec adds it |
-| Mutation testing | normal-risk work in this mode and all high-risk work, unless unavailable (say so) |
+| Mutation testing | the failure model needs evidence that plausible wrong implementations are rejected; use existing tooling or a focused manual mutant |
 | Property, fuzz, race, stress, compatibility, rollback, UI, performance, observability | the failure model names that risk |
 | Real execution of the assembled system | the claim depends on runtime assembly |
 | Dependency, license, capability, secret scans | dependencies or execution capabilities changed |
@@ -56,7 +53,7 @@ Every check must fail closed. A checker written for this task must first be show
 
 When mutating code by hand, prefer a temporary worktree or scratch copy of the repository so the user's worktree is never touched. When mutating in place, save each touched file's exact current content once, outside the repository, and write it back after every mutant; never stash or `git restore`, which also move or discard uncommitted work, and never leave a `.bak` or `.orig` beside the file. Restore the exact original after every mutant and confirm the worktree diff matches the pre-mutation state before moving on. A mutant that survives is a missing assertion or an equivalent change; say which, with the reason.
 
-Create one repository-native entry point that reruns every selected check from clean inputs, stops with a non-zero exit at the first required failure, and before reporting success confirms that every selected check actually ran. It must not touch unrelated user files. Keep it in the repository's working tree; commit it only when the user asks for a commit. Delete stale reports before running, record the source revision tested, and pin tool versions. Personal paths, scratch scripts, and leftover outputs are not evidence.
+Reuse the repository's sufficient commands or aggregate entry point. Add an entry point only when the selected checks cannot otherwise be rerun reliably; a single maintained command can already be enough. Any added runner must use clean inputs, propagate required failures, confirm every selected check ran, and leave unrelated user files untouched. Keep reusable runners in the working tree; commit only when asked. Distinguish fresh results from stale outputs and record the tested source revision and tool versions.
 
 A check that did not run is never a pass. Label it:
 
@@ -66,7 +63,7 @@ A check that did not run is never a pass. Label it:
 
 ## 4. Evidence Report
 
-After the last edit to code, tests, checkers, configuration, or docs, run the entry point once. Then write the report:
+After the last edit to code, tests, checkers, configuration, or docs, run the selected commands or entry point once. Then write the report:
 
 - the approved spec version and the source revision;
 - a two-way map: every scenario, must-not rule, and failure mode points to the checks that would catch it, and every check points back to what it covers;
@@ -82,10 +79,10 @@ While a required check fails, the result is blocked. Never weaken an assertion, 
 
 Use this only when the user or a policy asks for it and a helper with a fresh context is available. It adds an adversarial check; it never replaces the user's spec approval.
 
-1. **Blind pass.** Hand the helper only the task as the user stated it (with approved scope changes), the approved spec, the exact source revision, and the check entry point. Withhold the build conversation, the evidence report or its draft, your suspected weak spots, and expected answers. The helper may read any code and test. It reruns the entry point and attacks: whether the claimed source is what actually runs, gaps between spec and task, tests that pass trivially or mock away the logic, new mutants or inputs the builder did not pick, custom checkers' known-bad paths, and requirements without a falsifying check or checks without a requirement. It always returns its list of attacks, even when nothing survives.
+1. **Blind pass.** Hand the helper only the task as the user stated it (with approved scope changes), the approved spec, the exact source revision, and the selected check commands. Withhold the build conversation, the evidence report or its draft, your suspected weak spots, and expected answers. The helper may read any code and test. It reruns the checks and attacks: whether the claimed source is what actually runs, gaps between spec and task, tests that pass trivially or mock away the logic, new mutants or inputs the builder did not pick, custom checkers' known-bad paths, and requirements without a falsifying check or checks without a requirement. It always returns its list of attacks, even when nothing survives.
 2. **Comparison pass.** Only after the blind record is frozen, give the helper the evidence report. Compare revisions, commands, numbers, omissions, and mappings. Any mismatch suspends the affected claim until it is reconciled.
 3. **Findings.** The helper fixes nothing. A wrong behavior or a checker that cannot fail goes back through the spec, test, and check loop, then a new helper context reviews the new revision. An overclaim in the spec or report is corrected and disclosed. A gap in the spec, or a disputed classification, goes to the user.
-4. **Rounds and verdict.** Allow at most two rounds unless the user approves more; hitting the limit leaves open findings open. Report passed, failed, blocked (inputs, tools, or fresh context missing), or not performed (a stated confidence downgrade). A verdict covers one exact revision; any later edit to code or checkers resets it to not performed.
+4. **Progress and verdict.** Continue while evidence resolves findings within the authorized scope and budget; there is no default round limit. When the same finding recurs without new evidence, recheck the cause and change strategy. Report the missing input or condition if no safe approach can progress. Report passed, failed, blocked (inputs, tools, or fresh context missing), or not performed. A verdict covers one exact revision; any later edit to code or checkers resets it to not performed.
 
 ## Non-Negotiables
 
