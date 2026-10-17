@@ -102,7 +102,7 @@ Windows 没有 `py` 启动器时把 `py -3` 换成 `python`。看到 `Rumo skill
 
 **第二层：安装状态正确。**
 
-用安装器时，检查客户端目录里的 `rumo-*` 链接都指向本仓库的 `skills/`(装了扩展的还有 `extras/`)。默认应有 17 个：
+用安装器时，检查客户端目录里的 `rumo-*` 链接都指向本仓库的 `skills/`(装了扩展的还有 `extras/`)。数量与 README 技能清单里的默认技能一致：
 
 ```powershell
 Get-ChildItem "$HOME\.claude\skills" | Where-Object Name -like 'rumo-*' | Select-Object Name, LinkType, Target
