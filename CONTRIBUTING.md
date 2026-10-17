@@ -77,7 +77,10 @@ claude plugin eval . --runs 1 --ablation none --no-publish
 
 Use `--case <name>` for one case and `--runs 3` before trusting a borderline
 result. Results land in the ignored `evals/results/`. Add a case when a
-request picks the wrong skill.
+request picks the wrong skill. `coding-baseline` is expected to fail: on a
+small edit the client does not load `rumo-coding-guidelines`, which is why the
+always-on snippet in its `references/` exists. A pass there means a
+description change altered how the baseline loads.
 
 Without `--runs`, each case runs three times per arm, and without
 `--ablation none` it runs a second arm without the plugin, so a full default
