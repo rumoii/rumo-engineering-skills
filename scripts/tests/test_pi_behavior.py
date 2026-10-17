@@ -111,5 +111,74 @@ class RunCaseTest(unittest.TestCase):
         self.assertFalse((repo / "pi-evidence").exists())
 
 
+class ReplayTest(unittest.TestCase):
+    def make_repo(self, root: Path) -> tuple[Path, str, str]:
+        from scripts.run_codex_behavior import git
+        repo = root / "source"
+        (repo / "src").mkdir(parents=True)
+        (repo / "src" / "keep.py").write_text("base\n", encoding="utf-8")
+        (repo / "src" / "gone.py").write_text("old\n", encoding="utf-8")
+        (repo / ".gitignore").write_text("build/\n", encoding="utf-8")
+        git(repo, "init", "-q")
+        commit = ["-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-qam"]
+        git(repo, "add", ".")
+        git(repo, *commit, "base")
+        base = git(repo, "rev-parse", "HEAD")
+        (repo / "src" / "keep.py").write_text("edited\n", encoding="utf-8")
+        (repo / "src" / "gone.py").unlink()
+        (repo / "src" / "new.py").write_text("added\n", encoding="utf-8")
+        git(repo, "add", "-A")
+        git(repo, *commit, "dirty")
+        return repo, base, git(repo, "rev-parse", "HEAD")
+
+    def test_commit_seed_with_dirty_overlay(self) -> None:
+        from scripts.run_codex_behavior import git, seed_from_commit
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            repo, base, dirty = self.make_repo(root)
+            (root / "snap" / "skills" / "rumo-review").mkdir(parents=True)
+            (root / "snap" / "skills" / "rumo-review" / "SKILL.md").write_text("name: rumo-review\n", encoding="utf-8")
+            sample = root / "sample"
+            seed_from_commit(sample, root / "snap", {"repo": str(repo), "commit": base, "dirty_commit": dirty})
+            self.assertEqual(git(sample, "show", "HEAD:src/keep.py"), "base")
+            self.assertEqual((sample / "src" / "keep.py").read_text(encoding="utf-8"), "edited\n")
+            self.assertFalse((sample / "src" / "gone.py").exists())
+            self.assertTrue((sample / "src" / "new.py").exists())
+            self.assertIn(".agents/", (sample / ".gitignore").read_text(encoding="utf-8"))
+            self.assertNotIn(".agents", git(sample, "status", "--short", "--untracked-files=all"))
+
+    def test_manifest_must_stay_outside_checkout_and_be_complete(self) -> None:
+        from scripts.run_codex_behavior import load_manifest
+        repo = Path(__file__).resolve().parents[2]
+        with self.assertRaises(ValueError):
+            load_manifest(repo / "replays.json", repo)
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "replays.json"
+            path.write_text(json.dumps([{"name": "r", "repo": "x", "commit": "c", "turns": ["q"], "skills": []}]), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                load_manifest(path, repo)
+            path.write_text(json.dumps([{"name": "r", "repo": "x", "commit": "c", "turns": ["q"], "skills": [], "rubric": "x"}]), encoding="utf-8")
+            self.assertTrue(load_manifest(path, repo)["r"]["read_only"])
+
+    def test_replay_case_runs_from_its_commit(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            repo, base, _ = self.make_repo(root)
+            (root / "snap" / "skills").mkdir(parents=True)
+            case = {"repo": str(repo), "commit": base, "turns": ["review src"], "skills": [], "rubric": "r", "read_only": True}
+
+            def fake_turn(command, prompt, sample, prefix, timeout):
+                self.assertTrue((sample / "src" / "gone.py").exists())
+                prefix.with_suffix(".jsonl").write_text("\n".join(json.dumps(e) for e in [reply("ok"), SETTLED]), encoding="utf-8")
+                return 0, False
+
+            args = argparse.Namespace(output_dir=root / "out", snapshot=root / "snap", pi="x", model="m", timeout=10,
+                                      without_skills=True, cases={"replay": case})
+            with patch("scripts.run_pi_behavior.run_turn", side_effect=fake_turn):
+                result = run_case(args, "replay")
+            self.assertEqual(result["evidence_status"], "valid")
+            self.assertTrue(result["mechanical_checks"]["sample_unchanged"])
+
+
 if __name__ == "__main__":
     unittest.main()

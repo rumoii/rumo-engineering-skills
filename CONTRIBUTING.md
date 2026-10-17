@@ -185,6 +185,11 @@ Codex budget. pi has no sandbox, so the runner allows only `read`, `grep`,
 skills, extensions, and prompt templates. Its arguments, `--without-skills`
 arm, and result layout match the Codex runner. A result from another model
 only screens a change; confirm it with Codex or Claude before reporting it.
+`--manifest <file>` adds replay cases from local repositories: each names a
+repository, a commit, an optional `dirty_commit` whose changes become
+uncommitted edits, the turns, the skills, and the acceptance criterion. Keep
+manifests and their evidence outside this checkout when the repositories are
+private.
 
 Pull requests should explain the user scenario, changed behavior, verification
 performed, and any environment or acceptance boundary that was not exercised.

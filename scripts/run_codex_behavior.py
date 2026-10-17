@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -13,6 +14,7 @@ import shutil
 import signal
 import sqlite3
 import subprocess
+import tarfile
 import time
 import tomllib
 
@@ -70,6 +72,45 @@ def seed(root: Path, snapshot: Path, case: dict, with_skills: bool = True) -> No
     git(root, "-c", "user.name=Behavior fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "Seed local sample")
     for name, content in case.get("dirty", {}).items():
         (root / name).write_text(content, encoding="utf-8")
+
+
+def seed_from_commit(root: Path, snapshot: Path, case: dict, with_skills: bool = True) -> None:
+    """Seed from a local repository commit; files changed by dirty_commit become uncommitted edits."""
+    root.mkdir(parents=True, exist_ok=False)
+    tree = subprocess.run(["git", "-C", case["repo"], "archive", "--format=tar", case["commit"]], capture_output=True, check=True).stdout
+    with tarfile.open(fileobj=io.BytesIO(tree)) as archive:
+        archive.extractall(root, filter="data")
+    if with_skills:
+        shutil.copytree(snapshot / "skills", root / ".agents" / "skills")
+    ignore = root / ".gitignore"
+    ignore.write_text((ignore.read_text(encoding="utf-8") + "\n" if ignore.exists() else "") + ".agents/\n", encoding="utf-8")
+    git(root, "init", "-q")
+    git(root, "-c", "user.name=Behavior fixture", "-c", "user.email=fixture@example.invalid", "add", ".")
+    git(root, "-c", "user.name=Behavior fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", f"Seed {case['commit']}")
+    if not case.get("dirty_commit"):
+        return
+    changes = git(Path(case["repo"]), "diff", "--no-renames", "--name-status", "-z", case["commit"], case["dirty_commit"]).split("\0")
+    for status, name in zip(changes[::2], changes[1::2]):
+        path = root / name
+        if status == "D":
+            path.unlink()
+            continue
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(subprocess.run(["git", "-C", case["repo"], "show", f"{case['dirty_commit']}:{name}"], capture_output=True, check=True).stdout)
+
+
+def load_manifest(path: Path, repo: Path) -> dict[str, dict]:
+    """Replay cases for private repositories live outside this checkout, in a JSON list."""
+    path = path.resolve()
+    if path.is_relative_to(repo):
+        raise ValueError("Keep replay manifests outside the skill checkout")
+    cases = {}
+    for item in json.loads(path.read_text(encoding="utf-8")):
+        missing = {"name", "repo", "commit", "turns", "skills", "rubric"} - item.keys()
+        if missing or item["name"] in CASES or item["name"] in cases:
+            raise ValueError(f"Replay case {item.get('name')!r}: missing {sorted(missing)} or duplicate name")
+        cases[item["name"]] = {"read_only": True, **item}
+    return cases
 
 
 def skill_overrides() -> tuple[list[dict], dict]:

@@ -15,10 +15,10 @@ import uuid
 
 try:
     from .codex_behavior_cases import CASES
-    from .run_codex_behavior import file_state, git, normalized_path_text, read_events, run_turn, seed, write_json
+    from .run_codex_behavior import file_state, git, load_manifest, normalized_path_text, read_events, run_turn, seed, seed_from_commit, write_json
 except ImportError:
     from codex_behavior_cases import CASES
-    from run_codex_behavior import file_state, git, normalized_path_text, read_events, run_turn, seed, write_json
+    from run_codex_behavior import file_state, git, load_manifest, normalized_path_text, read_events, run_turn, seed, seed_from_commit, write_json
 
 
 # pi has no sandbox, so cases get file reads and searches only: no shell, no edits.
@@ -103,14 +103,14 @@ def read_any_rumo_skill(events: list[dict]) -> bool:
 
 
 def run_case(args: argparse.Namespace, name: str) -> dict:
-    case = CASES[name]
+    case = getattr(args, "cases", CASES)[name]
     if not case["read_only"]:
         raise ValueError(f"{name} edits files; pi runs read-only cases only")
     out = args.output_dir / name
     out.mkdir(parents=True, exist_ok=False)
     root = out / "sample"
     with_skills = not getattr(args, "without_skills", False)
-    seed(root, args.snapshot, case, with_skills)
+    (seed_from_commit if "repo" in case else seed)(root, args.snapshot, case, with_skills)
     before = file_state(root)
     head = git(root, "rev-parse", "HEAD")
     index = git(root, "diff", "--cached", "--binary")
@@ -166,13 +166,13 @@ def run_case(args: argparse.Namespace, name: str) -> dict:
 
 
 def main() -> int:
-    read_only = sorted(name for name, case in CASES.items() if case["read_only"])
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--snapshot", type=Path, required=True, help="Snapshot containing skills/.")
     parser.add_argument("--output-dir", type=Path, required=True, help="New task-owned directory outside the skill checkout.")
     parser.add_argument("--pi", default="pi")
     parser.add_argument("--model", default=DEFAULT_MODEL, help="pi model as provider/id.")
-    parser.add_argument("--case", action="append", choices=read_only, help="Read-only cases only.")
+    parser.add_argument("--case", action="append", help="Read-only cases only; default: every manifest case, else every built-in one.")
+    parser.add_argument("--manifest", type=Path, help="JSON list of replay cases from local repositories, kept outside this checkout.")
     parser.add_argument("--timeout", type=int, default=600, help="Overall seconds per case, across its turns.")
     parser.add_argument("--without-skills", action="store_true", help="Baseline arm: no skills in the sample or the prompt.")
     args = parser.parse_args()
@@ -183,6 +183,15 @@ def main() -> int:
     repo = Path(__file__).resolve().parents[1]
     if args.output_dir.is_relative_to(repo) or args.output_dir.is_relative_to(args.snapshot):
         parser.error("Evidence must be outside the source checkout and snapshot.")
+    try:
+        replays = load_manifest(args.manifest, repo) if args.manifest else {}
+    except (OSError, ValueError) as exc:
+        parser.error(str(exc))
+    args.cases = {**CASES, **replays}
+    selected = args.case or sorted(replays) or sorted(name for name, case in CASES.items() if case["read_only"])
+    unknown = [name for name in selected if name not in args.cases or not args.cases[name]["read_only"]]
+    if unknown:
+        parser.error(f"Not a read-only case: {', '.join(unknown)}")
     args.pi = shutil.which(args.pi) or args.pi
     args.output_dir.mkdir(parents=True, exist_ok=False)
     snapshot_state = file_state(args.snapshot)
@@ -191,10 +200,12 @@ def main() -> int:
         "pi_version": subprocess.check_output([args.pi, "--version"], text=True).strip(), "model": args.model,
         "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "cases_sha256": hashlib.sha256(Path(__file__).with_name("codex_behavior_cases.py").read_bytes()).hexdigest(),
-        "cases": args.case or read_only, "timeout": args.timeout, "with_skills": not args.without_skills,
+        "manifest": str(args.manifest.resolve()) if args.manifest else None,
+        "manifest_sha256": hashlib.sha256(args.manifest.read_bytes()).hexdigest() if args.manifest else None,
+        "cases": selected, "timeout": args.timeout, "with_skills": not args.without_skills,
     })
     results = []
-    for name in args.case or read_only:
+    for name in selected:
         print(f"Running {name}", flush=True)
         result = run_case(args, name)
         if file_state(args.snapshot) != snapshot_state:
