@@ -18,6 +18,7 @@ RULES = {
         "Treat review, explanation, and monitoring requests as read-only until the user asks for a change.",
         'never substitute "should work"',
         "A high-assurance final run is always a fresh run after the last edit",
+        "Only after the user agrees, add it to their `AGENTS.md` or `CLAUDE.md`",
     ),
     "rumo-database-change-safety": (
         "Start read-only.",
@@ -184,6 +185,31 @@ class AlwaysOnSnippetTest(unittest.TestCase):
         for name in sorted(names):
             with self.subTest(skill=name):
                 self.assertTrue((REPO_ROOT / "skills" / name / "SKILL.md").is_file())
+
+
+# The installer edits users' own instruction files only on request; an agent
+# installing from the README must ask first.
+README_INSTALL_RULES = {
+    "README.md": (
+        "--dry-run",
+        "Ask me before writing to my user-level CLAUDE.md or AGENTS.md.",
+        "it never adds `--baseline` or `-Baseline` without the user's explicit agreement",
+    ),
+    "README.zh-CN.md": (
+        "--dry-run",
+        "写入我的用户级 CLAUDE.md 或 AGENTS.md 之前先问我",
+        "没有用户明确同意，绝不加 `--baseline` 或 `-Baseline`",
+    ),
+}
+
+
+class ReadmeInstallRulesTest(unittest.TestCase):
+    def test_agent_install_asks_before_baseline(self) -> None:
+        for name, rules in README_INSTALL_RULES.items():
+            text = (REPO_ROOT / name).read_text(encoding="utf-8")
+            for rule in rules:
+                with self.subTest(readme=name, rule=rule):
+                    self.assertTrue(rule in text, f"{name}: agent install rule missing")
 
 
 if __name__ == "__main__":

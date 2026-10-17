@@ -95,6 +95,20 @@ cd rumo-engineering-skills
 
 可选环境变量：`RUMO_SKILLS_REPO`(固定的本地仓库)、`RUMO_SKILLS_REMOTE`(克隆地址)、`RUMO_SKILL_PROFILES_REPO`(私有 Profile 仓库)、`RUMO_PROJECT_PROFILE`(显式指定 Profile)，以及 `CODEX_HOME`、`CLAUDE_HOME`、`AGENTS_HOME`(自定义客户端目录)。安装时加 `-ProfilesRepo <path>` 或 `--profiles-repo <path>` 可把 Profile 仓库路径保存到 `~/.rumo-engineering-skills/config.json`。
 
+### 让 AI 帮你安装
+
+想让 AI 代你安装，把下面这段提示词发给它：
+
+```text
+按 https://github.com/rumoii/rumo-engineering-skills 的 README 安装这套技能。
+1. 本地没有就先 clone，然后用 --dry-run(Windows 用 -DryRun)运行安装器，把它会改动的内容告诉我。
+2. 不带 --baseline 正式运行安装器，告诉我链接了哪些客户端。
+3. 写入我的用户级 CLAUDE.md 或 AGENTS.md 之前先问我；我同意了，才带 --baseline(-Baseline)重跑，并把加进去的内容给我看。
+4. 列出改动过的文件，并提醒我开新会话。
+```
+
+AI 没收到这段提示词、只按 README 安装时，也遵守同一条规则：没有用户明确同意，绝不加 `--baseline` 或 `-Baseline`，因为它会改用户自己的说明文件。
+
 ### Claude Code 插件
 
 只用 Claude Code 时，也可以不 clone，直接把默认技能装成插件。在会话中执行(需要 Claude Code 2.1.275 或更高版本)：
@@ -116,7 +130,19 @@ claude plugin install rumo-engineering-skills@rumo-engineering-skills
 
 ### 常驻基线
 
-客户端只在 description 与请求匹配时才加载技能，小改动可能跳过 `rumo-coding-guidelines` 的基线规则。想让这些规则每次会话都在，把 [agents-snippet.md](skills/rumo-coding-guidelines/references/agents-snippet.md) 里的代码块贴进项目或用户级的 `AGENTS.md`、`CLAUDE.md`。它是一份指回技能本身的简短索引，同时写明每一步该用哪个技能。
+客户端只在 description 与请求匹配时才加载技能，小改动可能跳过 `rumo-coding-guidelines` 的基线规则。安装器可以把这些规则的简短索引写进检测到的客户端的用户级说明文件：Claude Code 目录下的 `CLAUDE.md`，以及 Codex 目录下的 `AGENTS.md`。
+
+```powershell
+.\install.ps1 -NoPull -Baseline
+.\install.ps1 -NoPull -RemoveBaseline
+```
+
+```bash
+./install.sh --no-pull --baseline
+./install.sh --no-pull --remove-baseline
+```
+
+写入的内容位于 `rumo-engineering-skills:baseline` 标记之间，标记之外的内容不会改动。之后不带参数重跑安装器时会自动更新这段内容；没写入过的，安装结束时会提示一行。插件用户和其他客户端可以直接运行辅助脚本，例如 `python3 skills/rumo-coding-guidelines/scripts/baseline_block.py --target ~/.claude/CLAUDE.md --install`，也可以手动把 [agents-snippet.md](skills/rumo-coding-guidelines/references/agents-snippet.md) 里的代码块贴进去。
 
 ## 项目 Profile
 

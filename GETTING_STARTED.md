@@ -34,6 +34,7 @@ cd /path/to/rumo-engineering-skills
 - 安装器只管理 `rumo-*` 链接，不会删除其他来源的技能。
 - 同名链接如果来自另一个仓库，安装器会先停下；确认要切换来源后再加 `-ReplaceForeignLinks` / `--replace-foreign-links`。
 - 安装完成后重新开一个客户端会话，让技能列表重新加载。
+- 想让基线规则每次会话都生效，加 `-Baseline` / `--baseline`，见 README 的“常驻基线”；让 AI 代你安装时，用 README“让 AI 帮你安装”一节的提示词。
 
 只用 Claude Code 的话，也可以不跑安装器，改为把默认技能装成插件，见 README 的“Claude Code 插件”一节。两种方式只能选一种，否则技能会重复出现。
 

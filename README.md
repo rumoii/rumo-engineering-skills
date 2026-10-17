@@ -95,6 +95,20 @@ Installed extras stay installed when you rerun the installer without options.
 
 Optional environment variables: `RUMO_SKILLS_REPO` (stable checkout), `RUMO_SKILLS_REMOTE` (clone URL), `RUMO_SKILL_PROFILES_REPO` (private profiles checkout), `RUMO_PROJECT_PROFILE` (explicit profile ID), and `CODEX_HOME`, `CLAUDE_HOME`, `AGENTS_HOME` (custom client homes). Pass `-ProfilesRepo <path>` or `--profiles-repo <path>` to persist a profiles checkout in `~/.rumo-engineering-skills/config.json`.
 
+### Install With An Agent
+
+To have an agent install the skills, give it this prompt:
+
+```text
+Install the skills from https://github.com/rumoii/rumo-engineering-skills by following its README.
+1. Clone it if it is not present, run the installer with --dry-run (-DryRun on Windows), and show me what it would change.
+2. Run the installer without --baseline and report which clients were linked.
+3. Ask me before writing to my user-level CLAUDE.md or AGENTS.md. Only if I agree, rerun it with --baseline (-Baseline) and show me the block it added.
+4. List the files that changed and remind me to start a new session.
+```
+
+An agent installing from this README without that prompt follows the same rule: it never adds `--baseline` or `-Baseline` without the user's explicit agreement, because that edits the user's own instruction files.
+
 ### Claude Code Plugin
 
 Claude Code users can install the default skills as a plugin instead, without a clone. In a session (Claude Code 2.1.275 or later):
@@ -116,7 +130,19 @@ Choose one method per machine. If the installer already linked skills into `~/.c
 
 ### Always-On Baseline
 
-Clients load a skill only when its description matches the request, so a small edit can skip the baseline rules in `rumo-coding-guidelines`. To keep them in every session, paste the block from [agents-snippet.md](skills/rumo-coding-guidelines/references/agents-snippet.md) into a project's or your user-level `AGENTS.md` or `CLAUDE.md`. The block is a short index that points back to the skills; it also names which skill to use at each step.
+Clients load a skill only when its description matches the request, so a small edit can skip the baseline rules in `rumo-coding-guidelines`. The installer can keep a short index of those rules in the user-level instruction file of each detected client: `CLAUDE.md` in the Claude Code home and `AGENTS.md` in the Codex home.
+
+```powershell
+.\install.ps1 -NoPull -Baseline
+.\install.ps1 -NoPull -RemoveBaseline
+```
+
+```bash
+./install.sh --no-pull --baseline
+./install.sh --no-pull --remove-baseline
+```
+
+The block sits between `rumo-engineering-skills:baseline` markers, and nothing outside them changes. Later runs without options keep the block current, and when it is absent they end with a one-line reminder. Plugin users and other clients can run the helper directly, for example `python3 skills/rumo-coding-guidelines/scripts/baseline_block.py --target ~/.claude/CLAUDE.md --install`, or paste the block from [agents-snippet.md](skills/rumo-coding-guidelines/references/agents-snippet.md) by hand.
 
 ## Project Profiles
 
