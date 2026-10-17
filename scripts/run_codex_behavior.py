@@ -39,13 +39,14 @@ def git(root: Path, *args: str) -> str:
     return subprocess.check_output(["git", "-C", str(root), *args], text=True, encoding="utf-8").strip()
 
 
-def seed(root: Path, snapshot: Path, case: dict) -> None:
+def seed(root: Path, snapshot: Path, case: dict, with_skills: bool = True) -> None:
     root.mkdir(parents=True, exist_ok=False)
-    shutil.copytree(snapshot / "skills", root / ".agents" / "skills")
+    if with_skills:
+        shutil.copytree(snapshot / "skills", root / ".agents" / "skills")
     files = {**case["files"], **case.get("committed", {})}
     files[".gitignore"] = ".agents/\n__pycache__/\n*.pyc\n"
     files["AGENTS.md"] = (
-        "# Local sample\nUse only this sample and its .agents/skills. Do not access network tools, "
+        "# Local sample\nUse only this sample" + (" and its .agents/skills" if with_skills else "") + ". Do not access network tools, "
         "other agents, credentials, or other projects. A Python unittest is the maintained "
         "check where a test_*.py exists. Do not install dependencies.\n"
     )
@@ -206,7 +207,8 @@ def run_case(args: argparse.Namespace, name: str, overrides: list[dict], setting
     out = args.output_dir / name
     out.mkdir(parents=True, exist_ok=False)
     root = out / "sample"
-    seed(root, args.snapshot, case)
+    with_skills = not getattr(args, "without_skills", False)
+    seed(root, args.snapshot, case, with_skills)
     before = file_state(root)
     head = git(root, "rev-parse", "HEAD")
     index = git(root, "diff", "--cached", "--binary")
@@ -223,7 +225,7 @@ def run_case(args: argparse.Namespace, name: str, overrides: list[dict], setting
     for turn, question in enumerate(case["turns"], 1):
         if turn == 1:
             paths = "\n".join(str(root / ".agents" / "skills" / name / "SKILL.md") for name in case["skills"])
-            prompt = f"Read and apply these exact skill files and their applicable references before acting:\n{paths}\n\n{question}"
+            prompt = f"Read and apply these exact skill files and their applicable references before acting:\n{paths}\n\n{question}" if with_skills else question
             command = [*base, "--sandbox", "workspace-write", "--cd", str(root), "-"]
         else:
             if not thread:
@@ -245,13 +247,19 @@ def run_case(args: argparse.Namespace, name: str, overrides: list[dict], setting
         runs.append({"turn": turn, "exit_code": code, "timed_out": timed_out, "completed": current["turn_completed"], "parse_error": parse_error})
         if code != 0 or timed_out or not current["turn_completed"] or current["errors"]:
             break
-    observed = evidence(all_events, root, case["skills"])
+    observed = evidence(all_events, root, case["skills"] if with_skills else [])
     after = file_state(root)
     changed = sorted(key for key in before.keys() | after.keys() if before.get(key) != after.get(key))
     protected_skills_unchanged = file_state(root / ".agents" / "skills") == skills_before
     valid = (len(runs) == len(case["turns"]) and all(r["exit_code"] == 0 and not r["timed_out"] and r["completed"] for r in runs)
              and all(observed["loaded_skill_paths"].values()) and not observed["errors"] and protected_skills_unchanged)
     checks = {"head_unchanged": git(root, "rev-parse", "HEAD") == head, "index_unchanged": git(root, "diff", "--cached", "--binary") == index, "skill_files_unchanged": protected_skills_unchanged}
+    if not with_skills:
+        # The baseline arm is valid only if no Rumo skill reached the model by any path.
+        checks["no_rumo_skill_read"] = not any(
+            re.search(r"rumo-[a-z-]+[/\\]skill\.md", normalized_path_text(item.get("command", "")))
+            for item in observed["commands"]
+        )
     if case["read_only"]:
         checks["sample_unchanged"] = not changed
     if name == "verify-honest":
@@ -263,7 +271,7 @@ def run_case(args: argparse.Namespace, name: str, overrides: list[dict], setting
     if name == "debug-then-fix":
         checks["only_loader_changed"] = changed == ["loader.py"]
     result = {
-        "case": name, "snapshot": str(args.snapshot), "settings": settings, "runs": runs,
+        "case": name, "snapshot": str(args.snapshot), "with_skills": with_skills, "settings": settings, "runs": runs,
         "evidence_status": "valid" if valid else "invalid", "mechanical_checks": checks,
         "changed_files": changed, "before": before, "after": after,
         "observed": observed, "review_verdict": "pending", "acceptance": case["rubric"],
@@ -279,6 +287,7 @@ def main() -> int:
     parser.add_argument("--codex", default="codex")
     parser.add_argument("--case", action="append", choices=sorted(CASES))
     parser.add_argument("--timeout", type=int, default=600, help="Overall seconds per case, across its turns.")
+    parser.add_argument("--without-skills", action="store_true", help="Baseline arm: no skills in the sample or the prompt.")
     args = parser.parse_args()
     args.snapshot = args.snapshot.resolve()
     args.output_dir = args.output_dir.resolve()
@@ -296,7 +305,7 @@ def main() -> int:
         "codex_version": subprocess.check_output([args.codex, "--version"], text=True).strip(),
         "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "cases_sha256": hashlib.sha256(Path(__file__).with_name("codex_behavior_cases.py").read_bytes()).hexdigest(),
-        "settings": settings, "cases": args.case or list(CASES), "timeout": args.timeout,
+        "settings": settings, "cases": args.case or list(CASES), "timeout": args.timeout, "with_skills": not args.without_skills,
     })
     results = []
     for name in args.case or CASES:

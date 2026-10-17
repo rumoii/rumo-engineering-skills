@@ -153,7 +153,9 @@ python scripts/run_codex_behavior.py --snapshot <snapshot-root> --output-dir <ta
 ```
 
 Use `--case verify-honest` for one case. Compare old and new skill snapshots
-with the same fixtures, model, reasoning settings, and grader version. Keep
+with the same fixtures, model, reasoning settings, and grader version. Add
+`--without-skills` for a baseline arm with no skills in the sample or the
+prompt; its `no_rumo_skill_read` check must hold for the run to count. Keep
 both snapshots and their source revisions with the evidence. The runner
 disables installed Rumo copies for its child process only and explicitly
 loads each sample's snapshot paths; it reuses existing authentication and

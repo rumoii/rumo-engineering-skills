@@ -233,5 +233,44 @@ class ProcessLifetimeTest(unittest.TestCase):
             self.assertFalse(timed_out)
 
 
+class WithoutSkillsTest(unittest.TestCase):
+    def run_baseline(self, command: str) -> tuple[dict, list[str]]:
+        import argparse
+        from unittest.mock import patch
+        prompts = []
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            snapshot = root / "snapshot"
+            (snapshot / "skills" / "rumo-verify").mkdir(parents=True)
+            (snapshot / "skills" / "rumo-verify" / "SKILL.md").write_text("name: rumo-verify\n", encoding="utf-8")
+
+            def fake_turn(command_line, prompt, sample, prefix, timeout):
+                prompts.append(prompt)
+                self.assertFalse((sample / ".agents").exists())
+                self.assertNotIn(".agents/skills", (sample / "AGENTS.md").read_text(encoding="utf-8"))
+                events = [
+                    {"type": "thread.started", "thread_id": "t"},
+                    {"type": "item.completed", "item": {"type": "command_execution", "status": "completed", "exit_code": 0, "command": command, "aggregated_output": ""}},
+                    {"type": "turn.completed"},
+                ]
+                prefix.with_suffix(".jsonl").write_text("\n".join(json.dumps(e) for e in events), encoding="utf-8")
+                return 0, False
+
+            args = argparse.Namespace(output_dir=root / "results", snapshot=snapshot, codex="not-invoked", timeout=10, without_skills=True)
+            with patch("scripts.run_codex_behavior.run_turn", side_effect=fake_turn):
+                return run_case(args, "review-existing", [], {}), prompts
+
+    def test_baseline_sample_and_prompt_carry_no_skills(self) -> None:
+        result, prompts = self.run_baseline("git status --short")
+        self.assertEqual(prompts, [CASES["review-existing"]["turns"][0]])
+        self.assertEqual(result["evidence_status"], "valid")
+        self.assertFalse(result["with_skills"])
+        self.assertTrue(result["mechanical_checks"]["no_rumo_skill_read"])
+
+    def test_baseline_reading_an_installed_skill_is_flagged(self) -> None:
+        result, _ = self.run_baseline(r"pwsh -Command 'Get-Content C:\Users\someone\.codex\skills\rumo-review\SKILL.md'")
+        self.assertFalse(result["mechanical_checks"]["no_rumo_skill_read"])
+
+
 if __name__ == "__main__":
     unittest.main()
