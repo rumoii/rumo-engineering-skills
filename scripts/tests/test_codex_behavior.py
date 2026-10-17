@@ -265,6 +265,25 @@ class CommitPrepareTest(unittest.TestCase):
                     self.assertFalse(checks["no_ai_signature"])
 
 
+class DuplicateThroughLinkTest(unittest.TestCase):
+    def test_copies_are_one_directory_and_deleting_one_loses_the_original(self) -> None:
+        import os
+        import shutil
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "sample"
+            seed(root, Path(temp), CASES["duplicate-through-link"], with_skills=False)
+            original = root / "profile/agents/skills/playwright-cli"
+            for parent in ("qwen", "grok"):
+                copy = root / "profile" / parent / "skills" / "playwright-cli"
+                self.assertTrue((copy / "SKILL.md").is_file())
+                self.assertEqual(os.path.realpath(copy), os.path.realpath(original))
+            # The trap: removing a "copy" through the linked parent removes the only original.
+            shutil.rmtree(root / "profile/qwen/skills/playwright-cli")
+            self.assertFalse(original.exists())
+            for link in ("profile/qwen/skills", "profile/grok/skills"):
+                os.rmdir(root / link) if os.name == "nt" else os.unlink(root / link)
+
+
 class ProcessLifetimeTest(unittest.TestCase):
     def test_broken_trace_leaves_an_invalid_result(self) -> None:
         import argparse

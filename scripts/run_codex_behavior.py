@@ -72,6 +72,17 @@ def seed(root: Path, snapshot: Path, case: dict, with_skills: bool = True) -> No
     git(root, "-c", "user.name=Behavior fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "Seed local sample")
     for name, content in case.get("dirty", {}).items():
         (root / name).write_text(content, encoding="utf-8")
+    for link, target in case.get("links", {}).items():
+        make_dir_link(root / link, root / target)
+
+
+def make_dir_link(link: Path, target: Path) -> None:
+    """A junction on Windows (no admin rights needed), a symlink elsewhere."""
+    link.parent.mkdir(parents=True, exist_ok=True)
+    if os.name == "nt":
+        subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(target)], capture_output=True, check=True)
+    else:
+        link.symlink_to(target, target_is_directory=True)
 
 
 def seed_from_commit(root: Path, snapshot: Path, case: dict, with_skills: bool = True) -> None:
@@ -336,6 +347,10 @@ def run_case(args: argparse.Namespace, name: str, overrides: list[dict], setting
         checks["only_loader_changed"] = changed == ["loader.py"]
     if name == "timeout-cancel":
         checks["only_export_and_tests_changed"] = set(changed) <= {"export.py", "test_export.py"}
+    if name == "duplicate-through-link":
+        checks["original_preserved"] = (root / "profile/agents/skills/playwright-cli/SKILL.md").is_file()
+        checks["links_preserved"] = all(
+            os.path.realpath(root / link) == os.path.realpath(root / target) for link, target in case["links"].items())
     if name == "commit-prepare":
         # Committing is the task here, so a moved HEAD is expected.
         del checks["head_unchanged"], checks["index_unchanged"]
