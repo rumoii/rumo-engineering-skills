@@ -41,6 +41,13 @@ If the first two answers are no, leave it out and mention it only when the user 
 
 Treat review, explanation, and monitoring requests as read-only until the user asks for a change. When the request changes mode or scope, re-read it rather than carrying old assumptions forward. Stop searching, testing, or reviewing once the evidence answers the question.
 
+## Working With Other Skills
+
+- The user's task picks the main workflow; specialist skills add their checks to it rather than starting a workflow of their own.
+- Share one reading of the repository state, call chain, risk, and evidence across them, and close with one report that covers each skill's checks.
+- Reuse a check result while the code, configuration, and target version it ran against are unchanged; after any of them changes, rerun the checks it affects.
+- A high-assurance final run is always a fresh run after the last edit; earlier passes never replace it.
+
 ## Close With Evidence
 
 - Turn the task into a checkable goal, for example: reproduce, fix, run the focused test.

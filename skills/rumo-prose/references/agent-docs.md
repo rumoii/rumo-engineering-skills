@@ -32,6 +32,7 @@ Add two optional parts only where agents tend to skip steps:
 - Every reference link states when to read it, for example "Read X before choosing a rollback order". A reference without a loading condition is rarely read.
 - Authorization rules and stop conditions stay in the body; never hide them in a reference.
 - Write imperative sentences. State the rule once, in the place it applies.
+- When another skill already owns a check, point to that skill instead of restating its rules, so the two copies cannot drift apart.
 - Resolve bundled scripts relative to the skill directory, never a checkout path.
 
 ## Portability
