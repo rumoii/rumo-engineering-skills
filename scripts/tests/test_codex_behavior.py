@@ -50,6 +50,21 @@ class CompletedTestEvidenceTest(unittest.TestCase):
         self.assertTrue(completed_cart_test([self.command(status="failed")]))
         self.assertTrue(completed_cart_test([self.command(command='"pwsh.exe" -Command \'python -B -m unittest discover -v\'')]))
 
+    def test_common_interpreter_forms_are_test_runs(self) -> None:
+        for command in (
+            "python ./test_cart.py",
+            r"python .\test_cart.py",
+            r'"pwsh.exe" -Command "& ' + r"'C:\Program Files\Python312\python.exe' .\test_cart.py" + '"',
+            r"C:\Python312\python.exe -m unittest -v",
+            "/usr/bin/python3 test_cart.py",
+            "py -3.12 test_cart.py",
+        ):
+            with self.subTest(command=command):
+                self.assertTrue(completed_cart_test([self.command(command=command)]))
+
+    def test_inline_python_is_not_a_test(self) -> None:
+        self.assertFalse(completed_cart_test([self.command(command="python -c \"print('x')\"")]))
+
     def test_file_read_is_not_a_test(self) -> None:
         self.assertFalse(completed_cart_test([self.command(command="cat test_cart.py", exit_code=0)]))
 
@@ -83,6 +98,23 @@ class TraceTest(unittest.TestCase):
         self.assertFalse(result["turn_completed"])
         self.assertFalse(completed_cart_test(result["commands"]))
         self.assertEqual(result["messages"], ["All tests passed; ready to merge."])
+
+    def test_same_named_skill_outside_sample_is_not_loaded(self) -> None:
+        for root, command in (
+            ("C:/sample", r"Get-Content C:\unrelated\.agents\skills\rumo-verify\SKILL.md"),
+            ("/other/sample", "cat /other/sample-copy/.agents/skills/rumo-verify/SKILL.md"),
+        ):
+            item = {"type": "command_execution", "command": command, "status": "completed", "exit_code": 0, "aggregated_output": "name: rumo-verify\n"}
+            with self.subTest(command=command):
+                result = evidence([{"type": "item.completed", "item": item}], Path(root), ["rumo-verify"])
+                self.assertFalse(result["loaded_skill_paths"]["rumo-verify"])
+
+    def test_relative_skill_read_is_loaded(self) -> None:
+        for command in ("cat .agents/skills/rumo-verify/SKILL.md", "cat ./.agents/skills/rumo-verify/SKILL.md"):
+            item = {"type": "command_execution", "command": command, "status": "completed", "exit_code": 0, "aggregated_output": "name: rumo-verify\n"}
+            with self.subTest(command=command):
+                result = evidence([{"type": "item.completed", "item": item}], Path("C:/sample"), ["rumo-verify"])
+                self.assertTrue(result["loaded_skill_paths"]["rumo-verify"])
 
     def test_failed_skill_read_is_not_loaded(self) -> None:
         item = {"type": "command_execution", "command": "cat .agents/skills/rumo-verify/SKILL.md", "status": "failed", "exit_code": -1}

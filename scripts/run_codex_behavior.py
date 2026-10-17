@@ -139,6 +139,21 @@ def read_events(path: Path) -> list[dict]:
     return events
 
 
+def normalized_path_text(text: str) -> str:
+    return re.sub(r"/+", "/", text.replace("\\", "/")).lower()
+
+
+def reads_sample_skill(command: str, root: Path, name: str) -> bool:
+    """Accept the skill path relative to the sample or absolute under it, never a same-named copy elsewhere."""
+    text = normalized_path_text(command)
+    sample = normalized_path_text(str(root)).rstrip("/") + "/"
+    for match in re.finditer(re.escape(f".agents/skills/{name}/skill.md"), text):
+        before = text[:match.start()]
+        if before.endswith(sample) or re.search(r"(?:^|[\s\"'=])(?:\./)?$", before):
+            return True
+    return False
+
+
 def evidence(events: list[dict], root: Path, skills: list[str]) -> dict:
     completed = [e["item"] for e in events if e.get("type") == "item.completed" and isinstance(e.get("item"), dict)]
     commands = [item for item in completed if item.get("type") == "command_execution"]
@@ -146,7 +161,7 @@ def evidence(events: list[dict], root: Path, skills: list[str]) -> dict:
     loaded = {
         name: any(
             item.get("status") == "completed" and item.get("exit_code") == 0
-            and f".agents/skills/{name}/skill.md" in re.sub(r"/+", "/", item.get("command", "").replace("\\", "/")).lower()
+            and reads_sample_skill(item.get("command", ""), root, name)
             and f"name: {name}" in item.get("aggregated_output", "")
             for item in commands
         ) for name in skills
@@ -162,6 +177,14 @@ def evidence(events: list[dict], root: Path, skills: list[str]) -> dict:
     }
 
 
+PYTHON_EXE = r"(?:python(?:3(?:\.\d+)?)?|py)(?:\.exe)?"
+# A bare, path-qualified, or quoted interpreter; no -c, so inline code cannot fake test output.
+TEST_INVOCATION = re.compile(
+    rf"""^\s*(?:&\s*)?(?:"(?:[^"]*/)?{PYTHON_EXE}"|'(?:[^']*/)?{PYTHON_EXE}'|(?:[^\s"']*/)?{PYTHON_EXE})"""
+    r"(?:\s+-(?:3(?:\.\d+)?|b|u))*\s+(?:-m\s+(?:unittest|pytest)\b|(?:\./)?test_cart\.py\b)"
+)
+
+
 def completed_cart_test(commands: list[dict]) -> bool:
     """Require a completed test process and its known assertion, never a command mention alone."""
     for item in commands:
@@ -169,7 +192,7 @@ def completed_cart_test(commands: list[dict]) -> bool:
         script = re.split(r"\s-(?:Command|lc|c)\s+", command, maxsplit=1, flags=re.I)[-1].strip()
         if len(script) >= 2 and script[0] == script[-1] and script[0] in "\"'":
             script = script[1:-1]
-        invoked = re.match(r"^\s*(?:python(?:3(?:\.\d+)?)?|py(?:\s+-3)?)\s+(?:-B\s+)?(?:-m\s+(?:unittest|pytest)\b|test_cart\.py\b)", script)
+        invoked = TEST_INVOCATION.match(normalized_path_text(script))
         output = item.get("aggregated_output", "")
         if (item.get("status") in {"completed", "failed"} and item.get("exit_code") == 1
                 and "test_multiplies_price_by_quantity" in output and "AssertionError: 7 != 17" in output
