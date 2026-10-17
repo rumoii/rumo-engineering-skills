@@ -11,6 +11,8 @@ product, repository layout, host, or deployment environment.
 - Do not commit credentials, private keys, certificates, customer data, or
   internal infrastructure details.
 - Add or update focused tests when changing scripts or deterministic rules.
+- When a skill gains a rule whose loss would let an agent overstep its
+  authority or overclaim a result, pin it in `scripts/tests/test_skill_rules.py`.
 - Preserve unrelated files and avoid generated dependencies such as
   `node_modules`.
 
@@ -35,6 +37,11 @@ In short:
 - `extras/` holds optional skills that users install with `-Extras` or
   `--extras`. A default skill must not link to an extra; mention it by name and
   say what to do when it is not installed.
+- A skill belongs in the default set when most engineering tasks pass through
+  it, or when it guards against irreversible damage even if it is rarely
+  needed. It belongs in extras when it produces a specific deliverable format,
+  serves a narrow domain, needs an external service or runtime, or is a
+  personal manual-only workflow.
 
 ## Validate changes
 
@@ -71,6 +78,14 @@ claude plugin eval . --runs 1 --ablation none --no-publish
 Use `--case <name>` for one case and `--runs 3` before trusting a borderline
 result. Results land in the ignored `evals/results/`. Add a case when a
 request picks the wrong skill.
+
+Without `--runs`, each case runs three times per arm, and without
+`--ablation none` it runs a second arm without the plugin, so a full default
+run costs about six agent runs per case. `llm` graders add judge calls; pass
+`--judge-model sonnet` when a small default judge looks unreliable. These
+evals exercise Claude models only; triggering in other clients and models is
+untested. When the eval tool is unavailable, run the same prompts by hand in
+fresh sessions and compare the skills they pick.
 
 Pull requests should explain the user scenario, changed behavior, verification
 performed, and any environment or acceptance boundary that was not exercised.

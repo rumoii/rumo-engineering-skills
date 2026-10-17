@@ -1,6 +1,6 @@
 # Repository Guidance
 
-This repository distributes reusable agent skills for Codex, Claude Code, and other clients that load `SKILL.md` directories. It contains no product source code.
+This repository distributes reusable agent skills for Codex, Claude Code, and other clients that load `SKILL.md` directories. It contains no product source code; its scripts are helpers bundled with the skills, plus the installers and repository checks.
 
 - Keep every skill independent of a specific company, product, repository name, internal host, deployment path, or agent client. When a step depends on one client, label it as client-specific and give a client-neutral alternative or an explicit stop condition.
 - Put private project facts in a local profile or optional private profiles checkout and access them through `rumo-project-profile`.
