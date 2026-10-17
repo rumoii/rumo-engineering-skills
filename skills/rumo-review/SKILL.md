@@ -47,6 +47,7 @@ When the target is a CI job, verifier, threshold, or other gate, also apply the 
 - Keep source behavior, built artifacts, deployed state, and field acceptance apart.
 - Treat tests and comments as evidence to weigh, not authority over production behavior.
 - For a diff, report only issues this change introduces or materially exposes; old debt is out of scope. For a named-scope audit, report existing actionable issues inside that scope, even on a clean HEAD. Do not expand either target into unrelated debt.
+- When a caller-supplied value drives a state change (money moved, stock reserved, quota spent, a record read or written for someone), name the stored value that must bound it: balance, amount paid, stock, quota, owner, or tenant. If nothing in scope compares against it, report a finding that states the assumed invariant and which component might already enforce it. A guarantee you cannot see elsewhere is an open question attached to the finding, not a reason to withhold it.
 - Check that a suggested fix direction is feasible, but do not edit code in review mode.
 
 ## Respond To Feedback

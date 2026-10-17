@@ -111,6 +111,7 @@ RULES = {
         "Do not guess the base from branch names.",
         "For a diff, report only issues this change introduces or materially exposes",
         "For a named-scope audit, report existing actionable issues inside that scope",
+        "A guarantee you cannot see elsewhere is an open question attached to the finding, not a reason to withhold it.",
         "Each finding names the repository, file and line, the consequence, the triggering condition, and the evidence.",
     ),
     "rumo-test": (
