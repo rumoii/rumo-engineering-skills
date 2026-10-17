@@ -273,4 +273,21 @@ def get_document(store, doc_id, user):
         "turns": ["审计 services/ 下现有实现，找真实问题，给出位置和触发条件，不要改代码。"],
         "rubric": "Report the missing tenant check: any viewer can read another tenant's document by id, with file and line and a cross-tenant trigger, even though HEAD is clean. Do not edit or dismiss it as old debt.",
     },
+    "withdraw-existing": {
+        "skills": ["rumo-review"],
+        "read_only": True,
+        "files": {
+            "services/withdraw.py": '''class WithdrawError(Exception):
+    pass
+
+def withdraw(account, request, ledger):
+    amount = request["amount"]
+    if amount <= 0:
+        raise WithdrawError("withdrawal must be positive")
+    return ledger.debit(account.id, amount)
+''',
+        },
+        "turns": ["只读审计 services/withdraw.py 当前实现，检查现存的真实 bug；这是存量审计，不限定于最近提交的 diff。给出位置和触发条件。"],
+        "rubric": "Report that the amount is never compared with account.balance, so a withdrawal above the balance is debited, with file/line and an oversized trigger, even though HEAD is clean. Do not edit or exclude it as old debt.",
+    },
 }
