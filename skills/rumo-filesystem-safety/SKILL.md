@@ -23,12 +23,13 @@ Use the full path whenever any of these applies:
 - Targets outside the established workspace, or a workspace boundary that is not yet confirmed.
 - Untracked or ignored content whose value is unknown; ignored files are not automatically disposable.
 - A cleanup command or script that will run repeatedly.
-- Suspected symbolic links, Windows junctions, or other reparse points among the targets.
+- Suspected symbolic links, Windows junctions, or other reparse points among the targets or their parent directories.
+- Removing something because it duplicates another path.
 
 ## Light Path
 
-- Echo the exact paths to be removed and confirm each exists inside the authorized workspace. If a named target is itself a link, remove only the link node.
-- Delete directly under the recovery policy — no preview inventory, no tracked/untracked audit, no link survey.
+- Echo the exact paths to be removed and resolve each through every component, not only the last, to confirm what it really is and that it lies inside the authorized workspace. If a named target is itself a link, remove only the link node.
+- Delete directly under the recovery policy — no preview inventory, no tracked/untracked audit.
 - Report in one line: what was removed and by what method.
 
 ## Full Path
@@ -38,11 +39,12 @@ Use the full path whenever any of these applies:
 - Establish what the user authorized, the owning workspace, and the exact files or directories to remove. A request to clean one path does not authorize deleting its parent or neighboring paths.
 - Inspect the target's current contents before recursive cleanup. In a Git repository, check tracked, untracked, and ignored contents that could be affected.
 - Do not construct deletion paths from empty or unchecked variables, broad wildcards, or assumptions about the current directory.
+- Removing a duplicate requires proof that the copies are separate objects: their fully resolved paths, or file IDs, differ. Identical content and timestamps in several places are what one object seen through links looks like, not evidence of independent copies.
 
 ### Check The Boundary
 
 - Confirm each target's absolute location and its parent path before deletion. Stop if a target falls outside the authorized workspace or resolves to a filesystem root, user home, system directory, repository root, or Git metadata without explicit scope for that target.
-- Identify symbolic links, Windows junctions, and other reparse points before recursive operations. Do not traverse a link to delete its destination. If only the link itself is in scope, use a platform-appropriate non-recursive operation; stop when its behavior is uncertain.
+- Identify symbolic links, Windows junctions, and other reparse points on every component of each path before deleting, not only on the target: a linked parent directory makes `a/skills/x` and `b/skills/x` the same directory. Do not traverse a link to delete its destination. If only the link itself is in scope, use a platform-appropriate non-recursive operation; stop when its behavior is uncertain.
 - Do not infer safety from a familiar command name or a clean Git status.
 
 ### Preview And Confirm

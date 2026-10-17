@@ -39,6 +39,8 @@ RULES = {
         "Use the light path only when every one of these holds",
         "Use the full path whenever any of these applies",
         "Do not traverse a link to delete its destination.",
+        "on every component of each path before deleting, not only on the target",
+        "Removing a duplicate requires proof that the copies are separate objects",
         "Never create ad-hoc backup copies as part of a deletion",
         "without retrying against a broader path",
     ),
