@@ -1,6 +1,6 @@
 ---
 name: rumo-test
-description: Use when planning, writing, or assessing tests for a behavior change: whether existing tests are enough, which evidence layers (unit, integration, browser, artifact, deployment, field) to use, and test-driven development. Also use unprompted when implementing a change that touches money, auth, durable data, concurrency, migrations, public interfaces, or irreversible effects, to rate its risk and enter high-assurance spec-and-evidence mode when it is high. Do not use to find the root cause of an existing defect (use rumo-debug) or to check an already finished diff before handoff (use rumo-verify).
+description: Use when planning, writing, or assessing tests for a behavior change, including whether existing tests are enough, which evidence layers (unit, integration, browser, artifact, deployment, field) to use, and test-driven development. Also use unprompted when implementing a change that touches money, auth, durable data, concurrency, migrations, public interfaces, or irreversible effects, to rate its risk and enter high-assurance spec-and-evidence mode when it is high. Do not use to find the root cause of an existing defect (use rumo-debug) or to check an already finished diff before handoff (use rumo-verify).
 ---
 
 # Rumo Test

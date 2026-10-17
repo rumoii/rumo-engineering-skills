@@ -74,6 +74,41 @@ class VerifySkillsTest(unittest.TestCase):
         )
         self.assertEqual(validate_repository(self.repo_root), [])
 
+    def replace_description(self, description: str) -> None:
+        skill_path = self.repo_root / "skills" / "rumo-example" / "SKILL.md"
+        skill_path.write_text(
+            skill_path.read_text(encoding="utf-8").replace(
+                "description: Use when validating a concrete example skill.",
+                f"description: {description}",
+            ),
+            encoding="utf-8",
+        )
+
+    def test_rejects_unquoted_values_that_are_not_yaml_plain_scalars(self) -> None:
+        cases = {
+            "Use when testing: a colon followed by a space.": "contains ': '",
+            "Use when testing #comments after a space.": "contains ' #'",
+            "[Use] when testing a leading bracket.": "starts with the YAML indicator '['",
+            "- Use when testing a leading dash.": "starts with the YAML indicator '-'",
+        }
+        for description, expected in cases.items():
+            with self.subTest(description=description):
+                self.tearDown()
+                self.setUp()
+                self.replace_description(description)
+                self.assert_error_contains(expected)
+
+    def test_accepts_quoted_value_and_plain_colon_without_space(self) -> None:
+        for description in (
+            '"Use when testing: a quoted colon."',
+            "Use when testing a ratio like 3:1 or a URL like https://example.com.",
+        ):
+            with self.subTest(description=description):
+                self.tearDown()
+                self.setUp()
+                self.replace_description(description)
+                self.assertEqual(validate_repository(self.repo_root), [])
+
     def test_rejects_frontmatter_name_mismatch(self) -> None:
         skill_path = self.repo_root / "skills" / "rumo-example" / "SKILL.md"
         skill_path.write_text(

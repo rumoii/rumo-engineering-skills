@@ -101,6 +101,21 @@ def read_text(path: Path, errors: list[str]) -> str | None:
     return text
 
 
+def plain_scalar_problem(value: str) -> str:
+    """Return why an unquoted value is not a valid YAML plain scalar, or an empty string."""
+    if not value:
+        return ""
+    if value[0] in "-?:" and (len(value) == 1 or value[1].isspace()):
+        return f"starts with the YAML indicator {value[0]!r}"
+    if value[0] in ",[]{}#&*!|>'\"%@`":
+        return f"starts with the YAML indicator {value[0]!r}"
+    if ": " in value or value.endswith(":"):
+        return "contains ': ', which YAML reads as a nested mapping"
+    if " #" in value:
+        return "contains ' #', which YAML reads as a comment"
+    return ""
+
+
 def parse_frontmatter(path: Path, text: str, errors: list[str]) -> dict[str, str]:
     """Parse the scalar fields used by repository skill frontmatter."""
     lines = text.splitlines()
@@ -138,6 +153,10 @@ def parse_frontmatter(path: Path, text: str, errors: list[str]) -> dict[str, str
 
         if len(raw_value) >= 2 and raw_value[0] == raw_value[-1] and raw_value[0] in "\"'":
             raw_value = raw_value[1:-1]
+        else:
+            problem = plain_scalar_problem(raw_value)
+            if problem:
+                errors.append(f"{path}:{index + 1}: unquoted {key} {problem}; quote the value or reword it")
         fields[key] = raw_value
         index += 1
 
