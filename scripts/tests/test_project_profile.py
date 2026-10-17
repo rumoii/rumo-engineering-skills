@@ -88,6 +88,46 @@ class ProjectProfileResolverTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("Multiple project profiles matched", result.stderr)
 
+    def git_repository(self, name: str, origin: str) -> Path:
+        project = self.root / name
+        project.mkdir()
+        for command in (["init", "-q"], ["remote", "add", "origin", origin]):
+            subprocess.run(["git", "-C", str(project), *command], check=True, capture_output=True)
+        return project
+
+    def write_project(self, profile_id: str, project: dict[str, object]) -> None:
+        profile = self.profiles / profile_id
+        profile.mkdir()
+        (profile / "project.json").write_text(
+            json.dumps({"id": profile_id, **project}), encoding="utf-8"
+        )
+
+    @unittest.skipUnless(shutil.which("git"), "needs git")
+    def test_matches_origin_remote_substring(self) -> None:
+        project = self.git_repository("remote-repository", "https://example.test/team/app.git")
+        self.write_project("remote", {"match": {"remote_contains": ["team/app"]}})
+
+        result = self.run_resolver("--cwd", str(project))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["profile_id"], "remote")
+
+    @unittest.skipUnless(shutil.which("git"), "needs git")
+    def test_unmatched_remote_falls_back_to_repository_names(self) -> None:
+        project = self.git_repository("fallback-repository", "https://example.test/other.git")
+        self.write_project(
+            "fallback",
+            {
+                "match": {"remote_contains": ["nomatch"]},
+                "repositories": [{"name": project.name}],
+            },
+        )
+
+        result = self.run_resolver("--cwd", str(project))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["profile_id"], "fallback")
+
     def test_reports_missing_match(self) -> None:
         project = self.root / "missing-repository"
         project.mkdir()
@@ -340,6 +380,7 @@ class ProjectProfileInitializerTests(unittest.TestCase):
         project = json.loads((profile / "project.json").read_text(encoding="utf-8"))
         self.assertEqual(project["id"], "demo_01")
         self.assertEqual(project["repositories"], [])
+        self.assertEqual(project["match"], {"repository_names": [], "remote_contains": []})
 
         validation = subprocess.run(
             [sys.executable, str(VALIDATOR), "--profiles-root", str(self.root)],

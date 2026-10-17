@@ -36,14 +36,8 @@ def validate_profile_id(profile_id: str) -> None:
 
 
 def write_project_json(path: Path, profile_id: str) -> None:
-    data = {
-        "id": profile_id,
-        "description": "Project-specific profile created from the generic template.",
-        "repositories": [],
-        "languages": [],
-        "frameworks": [],
-        "default_output_language": "zh-CN",
-    }
+    data = json.loads((templates_root() / "project.json").read_text(encoding="utf-8"))
+    data["id"] = profile_id
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 

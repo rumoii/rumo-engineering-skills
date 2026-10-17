@@ -12,6 +12,15 @@ exists, then fill in only the sections needed by the skills you use:
 - `documents.json`: document types, templates, and writing conventions.
 - `references/`: detailed project notes linked from the JSON files.
 
+Without `--profile` or `RUMO_PROJECT_PROFILE`, the resolver selects this
+profile when any of these `project.json` fields matches the current repository:
+
+- `match.repository_names`: exact names of the repository root directory.
+- `match.remote_contains`: substrings of the `origin` remote URL.
+- `repositories[].name`: checked last, as a fallback.
+
+When more than one profile matches, the resolver stops and asks for `--profile`.
+
 When `rumo-remote-ops` needs reusable project facts, a project may add
 an illustrative entry such as this to `runtime.json` and adapt the field names
 to its maintained conventions:

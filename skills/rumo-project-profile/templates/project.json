@@ -1,6 +1,10 @@
 {
   "id": "example-project",
   "description": "Project-specific profile created from the generic template.",
+  "match": {
+    "repository_names": [],
+    "remote_contains": []
+  },
   "repositories": [],
   "languages": [],
   "frameworks": [],

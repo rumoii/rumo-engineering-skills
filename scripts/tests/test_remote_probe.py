@@ -6,6 +6,7 @@ from pathlib import Path
 import shlex
 import shutil
 import subprocess
+import sys
 import unittest
 
 
@@ -34,6 +35,17 @@ class RemoteProbeTests(unittest.TestCase):
         remote = " ; ".join(REMOTE_PROBE.remote_commands("", "/var/log/app", ""))
 
         self.assertNotIn("grep", remote)
+
+    def test_default_target_leaves_user_to_ssh(self) -> None:
+        completed = subprocess.run(
+            [sys.executable, str(SCRIPT), "--host", "example.test"], capture_output=True, text=True, check=False
+        )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(shlex.split(completed.stdout)[:2], ["ssh", "example.test"])
+
+    def test_explicit_user_prefixes_host(self) -> None:
+        self.assertEqual(REMOTE_PROBE.ssh_target("ops", "example.test"), "ops@example.test")
 
     @unittest.skipUnless(os.name == "posix" and shutil.which("sh") and shutil.which("sed"), "needs a POSIX shell and sed")
     def test_redaction_masks_common_secret_shapes_and_keeps_context(self) -> None:

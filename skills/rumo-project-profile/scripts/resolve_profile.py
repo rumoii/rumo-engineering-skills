@@ -98,8 +98,8 @@ def profile_matches(profile: Path, repo_name: str, remote: str) -> bool:
     remotes = match.get("remote_contains", [])
     if isinstance(names, list) and repo_name and repo_name in {str(item) for item in names}:
         return True
-    if isinstance(remotes, list) and remote:
-        return any(str(item) and str(item) in remote for item in remotes)
+    if isinstance(remotes, list) and remote and any(str(item) and str(item) in remote for item in remotes):
+        return True
     repositories = project.get("repositories", [])
     if isinstance(repositories, list):
         return any(isinstance(item, dict) and item.get("name") == repo_name for item in repositories)

@@ -35,7 +35,7 @@ Run `scripts/resolve_profile.py` from this skill directory. The resolver checks,
 4. A sibling `rumo-skill-profiles` checkout next to the skills repository.
 5. `$HOME/.rumo-skill-profiles`.
 
-Select a profile with `--profile`, `RUMO_PROJECT_PROFILE`, or a unique match against the current Git repository name or remote URL. Never guess when multiple profiles match.
+Select a profile with `--profile`, `RUMO_PROJECT_PROFILE`, or a unique match against the current Git repository name or `origin` URL, declared in `project.json` as `match.repository_names`, `match.remote_contains`, or `repositories[].name` (see [templates/README.md](templates/README.md)). Never guess when multiple profiles match.
 
 ```powershell
 py -3 <skill-dir>\scripts\resolve_profile.py --cwd <project-path> --section runtime

@@ -47,16 +47,21 @@ def remote_commands(root: str, log_dir: str, keyword: str) -> list[str]:
     return commands
 
 
+def ssh_target(user: str, host: str) -> str:
+    """Omit an empty user so ssh applies its own config or the local login name."""
+    return f"{user}@{host}" if user else host
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", required=True)
-    parser.add_argument("--user", default="${RUMO_SSH_USER:-$USER}")
+    parser.add_argument("--user", default="", help="SSH login; omit to let ssh choose")
     parser.add_argument("--root", default="")
     parser.add_argument("--log-dir", default="")
     parser.add_argument("--keyword", default="")
     args = parser.parse_args()
     remote = " ; ".join(remote_commands(args.root, args.log_dir, args.keyword))
-    print("ssh", shlex.quote(f"{args.user}@{args.host}"), shlex.quote(remote))
+    print("ssh", shlex.quote(ssh_target(args.user, args.host)), shlex.quote(remote))
     return 0
 
 
