@@ -178,5 +178,13 @@ attempt limit. Preserve partial evidence on timeout, terminate only the
 runner-owned process tree, and report the case as unverified. Fresh paired
 runs are scenario evidence, not a statistical claim of overall improvement.
 
+`scripts/run_pi_behavior.py` runs the same read-only cases through the pi CLI
+with any model pi can reach, to screen skill changes without spending the
+Codex budget. pi has no sandbox, so the runner allows only `read`, `grep`,
+`find`, and `ls`, refuses cases that edit files, and turns off installed
+skills, extensions, and prompt templates. Its arguments, `--without-skills`
+arm, and result layout match the Codex runner. A result from another model
+only screens a change; confirm it with Codex or Claude before reporting it.
+
 Pull requests should explain the user scenario, changed behavior, verification
 performed, and any environment or acceptance boundary that was not exercised.
