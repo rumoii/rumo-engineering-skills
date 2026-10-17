@@ -136,7 +136,7 @@ SNIPPET_SOURCES = {
     "repository instructions override these defaults": ("rumo-coding-guidelines", "follow them over these defaults"),
     "report unrelated problems instead of fixing them": ("rumo-coding-guidelines", "Report unrelated problems you notice instead of fixing them."),
     "No speculative abstractions, drive-by refactors": ("rumo-coding-guidelines", "Do not reformat, rename, reorder, or refactor neighboring code."),
-    "apply the risk gate in rumo-test": ("rumo-coding-guidelines", "apply the high-assurance risk gate in `rumo-test` before editing"),
+    "load rumo-test and apply its risk gate": ("rumo-coding-guidelines", "load the `rumo-test` skill and apply its high-assurance risk gate before editing"),
     "use rumo-verify before handing back": ("rumo-coding-guidelines", "Use `rumo-verify` before claiming the change is ready."),
 }
 SNIPPET_INDEX_PREFIXES = ("- Flow:", "- Full rules:")
