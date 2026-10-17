@@ -15,12 +15,12 @@ Each step is a skill. Use only the ones a task needs: a one-line fix goes straig
 | When you want to | Codex | Claude Code |
 | --- | --- | --- |
 | Pin down a vague request | `$rumo-clarify` | `/rumo-clarify` |
-| Break agreed work into verifiable tasks | `$rumo-plan` | `/rumo-plan` |
+| Break agreed work into verifiable tasks, then work them one by one | `$rumo-plan` | `/rumo-plan` |
 | Implement test-first | `$rumo-test` | `/rumo-test` |
 | Find the cause of a bug, read-only | `$rumo-debug` | `/rumo-debug` |
 | Check the change before calling it done | `$rumo-verify` | `/rumo-verify` |
 | Review a diff without editing | `$rumo-review` | `/rumo-review` |
-| Commit, land, or push | `$rumo-git-commit` | `/rumo-git-commit` |
+| Commit, land, push, or open a pull request | `$rumo-git-commit` | `/rumo-git-commit` |
 
 Clients also pick skills automatically from their descriptions; naming one is optional except for manual-only skills.
 
@@ -31,13 +31,13 @@ Installed by default.
 | Skill | Purpose |
 | --- | --- |
 | `rumo-clarify` | One round of short questions with recommended answers when a request is unclear; critical decisions are never defaulted |
-| `rumo-plan` | Short spec and verifiable task breakdown, or a durable engineering decision record |
+| `rumo-plan` | Short spec and verifiable task breakdown, task-by-task execution of an agreed plan, or a durable engineering decision record |
 | `rumo-coding-guidelines` | Baseline discipline: real code paths, only requested and necessary work, verified results |
 | `rumo-test` | Evidence planning, test-first implementation, and high-assurance spec-and-evidence work |
 | `rumo-debug` | Reproduce, localize, and prove a root cause; read-only unless the fix is requested |
 | `rumo-verify` | Exact change scope and the smallest sufficient checks before claiming done; building repository gates |
-| `rumo-review` | Read-only review, an explicit review-fix loop, or a simplification audit |
-| `rumo-git-commit` | Commits, branch landing, history cleanup, releases, and pushes following repository conventions |
+| `rumo-review` | Read-only review, an explicit review-fix loop, a simplification audit, or addressing someone else's review feedback |
+| `rumo-git-commit` | Commits, branch landing, history cleanup, releases, pushes, and pull requests following repository conventions |
 | `rumo-interface` | Compatible evolution of APIs, messages, configuration, and stored formats, with HTTP contract checks |
 | `rumo-lifecycle-safety` | Ownership, retry, cancellation, timeout, shutdown, and cleanup for long-lived work |
 | `rumo-database-change-safety` | Authorized, backed-up, bounded, and reversible database writes |

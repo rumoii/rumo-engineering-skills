@@ -9,13 +9,13 @@ Every skill uses the `rumo-` namespace and stays independent of any company, pro
 | Skill | Purpose |
 | --- | --- |
 | `rumo-clarify` | Lightweight requirement clarification with one round of recommended-answer questions |
-| `rumo-plan` | Short spec and verifiable task breakdown, or a durable engineering decision record |
+| `rumo-plan` | Short spec and verifiable task breakdown, task-by-task execution, or a durable engineering decision record |
 | `rumo-coding-guidelines` | Baseline discipline for grounded, minimal, verified code changes |
 | `rumo-test` | Evidence planning, test-first implementation, and high-assurance spec and evidence |
 | `rumo-debug` | Reproduce, localize, and prove a root cause; read-only by default |
 | `rumo-verify` | Exact change scope and smallest sufficient checks; repository gates |
-| `rumo-review` | Read-only review, explicit review-fix loop, or simplification audit |
-| `rumo-git-commit` | Commit, branch landing, history cleanup, release, and push workflow |
+| `rumo-review` | Read-only review, explicit review-fix loop, simplification audit, or responding to review feedback |
+| `rumo-git-commit` | Commit, branch landing, history cleanup, release, push, and pull request workflow |
 | `rumo-interface` | Compatible interface and stored-format evolution, with HTTP contract checks |
 | `rumo-lifecycle-safety` | Ownership, retry, cancellation, timeout, shutdown, and cleanup |
 | `rumo-database-change-safety` | Authorized, backed-up, bounded, reversible database writes |

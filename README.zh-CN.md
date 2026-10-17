@@ -15,12 +15,12 @@ clarify -> plan -> test -> verify -> review -> git-commit
 | 想做的事 | Codex | Claude Code |
 | --- | --- | --- |
 | 对齐含糊的需求 | `$rumo-clarify` | `/rumo-clarify` |
-| 把已确认的工作拆成可验证的任务 | `$rumo-plan` | `/rumo-plan` |
+| 把已确认的工作拆成可验证的任务，再逐个执行 | `$rumo-plan` | `/rumo-plan` |
 | 测试先行地实现 | `$rumo-test` | `/rumo-test` |
 | 只读排查缺陷根因 | `$rumo-debug` | `/rumo-debug` |
 | 声称完成前检查改动 | `$rumo-verify` | `/rumo-verify` |
 | 只读评审差异 | `$rumo-review` | `/rumo-review` |
-| 提交、合入或推送 | `$rumo-git-commit` | `/rumo-git-commit` |
+| 提交、合入、推送或开 PR | `$rumo-git-commit` | `/rumo-git-commit` |
 
 客户端也会根据技能描述自动选择；除“仅手动调用”的技能外，点名不是必需的。
 
@@ -31,13 +31,13 @@ clarify -> plan -> test -> verify -> review -> git-commit
 | 技能 | 用途 |
 | --- | --- |
 | `rumo-clarify` | 需求不清时只问一轮带推荐答案的短问题；关键决策不明则暂停，绝不擅自取默认值 |
-| `rumo-plan` | 短规格加可验证的任务拆分，或持久化的工程决策记录 |
+| `rumo-plan` | 短规格加可验证的任务拆分、按任务逐个执行已确认的计划，或持久化的工程决策记录 |
 | `rumo-coding-guidelines` | 基线纪律：基于真实代码路径，只做请求和必要的工作，并以验证收尾 |
 | `rumo-test` | 证据规划、测试先行实现，以及高风险改动的规格加证据流程 |
 | `rumo-debug` | 复现、定位并用证据证明根因；除非请求包含修复，否则只读 |
 | `rumo-verify` | 声称完成前确定真实改动范围并跑最小充分检查；建设仓库门禁 |
-| `rumo-review` | 只读评审；明确要求时进入评审修复循环或做可删复杂度审计 |
-| `rumo-git-commit` | 按仓库约定提交、合入分支、整理历史、发布与推送 |
+| `rumo-review` | 只读评审；明确要求时进入评审修复循环、做可删复杂度审计，或逐条处理别人给的评审意见 |
+| `rumo-git-commit` | 按仓库约定提交、合入分支、整理历史、发布、推送与开 PR |
 | `rumo-interface` | API、消息、配置和持久化格式的兼容演进，含 HTTP 契约检查 |
 | `rumo-lifecycle-safety` | 长期运行任务的归属、重试、取消、超时、关闭与资源清理 |
 | `rumo-database-change-safety` | 经授权、有备份、影响有界且可回滚的数据库写入 |
