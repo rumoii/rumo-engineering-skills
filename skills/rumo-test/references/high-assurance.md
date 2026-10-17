@@ -2,7 +2,7 @@
 
 Trust shifts from reading the code to two artifacts the user can check: a spec they approved before work began, and an evidence report produced by one clean, reproducible run after work ended. The evidence covers only what its checks exercise; it does not prove the spec is complete.
 
-Do not use this mode for review-only requests, wording changes, routine refactors, or ordinary bug fixes unless the user asks for it or the failure cost is high.
+Entry follows the risk gate in SKILL.md: money, authentication, authorization, migrations, irreversible effects, or a user request for proof enter directly; durable data, concurrency, public interfaces, or unclear risk get a rating first, and only a high rating enters. Review-only requests, wording changes, routine refactors, and ordinary bug fixes rated normal stay out of this mode.
 
 ## Flow
 
@@ -15,6 +15,7 @@ spec -> approval -> failing test -> passing test -> refactor -> check suite -> e
 
 Before touching implementation files:
 
+0. If a spec the user already approved covers the whole task, reuse it and say so. Get approval again only for scope or key decisions it does not cover.
 1. Inspect entry points, callers, sources of truth, existing tests and aggregate checks, the dirty worktree, and repository instructions.
 2. Rate the risk:
    - **Low:** trivial, no meaningful behavior surface.

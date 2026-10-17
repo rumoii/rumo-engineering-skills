@@ -52,4 +52,4 @@ Stop and report, without improvising a live repair, on failed preconditions, une
 
 Target identity, source and deployed versions, risk class, preflight results, affected objects and row bounds, backup and restore evidence, authorization received, exact command, actual changes, verification results, rollback status, and remaining field limits. For plan-only work, label every command as proposed and state that no database was written.
 
-Related: read-only diagnosis in `rumo-debug`; check selection in `rumo-verify`; durable schema or compatibility decisions in `rumo-plan`; file and directory deletion in `rumo-filesystem-safety`; offline packages that embed migrations in the optional `rumo-offline-delivery-audit` extra, when installed.
+Related: read-only diagnosis in `rumo-debug`; test evidence and the high-assurance risk gate, which migrations enter directly, in `rumo-test`; check selection in `rumo-verify`; durable schema or compatibility decisions in `rumo-plan`; file and directory deletion in `rumo-filesystem-safety`; offline packages that embed migrations in the optional `rumo-offline-delivery-audit` extra, when installed.

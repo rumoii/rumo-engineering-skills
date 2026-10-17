@@ -83,6 +83,27 @@ CLARIFY_BODY_RULES = (
     r"Answers to clarifying questions do not widen what the agent may do",
 )
 
+# The high-assurance gate fires without being named, but never widens authorization.
+HIGH_ASSURANCE_BODY_RULES = (
+    r"Apply this risk gate on your own",
+    r"\*\*Enter directly\*\* when the change touches money, authentication, authorization, migrations, or irreversible effects",
+    r"\*\*Rate first\*\* when it touches durable data, concurrency, or public interfaces, or when the risk is unclear",
+    r"Review-only, read-only diagnosis, and evidence-plan requests keep their own boundaries",
+    r"Spec approval authorizes implementation and local checks only",
+)
+HIGH_ASSURANCE_REFERENCE_RULES = (
+    r"Entry follows the risk gate in SKILL\.md",
+    r"already approved covers the whole task, reuse it",
+    r"Get approval again only for scope or key decisions it does not cover",
+    r"Do not let this workflow widen the user's authorization",
+)
+RISK_GATE_ENTRIES = (
+    "rumo-coding-guidelines",
+    "rumo-interface",
+    "rumo-lifecycle-safety",
+    "rumo-database-change-safety",
+)
+
 
 def read_description(path: Path) -> str:
     errors: list[str] = []
@@ -137,6 +158,24 @@ class SkillBoundariesTest(unittest.TestCase):
         for pattern in CLARIFY_BODY_RULES:
             with self.subTest(body_rule=pattern):
                 self.assertRegex(body, re.compile(pattern, re.I))
+
+    def test_high_assurance_gate_is_automatic_but_bounded(self) -> None:
+        skill = REPO_ROOT / "skills" / "rumo-test" / "SKILL.md"
+        description = read_description(skill)
+        self.assertRegex(description, r"unprompted")
+        self.assertNotRegex(description, r"with an approved spec")
+        body = skill.read_text(encoding="utf-8").split("\n---\n", 1)[1]
+        for pattern in HIGH_ASSURANCE_BODY_RULES:
+            with self.subTest(body_rule=pattern):
+                self.assertRegex(body, pattern)
+        reference = (REPO_ROOT / "skills" / "rumo-test" / "references" / "high-assurance.md").read_text(encoding="utf-8")
+        for pattern in HIGH_ASSURANCE_REFERENCE_RULES:
+            with self.subTest(reference_rule=pattern):
+                self.assertRegex(reference, pattern)
+        for skill_name in RISK_GATE_ENTRIES:
+            with self.subTest(entry=skill_name):
+                text = (REPO_ROOT / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")
+                self.assertRegex(text, r"high-assurance risk gate[^.]*`rumo-test`|`rumo-test`[^.]*high-assurance risk gate")
 
     def test_accepts_counterpart_or_pair_specific_exclusion(self) -> None:
         self.assertTrue(has_boundary("Use rumo-verify instead.", "rumo-verify", "unused"))

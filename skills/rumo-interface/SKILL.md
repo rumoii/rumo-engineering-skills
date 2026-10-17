@@ -54,7 +54,7 @@ For HTTP/JSON surfaces, read [references/http.md](references/http.md) and work t
 | new | new | new meaning and invalid cases work |
 | new | old | compatible, or the rollout explicitly forbids this pair |
 
-Add invalid types, missing required values, unknown enums, boundaries, duplicate delivery, serialization round trips, reload of stored data, and rollback where they apply. Check the assembled route or artifact when generation, packaging, proxies, or deployment can differ from source tests. Plan coverage with `rumo-test`; check the final diff with `rumo-verify`; record a material compatibility or versioning policy with `rumo-plan`.
+Add invalid types, missing required values, unknown enums, boundaries, duplicate delivery, serialization round trips, reload of stored data, and rollback where they apply. Check the assembled route or artifact when generation, packaging, proxies, or deployment can differ from source tests. Plan coverage with `rumo-test`, applying its high-assurance risk gate before implementation; check the final diff with `rumo-verify`; record a material compatibility or versioning policy with `rumo-plan`.
 
 ## Report
 

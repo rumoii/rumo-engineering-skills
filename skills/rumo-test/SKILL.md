@@ -1,6 +1,6 @@
 ---
 name: rumo-test
-description: Use when planning, writing, or assessing tests for a behavior change, including judging whether existing tests are enough, choosing between unit, integration, browser, artifact, deployment, and field evidence, test-driven development, or a high-assurance change with an approved spec and reproducible evidence for money, authentication, authorization, durable data, concurrency, migrations, or public interfaces. Do not use to find the root cause of an existing defect (use rumo-debug) or to check an already finished diff before handoff (use rumo-verify).
+description: Use when planning, writing, or assessing tests for a behavior change: whether existing tests are enough, which evidence layers (unit, integration, browser, artifact, deployment, field) to use, and test-driven development. Also use unprompted when implementing a change that touches money, auth, durable data, concurrency, migrations, public interfaces, or irreversible effects, to rate its risk and enter high-assurance spec-and-evidence mode when it is high. Do not use to find the root cause of an existing defect (use rumo-debug) or to check an already finished diff before handoff (use rumo-verify).
 ---
 
 # Rumo Test
@@ -13,7 +13,7 @@ Tests are evidence for claims. A large suite, a coverage number, an HTTP 200, or
 | --- | --- |
 | Evidence plan (default) | Deciding what to test, or whether existing tests are enough; works without writing code |
 | Test-first | Implementing a behavior change or bug fix |
-| High assurance | The user asks for proof, a spec, or confidence without line-by-line review, or failure would hit money, auth, durable data, concurrency, migrations, or public interfaces |
+| High assurance | The risk gate below rates the change high, or the user asks for proof, a spec, or confidence without line-by-line review |
 
 ## Evidence Plan
 
@@ -37,6 +37,12 @@ Example, for a bug where refunds can exceed the amount paid:
 - Weak: a test that mocks `issue_refund` and asserts it was called. It passed before the fix, so it proves nothing about the bug.
 
 ## High Assurance
+
+Apply this risk gate on your own whenever you implement a change; the user does not need to name the mode.
+
+- **Enter directly** when the change touches money, authentication, authorization, migrations, or irreversible effects, or the user asks for proof, a spec, or confidence without line-by-line review.
+- **Rate first** when it touches durable data, concurrency, or public interfaces, or when the risk is unclear. Write a short rating against the risk levels in the reference, in the plan or the reply. High enters this mode; normal continues with test-first, and the report states the rating and why.
+- Review-only, read-only diagnosis, and evidence-plan requests keep their own boundaries. The rating informs the advice; it does not authorize edits.
 
 Read [references/high-assurance.md](references/high-assurance.md) in full before starting. In short: an approved spec before any implementation, test-first for every behavior, one entry point that reruns every selected check from clean inputs, and a final evidence report from a single fresh run after the last edit. Spec approval authorizes implementation and local checks only; commits, tags, pushes, deployments, database writes, deletions, credential changes, dependency installs, paid services, and any other separately controlled action keep their own approvals.
 

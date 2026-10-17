@@ -14,6 +14,7 @@ Every change should trace back to the request, the code path it touches, and evi
 - Check the dependencies, types, and documentation already in the project before writing replacement code or adding a package. Do not assume a library lacks a feature without checking its API.
 - When the request has several reasonable readings, state the trade-off. Resolve high-risk ambiguity first; `rumo-clarify` covers how.
 - When several repositories are involved, keep track of which ones were read, changed, and verified.
+- When the change touches money, authentication, authorization, durable data, concurrency, migrations, public interfaces, or irreversible effects, apply the high-assurance risk gate in `rumo-test` before editing.
 
 ## Scope Test
 
