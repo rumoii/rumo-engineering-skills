@@ -1,6 +1,6 @@
 ---
 name: rumo-plan
-description: Use when turning an agreed multi-step or cross-module task into a short spec and verifiable task breakdown before implementation, or when creating, updating, superseding, implementing, or rejecting a durable engineering decision record (ADR) for a cross-module contract, data or wire format, permission model or security policy, lifecycle rule, deployment topology, migration, or rollback strategy. Do not use for single-file fixes or mechanical edits, and do not write a duplicate record for a choice an existing record already owns (update, review, or supersede that record instead); settle unclear goals with rumo-clarify first.
+description: Use when turning an agreed multi-step or cross-module task into a short spec and verifiable task breakdown before implementation, when executing an agreed plan task by task, or when creating, updating, superseding, implementing, or rejecting a durable engineering decision record (ADR) for a cross-module contract, data or wire format, permission model or security policy, lifecycle rule, deployment topology, migration, or rollback strategy. Do not use for single-file fixes or mechanical edits, and do not write a duplicate record for a choice an existing record already owns (update, review, or supersede that record instead); settle unclear goals with rumo-clarify first.
 ---
 
 # Rumo Plan
@@ -12,6 +12,7 @@ Make the work and its reasons explicit before they become code.
 | Mode | Use when | Output |
 | --- | --- | --- |
 | Plan | The task spans several steps, modules, or sessions | A short spec plus ordered, verifiable tasks |
+| Execute | An agreed plan is ready to implement | Tasks done in order, each with its check result |
 | Decision record | A material choice must outlive this conversation, or an existing record needs updating | A decision record in the repository's convention |
 
 Unclear goals or acceptance criteria go to `rumo-clarify` first. A decision record can be maintained even for a small change when it owns the affected mechanism.
@@ -19,13 +20,24 @@ Unclear goals or acceptance criteria go to `rumo-clarify` first. A decision reco
 ## Plan Mode
 
 1. Inspect the real entry points, owners, tests, and repository instructions for the affected area.
-2. Write the spec in a few lines each: goal, non-goals, constraints, acceptance criteria, and open decisions with recommended answers.
+2. Write the spec in a few lines each: goal, non-goals, constraints, acceptance criteria, and open decisions with recommended answers. When more than one design is viable and the choice changes an interface, stored data, or the amount of work, list two or three options with their trade-offs and a recommendation, and break the work down only after the user picks one.
 3. Break the work into tasks. Each task names the files or modules it touches, the check that proves it done, and what it depends on. Prefer thin end-to-end slices over layer-by-layer batches.
 4. Mark tasks that need separate authorization: commits, tags, pushes, deployments, database writes, deletions, credential changes, dependency installs, and paid services.
 5. Show the plan. When the user already authorized this scope and the plan adds no new decision, continue; otherwise wait for approval of that exact version, pausing only the tasks that depend on the open decision or authorization. A clarifying answer revises the plan; it is not approval.
 6. While implementing, stop and revise the plan when a task turns out wrong or a hidden requirement appears; do not silently drift.
 
 Save the plan where the user or repository wants it. Without a convention, keep it in the conversation rather than inventing a directory.
+
+## Execute Mode
+
+Work an agreed plan one task at a time, in dependency order.
+
+1. Before a task, re-read the files it touches and the check it names.
+2. After the task, run that check. Mark the task done only when the check passes, and record the command and result.
+3. When a check fails, stay on that task until it passes or the plan needs revising; never start the next task on top of a failing one.
+4. Report per task or small batch, and end with one line per task: done with its evidence, blocked with the reason, or not started.
+
+Run tasks in parallel or in separate worktrees only when the user asks, and never run two tasks in parallel when they touch the same files. Read [references/parallel-execution.md](references/parallel-execution.md) before doing so.
 
 ## Decision Record Mode
 
@@ -39,4 +51,4 @@ Read [references/decision-records.md](references/decision-records.md) before wri
 
 ## Report
 
-For plans: the spec, the task list with checks, items needing separate authorization, and the approval status. For records: status, path, superseded records, and evidence boundaries.
+For plans: the spec, the task list with checks, items needing separate authorization, and the approval status. For execution: each task's status with its check evidence. For records: status, path, superseded records, and evidence boundaries.

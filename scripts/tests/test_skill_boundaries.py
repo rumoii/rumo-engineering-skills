@@ -56,10 +56,10 @@ BOUNDARIES = (
 # Each merged skill keeps one trigger phrase per mode in its description,
 # because clients pick skills from the description alone.
 MODE_TRIGGERS = {
-    "rumo-plan": (r"task breakdown", r"decision record|ADR"),
+    "rumo-plan": (r"task breakdown", r"decision record|ADR", r"executing an agreed plan"),
     "rumo-test": (r"existing tests are enough", r"test-driven", r"high-assurance"),
     "rumo-verify": (r"before claiming work is done", r"CI check|static verifier"),
-    "rumo-review": (r"read-only code review", r"review-fix", r"simplification audit"),
+    "rumo-review": (r"read-only code review", r"review-fix", r"simplification audit", r"review feedback from someone else"),
     "rumo-interface": (r"HTTP", r"event|queue message", r"configuration field"),
     "rumo-remote-ops": (r"remote Linux host", r"systemd|Docker Compose", r"backups? and restores?", r"deployment of selected application artifacts"),
     "rumo-debug": (r"stay read-only unless the request also asks for the fix",),

@@ -1,6 +1,6 @@
 ---
 name: rumo-git-commit
-description: Use when the user explicitly asks to commit, tag, release, push, clean up history, or land a worktree or feature branch. Follow repository conventions for branch selection, commit language, message format, verification, and release versioning. Do not use merely because work is finished; without an explicit request, stop after rumo-verify.
+description: Use when the user explicitly asks to commit, tag, release, push, clean up history, land a worktree or feature branch, or open or update a pull request. Follow repository conventions for branch selection, commit language, message format, verification, and release versioning. Do not use merely because work is finished; without an explicit request, stop after rumo-verify.
 ---
 
 # Git Commit
@@ -39,6 +39,15 @@ When the source is a worktree or feature branch:
 8. Verify the landed state before push.
 
 History rewriting, interactive rebase, force push, deleting branches, and replacing tags require a preview and explicit confirmation because they can invalidate other clones or references.
+
+## Pull Request
+
+Open or update a pull request only when the user asks.
+
+- Confirm the remote, source branch, and target branch, and that the source is pushed. Follow the repository's pull request template when one exists.
+- Write the body in four parts: why the change is needed, what behavior changes, the verification actually run (taken from the `rumo-verify` report), and risks, rollback, and boundaries not verified.
+- Add signatures, trailers, labels, and reviewers only as the repository convention or the user requires. Never merge it automatically, and do not edit someone else's pull request.
+- Use the hosting platform's CLI or web interface; when neither is available, give the user the title and body to paste.
 
 ## Release
 

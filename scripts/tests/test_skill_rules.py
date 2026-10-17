@@ -51,6 +51,8 @@ RULES = {
         "Preserve unrelated tracked, staged, unstaged, and untracked work.",
         "Never create a tag unless the user explicitly asks",
         "Never push unless the user explicitly asks.",
+        "Open or update a pull request only when the user asks.",
+        "Never merge it automatically",
         "require a preview and explicit confirmation",
     ),
     "rumo-handoff": (
@@ -76,6 +78,8 @@ RULES = {
         "Mark tasks that need separate authorization",
         "A clarifying answer revises the plan; it is not approval.",
         "Do not mark a record implemented because code was drafted or unit tests passed",
+        "never start the next task on top of a failing one",
+        "never run two tasks in parallel when they touch the same files",
         "A decision record never authorizes database writes, deployments, or other controlled actions.",
     ),
     "rumo-project-profile": (
@@ -98,6 +102,8 @@ RULES = {
     ),
     "rumo-review": (
         "do not edit code in review mode",
+        "Review (default) and Simplify modes never edit code; only Loop and Respond do, and only on an explicit request.",
+        "Do not post replies, resolve threads, or request another review on the hosting platform unless the user asks.",
         "Do not guess the base from branch names.",
         "Report only issues this change introduces or materially exposes",
         "Each finding names the repository, file and line, the consequence, the triggering condition, and the evidence.",

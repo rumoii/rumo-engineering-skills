@@ -1,6 +1,6 @@
 ---
 name: rumo-lifecycle-safety
-description: Use when implementing, fixing, or reviewing asynchronous or long-lived behavior involving background tasks, thread pools, scheduled jobs, Kafka consumers, terminal sessions, subprocesses, retries, cancellation, timeouts, shutdown, or resource cleanup. Establish explicit ownership and state transitions, make retry and disposal safe, and verify failure and restart paths instead of only the successful call.
+description: Use when implementing, fixing, or reviewing asynchronous or long-lived behavior involving background tasks, thread pools, scheduled jobs, message-queue consumers such as Kafka, terminal sessions, subprocesses, retries, cancellation, timeouts, shutdown, or resource cleanup. Establish explicit ownership and state transitions, make retry and disposal safe, and verify failure and restart paths instead of only the successful call.
 ---
 
 # Rumo Lifecycle Safety

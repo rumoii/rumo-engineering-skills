@@ -1,6 +1,6 @@
 ---
 name: rumo-review
-description: Use for a read-only code review of uncommitted changes, a branch diff, a commit, or a named scope; for an explicitly requested review-fix-repeat loop until no blocking findings remain; or for an explicitly requested simplification audit of removable complexity. Report correctness, security, lifecycle, compatibility, operations, and test risks with file-and-line evidence. Do not use to run pre-handoff checks; use rumo-verify instead.
+description: Use for a read-only code review of uncommitted changes, a branch diff, a commit, or a named scope; for an explicitly requested review-fix-repeat loop until no blocking findings remain; for an explicitly requested simplification audit of removable complexity; or for addressing review feedback from someone else. Report correctness, security, lifecycle, compatibility, operations, and test risks with file-and-line evidence. Do not use to run pre-handoff checks; use rumo-verify instead.
 ---
 
 # Rumo Review
@@ -14,6 +14,9 @@ Lead with actionable findings, not a tour of the diff.
 | Review (default) | Any review request | No |
 | Loop | The user explicitly asks to review, fix, and repeat; read [references/loop.md](references/loop.md) | Yes, must-fix items only |
 | Simplify | The user explicitly asks for simplification or removable-complexity findings; read [references/simplify.md](references/simplify.md) | No |
+| Respond | The user hands over review comments from a person or a tool and asks to address them | Yes, accepted comments only |
+
+Review (default) and Simplify modes never edit code; only Loop and Respond do, and only on an explicit request.
 
 ## Settle The Target
 
@@ -46,6 +49,15 @@ When the target is a CI job, verifier, threshold, or other gate, also apply the 
 - Report only issues this change introduces or materially exposes; old debt is out of scope.
 - Check that a suggested fix direction is feasible, but do not edit code in review mode.
 
+## Respond To Feedback
+
+1. Check each comment against the code: is the problem real, and is it inside the reviewed change?
+2. Sort each one: fix; decline with evidence (file, line, test, or documentation); needs clarification; or out of scope, recorded but not fixed now. Order the fixes with the must-fix and consider buckets in [references/loop.md](references/loop.md).
+3. Ask about unclear comments first; hold the edits that depend on them and continue with the rest.
+4. Fix in severity order, add a regression test for behavior findings, and verify with `rumo-verify`.
+5. Reply per comment with what changed or why it did not. Skip blanket thanks and agreement.
+6. Do not post replies, resolve threads, or request another review on the hosting platform unless the user asks.
+
 ## Report
 
 Findings first, by severity:
@@ -75,4 +87,4 @@ Not a finding: "Consider more error handling; the code could be cleaner; tests l
 | "The tests pass, so it's fine." | Check whether the tests touch the changed route at all. |
 | "I'll mention this old problem too." | Findings outside the change bury the ones that matter. |
 | "Probably main is the base." | A wrong base reviews the wrong diff; confirm it. |
-| "Quick fix while reviewing." | Review mode is read-only unless the user asked for the loop. |
+| "Quick fix while reviewing." | Review mode is read-only unless the user asked for the loop or for responding to feedback. |
