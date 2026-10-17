@@ -108,5 +108,43 @@ Code's sandbox: on Windows run the suite under WSL2, and on Linux install
 `bubblewrap` and `socat`. `review-readonly` needs only `Edit Write` and runs
 anywhere.
 
+### Codex behavior checks
+
+`scripts/run_codex_behavior.py` runs the eight local cases in
+`scripts/codex_behavior_cases.py` through the existing Codex CLI. It calls a
+model, so it is opt-in and stays out of CI. Unit tests for its evidence
+parser and fixtures run in the ordinary test suite without model calls.
+
+Create a snapshot containing `skills/`, then run in a new evidence directory
+outside the checkout:
+
+```powershell
+python scripts/run_codex_behavior.py --snapshot <snapshot-root> --output-dir <task-evidence-dir>
+```
+
+Use `--case verify-honest` for one case. Compare old and new skill snapshots
+with the same fixtures, model, reasoning settings, and grader version. Keep
+both snapshots and their source revisions with the evidence. The runner
+disables installed Rumo copies for its child process only and explicitly
+loads each sample's snapshot paths; it reuses existing authentication and
+provider settings. On Windows it uses the unelevated workspace-write sandbox.
+It never falls back to unsandboxed execution. Runtime or skill-read failure
+invalidates the run; inspect it before spending another model call.
+
+Results separate mechanical checks from a pending review verdict. Inspect the
+JSONL commands, completed outputs, final replies, and changed files against
+each saved acceptance criterion before assigning a verdict, and state whether
+the reviewer was a person or an agent. A known failed
+test must have a completed command, exit code 1, and the expected assertion;
+reading a file, mentioning a command, or merely avoiding readiness phrases
+does not prove it ran. Claude's `tool_used` grader checks a test attempt only;
+its failure-report phrase graders do not establish arbitrary semantic truth.
+Neither client result establishes behavior in the other client.
+
+The timeout bounds one case's runtime across turns; it is not a debugging
+attempt limit. Preserve partial evidence on timeout, terminate only the
+runner-owned process tree, and report the case as unverified. Fresh paired
+runs are scenario evidence, not a statistical claim of overall improvement.
+
 Pull requests should explain the user scenario, changed behavior, verification
 performed, and any environment or acceptance boundary that was not exercised.
