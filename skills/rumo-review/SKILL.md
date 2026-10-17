@@ -72,10 +72,10 @@ Each finding names the repository, file and line, the consequence, the triggerin
 A finding that can be acted on:
 
 ```text
-P1 services/refund.py:88 - the refund amount comes from the request body, not the stored order.
-Trigger: a client sends an amount above what was paid.
-Consequence: refunds larger than the payment succeed.
-Evidence: line 88 passes request.amount to issue_refund; order.paid_total (line 71) is never compared.
+P1 services/profile.py:54 - updating the email commits to the database but leaves the cached profile in place.
+Trigger: a user changes their email and a password reset is requested within the 10-minute cache TTL.
+Consequence: the reset link goes to the old address.
+Evidence: line 54 commits the row; nothing deletes profile:{id}, which get_profile (line 21) reads before the database.
 ```
 
 Not a finding: "Consider more error handling; the code could be cleaner; tests look fine." It names no location, trigger, or consequence, so nobody can verify or fix it.
