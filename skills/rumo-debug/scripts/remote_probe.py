@@ -22,9 +22,12 @@ def any_case(pattern: str) -> str:
 def redact_expressions() -> list[str]:
     """Best-effort sed -E expressions that mask common secret shapes in log lines."""
     keys = "|".join(any_case(key) for key in SECRET_KEYS)
+    prefix = "((" + keys + ")[A-Za-z0-9_.-]*[\"']?[[:space:]]*[=:][[:space:]]*)"
     return [
         "s#(" + any_case("bearer") + "|" + any_case("basic") + ")[[:space:]]+[^[:space:]\",;]+#\\1 ***#g",
-        "s#((" + keys + ")[A-Za-z0-9_.-]*\"?[[:space:]]*[=:][[:space:]]*\"?)[^[:space:]\",;&]+#\\1***#g",
+        "s#" + prefix + "\"[^\"]*\"#\\1\"***\"#g",
+        "s#" + prefix + "'[^']*'#\\1'***'#g",
+        "s#" + prefix + "[^[:space:]\"',;&]+#\\1***#g",
         "s#://[^/@[:space:]:]+:[^/@[:space:]]+@#://***:***@#g",
         "s#eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+#***#g",
     ]

@@ -46,6 +46,10 @@ class RemoteProbeTests(unittest.TestCase):
                 "jwt eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.FAKE6sig",
                 '{"apiKey":"FAKE7","api_key": "FAKE8"} token expired for order 42',
                 "-Dsecret.value=FAKE9 order_id=123",
+                'password="FAKE10 FAKE10_SUFFIX" retry=3',
+                "{'token': 'FAKE11_VALUE'}",
+                "secret='FAKE12 a b c' status=open",
+                "client_secret = 'FAKE13'",
             ]
         )
         command = "sed -E " + " ".join(f"-e {shlex.quote(expression)}" for expression in REMOTE_PROBE.redact_expressions())
@@ -57,6 +61,8 @@ class RemoteProbeTests(unittest.TestCase):
         self.assertIn("token expired for order 42", completed.stdout)
         self.assertIn("order_id=123", completed.stdout)
         self.assertIn("user=bob", completed.stdout)
+        self.assertIn("retry=3", completed.stdout)
+        self.assertIn("status=open", completed.stdout)
 
 
 if __name__ == "__main__":
