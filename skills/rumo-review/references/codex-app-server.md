@@ -20,7 +20,7 @@ During long waits, the script prints progress heartbeat messages to stderr by de
 
 Use `--show-intermediate` only when you need to inspect visible in-progress review messages while waiting. It prints non-reasoning, non-tool visible text items to stderr, capped by `--intermediate-max-chars`, but those snippets are provisional. Do not extract `must_fix`/`consider` buckets, edit code, or stop the loop from intermediate snippets; wait for the final `exitedReviewMode.review`.
 
-Do not keep retrying app-server review indefinitely. If `app_server_review.py` exits `1` because it timed out or returned `missingExitedReviewMode`, clean up only the review app-server child processes you started and retry once with a long enough wrapper timeout. If the second attempt still has no valid `exitedReviewMode.review`, switch to the current-thread code-review fallback for that cycle, explicitly report that the app-server review backend failed, and continue the same fix -> verify loop from the fallback findings.
+Do not keep retrying app-server review indefinitely. If `app_server_review.py` exits `1` because it timed out or returned `missingExitedReviewMode`, clean up only the review app-server child processes you started and retry once with a long enough wrapper timeout. If the second attempt still has no valid `exitedReviewMode.review`, switch to the next backend in [loop.md](loop.md#review-backends) for that cycle, explicitly report that the app-server review backend failed, and continue the same fix -> verify loop from the fallback findings.
 
 Resolve the script from the installed skill directory, not from a product repo. If the skill path is unclear, locate it from the loaded `SKILL.md` path.
 

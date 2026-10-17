@@ -11,8 +11,9 @@ Settle one target before starting: uncommitted changes (default after a fix), a 
 Prefer the most direct independent review surface; all of them feed the same loop:
 
 1. When `codex app-server` is available, read [codex-app-server.md](codex-app-server.md) and run `scripts/app_server_review.py`. It gives an independent review thread and a machine-readable exit code.
-2. Otherwise, or after two app-server attempts end without a valid review result, use the client's built-in review command if it has one (client-specific: for example `/review` in Codex or `/code-review` in Claude Code).
-3. Otherwise, review in the current session following SKILL.md.
+2. Otherwise, or after two app-server attempts end without a valid review result, when the client can start a helper with a fresh context (client-specific: for example a subagent), give it only the target, the review standard in SKILL.md, and the repository guidance. Withhold the fix history and earlier findings so it reviews the code, not your reasoning. It reports findings and never edits code.
+3. Otherwise, use the client's built-in review command if it has one (client-specific: for example `/review` in Codex or `/code-review` in Claude Code).
+4. Otherwise, review in the current session following SKILL.md, and say in the report that the review was not independent.
 
 ## Cycle
 
