@@ -38,9 +38,29 @@ Write a failing regression test first, make the smallest fix, and verify with `r
 
 Read [references/remote-investigation.md](references/remote-investigation.md) before touching a remote host. By default access only localhost or an environment identified as development or test, and ask when the purpose is unclear. Production access needs the user's explicit go-ahead and stays read-only unless the user authorizes the exact change. Never print passwords, tokens, keys, or full sensitive payloads. `scripts/remote_probe.py --host <host> --root <remote-root> --log-dir <log-dir>` prints a generic read-only probe.
 
+## Stop Conditions
+
+- After three hypotheses in a row are refuted, or after a fix leaves the symptom in place twice, stop proposing hypotheses and stacking patches.
+- Return to step 1 and recheck the premises: environment, version, the artifact actually running, the data, and which component owns the behavior.
+- Report the hypotheses ruled out with their evidence, what remains suspect, and the information or access you need from the user.
+- When the fix would reach beyond the proven cause, such as a broad rewrite, a public interface, or stored data, stop and ask first.
+
 ## Report
 
 Use [references/report-template.md](references/report-template.md). State the symptom, confirmed or likely cause, causal chain, evidence with file, line, or timestamp, fix boundary, unresolved conflicts, and evidence not obtained. Keep source reasoning separate from runtime proof.
+
+A causal chain that can be checked:
+
+```text
+Symptom: exported CSV for order 1042 shows 0.00 total since the 10-14 release.
+Trigger: orders created with a coupon go through CouponPricing (pricing/coupon.py:57).
+Earliest wrong state: line 63 rounds the discount before currency conversion, so total_minor becomes 0.
+Evidence (source): pricing/coupon.py:57-63; test_coupon_rounding reproduces it.
+Evidence (runtime): export log 2026-10-15T09:12:44Z order=1042 total_minor=0; 10-13 build shows 1999.
+Not obtained: whether pre-release coupon orders were re-exported.
+```
+
+Not a causal chain: "There's a missing null check in export, that's probably it." It names no trigger, no wrong state, and no evidence, so nobody can confirm or refute it.
 
 ## Shortcuts And Rebuttals
 
