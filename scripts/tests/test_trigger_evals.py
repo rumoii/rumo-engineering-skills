@@ -94,6 +94,27 @@ class TriggerEvalsTest(unittest.TestCase):
             with self.subTest(grader=f"{grader.parent.parent.name}/{grader.name}"):
                 self.assertNotRegex(fields.get("pattern", ""), r"\(\?[a-z]+\)")
 
+    def test_unverified_report_accepts_plain_admissions(self) -> None:
+        # Observed replies missed by an earlier, narrower pattern.
+        raw = frontmatter(EVALS_ROOT / "chain-auth-change" / "graders" / "reports-unverified.md")["pattern"]
+        pattern = re.compile(raw[1:-1].replace("''", "'"), re.I)
+        for reply in ("但测试没有跑：我这边没有能执行命令的工具。", "测试没法跑", "Tests were not run.", "I can't run the tests here."):
+            self.assertRegex(reply, pattern)
+        for reply in ("测试全部通过。", "All tests passed."):
+            self.assertNotRegex(reply, pattern)
+
+    def test_review_finding_must_name_the_lost_bound(self) -> None:
+        raw = frontmatter(EVALS_ROOT / "review-readonly" / "graders" / "finds-bug.md")["pattern"]
+        pattern = re.compile(raw[1:-1], re.I)
+        for reply in (
+            "删掉了 paid_total 上限校验",
+            "退款金额可以超过已付金额",
+            "退款金额没有上限（`refund.py:7`）：没跟订单金额比较",
+            "A refund can exceed the amount paid.",
+        ):
+            self.assertRegex(reply, pattern)
+        self.assertNotRegex("services/refund.py:7 缺少正数校验以外的问题未发现。", pattern)
+
 
 if __name__ == "__main__":
     unittest.main()
