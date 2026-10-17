@@ -16,6 +16,6 @@ Ground the change in the real page, design system, component inventory, routes, 
 2. Establish success criteria for structure, spacing, alignment, overflow, states, and interactions.
 3. Implement the smallest coherent change using existing design tokens and component APIs.
 4. Run focused lint or tests and the affected application build.
-5. When browser validation is required, use the dedicated Playwright profile and check visible state, console errors, failed network requests, critical interactions, and screenshots.
+5. When browser validation is required, prefer Playwright driving an isolated browser profile; otherwise use another browser-automation tool; if none is available, report that browser validation was not done. Check visible state, console errors, failed network requests, critical interactions, and screenshots.
 
 Run `scripts/probe_frontend_ui.py --repo <path>` for a read-only inventory of package manifests, source roots, and likely component libraries.

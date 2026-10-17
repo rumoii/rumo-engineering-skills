@@ -54,4 +54,4 @@ These signal an interface nobody designed:
 
 ## Check The Result
 
-Render the page at a wide and a narrow viewport with realistic data, including a long name, an empty list, and an error. Compare the screenshots with the direction you set: hierarchy, spacing rhythm, color roles, and states. Fix what drifted, then run the accessibility check.
+Render the page at a wide and a narrow viewport with realistic data, including a long name, an empty list, and an error; prefer Playwright with two viewport sizes for the screenshots, and say so when no browser automation is available. Compare the screenshots with the direction you set: hierarchy, spacing rhythm, color roles, and states. Fix what drifted, then run the accessibility check.

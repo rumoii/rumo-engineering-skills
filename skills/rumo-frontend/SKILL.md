@@ -22,7 +22,7 @@ An established design system or adjacent page always outranks the defaults in `d
 - Never point a development server or browser at an environment whose purpose is unclear. By default operate only on localhost or an environment the user identified as development or test. Production access needs the user's explicit go-ahead and stays read-only unless the user authorizes the exact change.
 - Preserve routes, APIs, permissions, keyboard behavior, and loading, empty, error, disabled, and validation states.
 - Use an isolated automation browser profile by default. Let the user type passwords and one-time codes; never extract credentials from a browser profile.
-- Keep evidence capture local. Committing, uploading, or publishing evidence is a separate action that needs explicit approval.
+- Temporary renders and screenshots for self-checking are expected. Keep evidence capture local; persisting, committing, uploading, or publishing it is a separate action that needs explicit approval.
 - A successful build does not prove proxy, authentication, or browser behavior; report which of those were actually exercised.
 
 Run `scripts/probe_frontend_ui.py --repo <path>` for a read-only inventory of manifests, source roots, and likely component libraries.
