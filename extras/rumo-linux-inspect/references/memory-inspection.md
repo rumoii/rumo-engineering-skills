@@ -9,12 +9,12 @@ Use `rumo-project-profile` for install roots, log directories, service patterns,
 ## Evidence
 
 - host identity, time, kernel, uptime, memory and swap;
-- top processes by RSS and command line;
+- top processes by RSS with process name and owning systemd unit or cgroup, never full command lines;
 - process status, threads, file descriptors, and container usage;
 - optional JVM diagnostics when the profile declares a JVM runtime and tools are available;
-- kernel OOM evidence and bounded recent logs;
+- kernel OOM evidence, and for `--log-dir` a per-file count of memory and error patterns rather than log text;
 - listeners and middleware processes relevant to the suspected route.
 
-Run `scripts/remote_memory_inspection.py --host <host> --user <user> [--root <path>] [--log-dir <path>] --dry-run` before live collection. The live command uses SSH keys by default and saves a local evidence directory. It never restarts services or writes remotely.
+Run `scripts/remote_memory_inspection.py --host <host> --user <user> [--root <path>] [--log-dir <path>] --dry-run` before live collection. The live command uses SSH keys by default and saves a local evidence directory. It never restarts services or writes remotely. A log directory that is missing or unreadable is reported as such, not as zero matches. When a count points at a specific problem, read the relevant lines in a targeted follow-up and mask secrets before saving them.
 
 Classify observed pressure as process heap, native memory, thread or descriptor growth, middleware/container pressure, kernel OOM, repeated application errors, or insufficient evidence. State what the collected layer does not prove.

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 from pathlib import Path
+import shutil
+import subprocess
 import tempfile
 import unittest
 
@@ -38,6 +41,53 @@ class RemoteMemoryOutputPathTests(unittest.TestCase):
 
             self.assertNotIn(":", output.name)
             self.assertRegex(output.name, r"^[A-Za-z0-9_-]+$")
+
+
+class RemoteMemoryScriptTests(unittest.TestCase):
+    def test_script_collects_no_command_lines_or_raw_log_lines(self) -> None:
+        script = REMOTE_MEMORY.remote_script("/srv/app", "/var/log/app", 30)
+
+        self.assertNotRegex(script, r"\bargs\b|cmdline")
+        self.assertIn("comm", script)
+        self.assertNotRegex(script, r"grep -[a-zA-Z]*n")
+        self.assertIn("grep -ciF", script)
+
+    @unittest.skipUnless(os.name == "posix" and shutil.which("sh"), "needs a POSIX shell")
+    def test_log_summary_reports_counts_without_log_content(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            logs = Path(temp_dir) / "logs"
+            logs.mkdir()
+            (logs / "app.log").write_text(
+                "ERROR login failed token=FAKE-LOG-SECRET\nERROR again password=FAKE-LOG-SECRET\nWARN slow\n",
+                encoding="utf-8",
+            )
+            (logs / "quiet.log").write_text("all good\n", encoding="utf-8")
+            locked = logs / "locked.log"
+            locked.write_text("ERROR FAKE-LOG-SECRET\n", encoding="utf-8")
+            locked.chmod(0)
+
+            output = self.run_script(REMOTE_MEMORY.remote_script("", str(logs), 30))
+
+            self.assertNotIn("FAKE-LOG-SECRET", output)
+            self.assertRegex(output, r"app\.log\tERROR\t2")
+            self.assertRegex(output, r"app\.log\tWARN\t1")
+            self.assertNotRegex(output, r"quiet\.log\t")
+            if os.geteuid() != 0:
+                self.assertRegex(output, r"locked\.log\tunreadable")
+                self.assertIn("files_scanned=3 unreadable=1", output)
+
+    @unittest.skipUnless(os.name == "posix" and shutil.which("sh"), "needs a POSIX shell")
+    def test_missing_log_directory_is_reported_not_silent(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = self.run_script(REMOTE_MEMORY.remote_script("", str(Path(temp_dir) / "absent"), 30))
+
+        self.assertIn("log directory missing or not a directory", output)
+        self.assertNotIn("files_scanned=", output)
+
+    def run_script(self, script: str) -> str:
+        completed = subprocess.run(["sh", "-s"], input=script, text=True, capture_output=True, timeout=60, check=False)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        return completed.stdout
 
 
 if __name__ == "__main__":
