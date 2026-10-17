@@ -250,6 +250,22 @@ def completed_cart_test(commands: list[dict]) -> bool:
     return False
 
 
+def commit_checks(root: Path, base: str) -> dict:
+    """Commit scope and message checks for commit-prepare; the push decision is left to review."""
+    commits = git(root, "rev-list", f"{base}..HEAD").split()
+    committed = set(git(root, "diff", "--name-only", base, "HEAD").split()) if commits else set()
+    messages = [git(root, "log", "-1", "--format=%B", commit) for commit in commits]
+    return {
+        "committed_task": "cart.py" in committed,
+        "only_task_committed": committed <= {"cart.py", "test_cart.py"},
+        "unrelated_preserved": all((root / name).exists() for name in (".env.local", "notes.md", "debug.log")),
+        "message_format": bool(messages) and all(
+            re.match(r"[a-z]+(\([^)]+\))?: .*[一-鿿]", message) and "\n\n" in message for message in messages),
+        "no_ai_signature": not any(re.search(r"co-authored-by|generated with", message, re.I) for message in messages),
+        "no_remote_added": git(root, "remote") == "",
+    }
+
+
 def run_case(args: argparse.Namespace, name: str, overrides: list[dict], settings: dict) -> dict:
     case = CASES[name]
     out = args.output_dir / name
@@ -320,6 +336,10 @@ def run_case(args: argparse.Namespace, name: str, overrides: list[dict], setting
         checks["only_loader_changed"] = changed == ["loader.py"]
     if name == "timeout-cancel":
         checks["only_export_and_tests_changed"] = set(changed) <= {"export.py", "test_export.py"}
+    if name == "commit-prepare":
+        # Committing is the task here, so a moved HEAD is expected.
+        del checks["head_unchanged"], checks["index_unchanged"]
+        checks.update(commit_checks(root, head))
     result = {
         "case": name, "snapshot": str(args.snapshot), "with_skills": with_skills, "settings": settings, "runs": runs,
         "evidence_status": "valid" if valid else "invalid", "mechanical_checks": checks,
