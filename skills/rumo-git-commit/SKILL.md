@@ -18,6 +18,8 @@ Do not require a particular language, trailer set, version scheme, or branch pat
 - Stage only files belonging to the current task.
 - Preserve unrelated tracked, staged, unstaged, and untracked work.
 - Split atomic commits when changes are independently reviewable and each commit remains usable.
+- For substantive behavior changes, include a commit body explaining why the change is needed, the main changes, and verification actually performed; state when verification was not run. Only purely mechanical changes, such as formatting or spelling fixes, may use a title alone.
+- After creating a commit, read its full message to confirm the intended title and body were saved before any authorized push.
 - Never create a tag unless the user explicitly asks for tagging or release work.
 - Never push unless the user explicitly asks.
 
