@@ -80,6 +80,8 @@ CLARIFY_BODY_RULES = (
     r"accepts only the recommendations shown in this round",
     r"Critical.*do not default it",
     r"Do not start a second round on your own",
+    r"gather every open decision it raises into one new round",
+    r"end on the questions, not on a completion report",
     r"Answers to clarifying questions do not widen what the agent may do",
 )
 

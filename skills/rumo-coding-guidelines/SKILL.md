@@ -61,4 +61,4 @@ Treat review, explanation, and monitoring requests as read-only until the user a
 - Every changed file and hunk belongs to this task.
 - No unrequested abstraction, option, or capability slipped in.
 - Existing dependencies and patterns were checked before custom code was added.
-- The final message separates what changed, what was verified, and what remains unverified or blocked.
+- When handing back changed work, the final message separates what changed, what was verified, and what remains unverified or blocked. A read-only or planning turn reports what it found and what the user must decide next.

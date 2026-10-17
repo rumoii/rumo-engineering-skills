@@ -20,13 +20,16 @@ Answer facts yourself from the code, documentation, configuration, history, or e
 - At most five numbered questions, ordered by impact.
 - Each question carries a recommended answer and one line on what changes if the user picks differently.
 - Ask only questions that are answerable now; leave questions that depend on earlier answers for later.
-- Tell the user they can reply "ok" to accept every recommendation listed in this round, or answer selectively, for example "2: use X".
+- In a plain-text round, tell the user they can reply "ok" to accept every recommendation listed in this round, or answer selectively, for example "2: use X". When the client offers a structured question tool, put the recommended option first and leave out the "ok" line.
 - "ok" accepts only the recommendations shown in this round. It never approves anything that was not asked.
+- When you end the turn with questions unanswered, end on the questions, not on a completion report.
 
 ## 4. Sort What Remains Open
 
 - **Preference** (naming, layout, wording, minor behavior): adopt the recommended default and list it as an explicit assumption.
 - **Critical** (target environment or database, deletion scope, permissions, irreversible operations, external publication, money or quota): do not default it. Pause the work that depends on it, say what is blocked, and keep going only on parts that do not depend on it. Do not start a second round on your own.
+
+When an answer changes the goal itself, restate the new goal in one sentence and gather every open decision it raises into one new round. Do not ask one decision per round as each comes up.
 
 ## 5. Dig Deeper Only On Request
 
@@ -68,3 +71,4 @@ Answers to clarifying questions do not widen what the agent may do. Authorizatio
 | "No answer on the target database, so I'll use the obvious one." | Critical decisions are never defaulted; mark them blocked. |
 | "They said ok, so I can also push and deploy." | "ok" covers only the listed recommendations. |
 | "The request is a bit vague, so I'll run the full interview." | One round is the default; deeper rounds are the user's call. |
+| "I'll ask about each decision as it comes up." | Drip-fed rounds interrupt the user again and again; collect the open decisions and ask them together. |

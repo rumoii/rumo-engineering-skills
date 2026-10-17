@@ -120,6 +120,7 @@ RULES = {
         "Never stage, stash, reset, clean, or rewrite unrelated work",
         "never mark it passed",
         "those are separate authorizations",
+        "Controlled actions you did not take, such as commits, pushes, or publication, are not verification gaps",
     ),
 }
 PINNED_ELSEWHERE = {"rumo-clarify"}

@@ -27,7 +27,7 @@ No claim of "done", "fixed", or "passing" without fresh evidence from this state
 
 ### 2. Choose Checks
 
-Pick the narrowest command that would fail for the regression, then widen only for a real dependency or shared contract. Read [references/surfaces.md](references/surfaces.md) for the minimum evidence per changed surface. Use `rumo-test` when the behavioral claims themselves are unclear.
+Pick the narrowest command that would fail for the regression, then widen only for a real dependency or shared contract. Match the evidence to the risk: a file copy or documentation change is confirmed with a file list and a diff, not a custom verification harness, unless the user asks for one or `rumo-test` rates the change high. Read [references/surfaces.md](references/surfaces.md) for the minimum evidence per changed surface. Use `rumo-test` when the behavioral claims themselves are unclear.
 
 ### 3. Run And Read
 
@@ -35,7 +35,9 @@ Run the checks and read the output; an exit code alone is not the whole story. D
 
 ### 4. Report
 
-List the verified scope, each command with its actual result, skipped or unavailable checks and why, evidence boundaries (source versus artifact versus deployment versus field), and whether later edits invalidated earlier results.
+List the verified scope, each command with its actual result, skipped or unavailable checks and why, evidence boundaries (source versus artifact versus deployment versus field), and whether later edits invalidated earlier results. When the same commands ran in more than one directory or copy, say where each result comes from.
+
+"Not run" lists checks and evidence boundaries only. Controlled actions you did not take, such as commits, pushes, or publication, are not verification gaps; mention them in one line, and only when the user could assume they happened.
 
 ```text
 Scope: branch fix/refund-limit vs main, 2 commits, no uncommitted files.
