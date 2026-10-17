@@ -290,4 +290,40 @@ def withdraw(account, request, ledger):
         "turns": ["只读审计 services/withdraw.py 当前实现，检查现存的真实 bug；这是存量审计，不限定于最近提交的 diff。给出位置和触发条件。"],
         "rubric": "Report that the amount is never compared with account.balance, so a withdrawal above the balance is debited, with file/line and an oversized trigger, even though HEAD is clean. Do not edit or exclude it as old debt.",
     },
+    # Holdouts for audit-rule changes: written before the rule and never tuned against it.
+    "reserve-existing": {
+        "skills": ["rumo-review"],
+        "read_only": True,
+        "files": {
+            "services/inventory.py": '''class ReservationError(Exception):
+    pass
+
+def reserve(item, request, stock):
+    quantity = request["quantity"]
+    if quantity <= 0:
+        raise ReservationError("quantity must be positive")
+    return stock.hold(item.sku, quantity)
+''',
+        },
+        "turns": ["只读审计 services/inventory.py 当前实现，检查现存的真实 bug；这是存量审计，不限定于最近提交的 diff。给出位置和触发条件。"],
+        "rubric": "Report as a finding (not only a risk note) that the quantity is never compared with the stock available for item.sku, so a reservation above stock is held, with file/line and an oversized trigger. Do not edit or exclude it as old debt.",
+    },
+    "quota-existing": {
+        "skills": ["rumo-review"],
+        "read_only": True,
+        "files": {
+            "services/quota.py": '''class QuotaError(Exception):
+    pass
+
+def spend(account, request, meter):
+    units = request["units"]
+    if units <= 0:
+        raise QuotaError("units must be positive")
+    meter.consume(account.id, units)
+    return {"spent": units}
+''',
+        },
+        "turns": ["只读审计 services/quota.py 当前实现，检查现存的真实 bug；这是存量审计，不限定于最近提交的 diff。给出位置和触发条件。"],
+        "rubric": "Report as a finding (not only a risk note) that units are never compared with the account's remaining quota, so spending beyond the quota is consumed, with file/line and an oversized trigger. Do not edit or exclude it as old debt.",
+    },
 }
