@@ -87,5 +87,23 @@ evals exercise Claude models only; triggering in other clients and models is
 untested. When the eval tool is unavailable, run the same prompts by hand in
 fresh sessions and compare the skills they pick.
 
+## Behavior evals
+
+Cases tagged `behavior` check what an agent does once a skill fires, such as
+not editing code during a review or not running a DELETE before the target
+database is confirmed. Each one seeds a small git repository with a scaffold
+script and grades only from the transcript, never with a judge model. Run
+them before and after merging, rewriting, or substantially trimming a skill:
+
+```bash
+claude plugin eval . --tag behavior --scaffold --allow-tools Edit Write Bash --runs 1
+```
+
+`--scaffold` runs each case's script as you, outside the agent's sandbox, so
+pass it only for this repository's own cases. Granting `Bash` needs Claude
+Code's sandbox: on Windows run the suite under WSL2, and on Linux install
+`bubblewrap` and `socat`. `review-readonly` needs only `Edit Write` and runs
+anywhere.
+
 Pull requests should explain the user scenario, changed behavior, verification
 performed, and any environment or acceptance boundary that was not exercised.

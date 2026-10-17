@@ -8,6 +8,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EVALS_ROOT = REPO_ROOT / "evals"
 SKILL_IN_PATTERN = re.compile(r"\)\?(rumo-[a-z0-9-]+)\"'?$")
+# Behavior cases stay on graders computed from the transcript; judge-model
+# graders cost money on every run and drift between judges.
+FREE_GRADER_TYPES = {"regex", "tool_used", "tool_order", "file_exists"}
 
 
 def frontmatter(path: Path) -> dict[str, str]:
@@ -21,11 +24,18 @@ def frontmatter(path: Path) -> dict[str, str]:
     return fields
 
 
+def tags(case: Path) -> str:
+    return frontmatter(case / "prompt.md").get("tags", "")
+
+
 class TriggerEvalsTest(unittest.TestCase):
     """Static checks for the claude plugin eval suite; running it calls a model."""
 
     def cases(self) -> list[Path]:
         return sorted(path for path in EVALS_ROOT.iterdir() if path.is_dir() and path.name != "results")
+
+    def behavior_cases(self) -> list[Path]:
+        return [case for case in self.cases() if "behavior" in tags(case)]
 
     def test_suite_exists(self) -> None:
         self.assertTrue((REPO_ROOT / ".claude-plugin" / "plugin.json").is_file())
@@ -40,8 +50,16 @@ class TriggerEvalsTest(unittest.TestCase):
                 self.assertTrue(body.strip(), "prompt body is empty")
                 self.assertTrue(list((case / "graders").glob("*.md")), "no graders")
 
+    def test_each_case_is_trigger_or_behavior(self) -> None:
+        for case in self.cases():
+            with self.subTest(case=case.name):
+                self.assertNotEqual("trigger" in tags(case), "behavior" in tags(case))
+
     def test_graders_name_existing_default_skills(self) -> None:
+        behavior = set(self.behavior_cases())
         for grader in sorted(EVALS_ROOT.glob("*/graders/*.md")):
+            if grader.parent.parent in behavior:
+                continue
             with self.subTest(grader=f"{grader.parent.parent.name}/{grader.name}"):
                 fields = frontmatter(grader)
                 self.assertEqual(fields.get("type"), "tool_used")
@@ -53,6 +71,18 @@ class TriggerEvalsTest(unittest.TestCase):
                     self.assertEqual(grader.name, "uses-no-rumo-skill.md")
                 if grader.name.startswith(("skips-", "uses-no-")):
                     self.assertEqual((fields.get("min"), fields.get("max")), ("0", "0"))
+
+    def test_behavior_cases_scaffold_a_workspace_and_use_free_graders(self) -> None:
+        self.assertTrue(self.behavior_cases())
+        for case in self.behavior_cases():
+            with self.subTest(case=case.name):
+                spec = (case / "case.yaml").read_text(encoding="utf-8")
+                match = re.search(r"^\s+scaffold_script:\s*(\S+)", spec, re.M)
+                self.assertTrue(match, "behavior case needs context.scaffold_script")
+                self.assertTrue((case / match.group(1)).is_file())
+                types = {frontmatter(grader).get("type") for grader in (case / "graders").glob("*.md")}
+                self.assertTrue(types)
+                self.assertLessEqual(types, FREE_GRADER_TYPES)
 
 
 if __name__ == "__main__":
