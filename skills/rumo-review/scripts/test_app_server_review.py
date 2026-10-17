@@ -146,5 +146,27 @@ class WaitForReviewTest(unittest.TestCase):
         self.assertIn("no app-server review progress", str(raised.exception))
 
 
+class BlockingVerdictTest(unittest.TestCase):
+    def test_verdicts(self) -> None:
+        cases = {
+            "No findings.": False,
+            "No blocking findings.": False,
+            "No P0/P1/P2 issues found.": False,
+            "没有发现严重问题。": False,
+            "The change looks correct; nothing blocking.": False,
+            "- [P1] Refund can exceed paid total — src/refund.py:42-48\n  The limit check runs after the insert.": True,
+            "Review comment:\n\n- [P3] Rename the helper for clarity — src/util.py:10": False,
+            "No blocking findings.\n- [P3] Consider a clearer name — a.py:3": False,
+            "1. **P2** Race between cancel and completion — worker.py:88": True,
+            "Found a critical bug in the auth check.": True,
+            "No P1 issues, but a critical race remains in the scheduler.": True,
+            "发现一个严重问题：取消后任务仍在运行。": True,
+            "连接无法释放是严重问题。": True,
+        }
+        for text, expected in cases.items():
+            with self.subTest(text=text):
+                self.assertIs(app_server_review.has_blocking_finding(text), expected)
+
+
 if __name__ == "__main__":
     unittest.main()

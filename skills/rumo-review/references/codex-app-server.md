@@ -4,7 +4,7 @@ This file applies only to environments where `codex app-server` is available. Ot
 
 ## Codex App Server Script
 
-Use `scripts/app_server_review.py` to launch `codex app-server --stdio`, create a temporary review thread, call `review/start`, wait for `exitedReviewMode.review`, and print the final review text. The script exits `2` when the review text appears to contain P0/P1/P2 or another blocking/critical finding, `0` when no blocking finding is detected, and `1` on protocol/runtime failure. If the app-server turn completes without `exitedReviewMode.review`, the script returns JSON with `error: "missingExitedReviewMode"` and diagnostics instead of a review conclusion.
+Use `scripts/app_server_review.py` to launch `codex app-server --stdio`, create a temporary review thread, call `review/start`, wait for `exitedReviewMode.review`, and print the final review text. The script exits `2` when the review has a blocking finding, `0` when it has none, and `1` on protocol/runtime failure. Findings tagged with a priority, such as `- [P1] Title`, decide by tag alone: any P0–P2 blocks, P3 alone does not. Untagged text blocks when it mentions P0–P2, blocking, or critical outside a negated statement such as "No blocking findings"; when unsure it blocks. The exit code is a convenience; read the review text before acting on it. If the app-server turn completes without `exitedReviewMode.review`, the script returns JSON with `error: "missingExitedReviewMode"` and diagnostics instead of a review conclusion.
 
 The script defaults to `--sandbox workspace-write` because real review usually needs `git diff` and some shell wrappers create temporary files. Use `--sandbox read-only` only when you know the local Codex/Git wrapper works under read-only sandboxing.
 

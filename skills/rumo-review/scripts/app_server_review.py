@@ -21,7 +21,26 @@ from pathlib import Path
 from typing import Any
 
 
-BLOCKING_RE = re.compile(r"\bP[0-2]\b|严重|阻断|block(?:er|ing)?|critical", re.IGNORECASE)
+# A finding line starts with a priority tag, such as "- [P1] Title" or "**P2** Title".
+FINDING_TAG_RE = re.compile(
+    r"^\s*(?:[-*•]\s*|\d+[.)]\s*)?(?:title:\s*)?(?:\*\*)?\[?P([0-3])\]?(?:\*\*)?(?=[\s:：\]-]|$)",
+    re.IGNORECASE | re.MULTILINE,
+)
+SEVERITY_RE = re.compile(r"\bP[0-2]\b|严重|阻断|\bblock(?:er|ing|s)?\b|\bcritical\b", re.IGNORECASE)
+NEGATION_RE = re.compile(r"\b(?:no|not|none|nothing|zero|without)\b|没有|未发现|未见|无(?!法)", re.IGNORECASE)
+CLAUSE_SPLIT_RE = re.compile(r"[.!?;。！？；，\n]+|,?\s+but\s+|但是?", re.IGNORECASE)
+
+
+def has_blocking_finding(review_text: str) -> bool:
+    """Judge tagged findings by priority; without tags, flag any severity wording that is not negated."""
+    priorities = [int(match.group(1)) for match in FINDING_TAG_RE.finditer(review_text)]
+    if priorities:
+        return min(priorities) <= 2
+    for clause in CLAUSE_SPLIT_RE.split(review_text):
+        match = SEVERITY_RE.search(clause)
+        if match and not NEGATION_RE.search(clause[: match.start()]):
+            return True
+    return False
 DEFAULT_OPT_OUT_NOTIFICATIONS = [
     "account/updated",
     "account/rateLimits/updated",
@@ -627,7 +646,7 @@ def main() -> int:
             show_intermediate=args.show_intermediate,
             intermediate_max_chars=args.intermediate_max_chars,
         )
-        has_blocking = bool(BLOCKING_RE.search(review_text))
+        has_blocking = has_blocking_finding(review_text)
         if args.json:
             print(
                 json.dumps(
