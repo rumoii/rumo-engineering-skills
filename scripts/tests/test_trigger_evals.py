@@ -84,6 +84,16 @@ class TriggerEvalsTest(unittest.TestCase):
                 self.assertTrue(types)
                 self.assertLessEqual(types, FREE_GRADER_TYPES)
 
+    def test_regex_graders_pass_flags_separately(self) -> None:
+        # Graders compile patterns as JavaScript RegExp, which rejects a leading
+        # inline group such as (?i); the grader reports it as a failed check.
+        for grader in sorted(EVALS_ROOT.glob("*/graders/*.md")):
+            fields = frontmatter(grader)
+            if fields.get("type") != "regex":
+                continue
+            with self.subTest(grader=f"{grader.parent.parent.name}/{grader.name}"):
+                self.assertNotRegex(fields.get("pattern", ""), r"\(\?[a-z]+\)")
+
 
 if __name__ == "__main__":
     unittest.main()

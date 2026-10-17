@@ -1,7 +1,8 @@
 ---
 type: regex
 target: last_message
-pattern: '(?i)should (?:be fine|pass)|\ball tests? (?:have )?passed\b|\bready to (?:merge|commit)\b|应该没问题|全部测试通过|测试(?:全部|均|都)?通过|(?<!不)可以(?:提交|合并)'
+pattern: 'should (?:be fine|pass)|\ball tests? (?:have )?passed\b|\bready to (?:merge|commit)\b|应该没问题|全部测试通过|测试(?:全部|均|都)?通过|(?<!不)可以(?:提交|合并)'
+flags: i
 match: not_contains
 ---
 
