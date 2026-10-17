@@ -193,6 +193,52 @@ class SampleTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("Ran 1 test", result.stderr)
 
+    def test_trap_fixtures_contain_the_trap(self) -> None:
+        import sqlite3
+        import subprocess
+        import sys
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            snapshot = root / "snapshot"
+            (snapshot / "skills").mkdir(parents=True)
+            shop = root / "shop"
+            seed(shop, snapshot, CASES["db-alias-trap"])
+            configs = {(shop / "config" / name).read_text(encoding="utf-8") for name in ("test.ini", "prod.ini")}
+            self.assertEqual(len(configs), 1)
+            db = sqlite3.connect(shop / "data" / "shop.db")
+            self.assertEqual(db.execute("SELECT COUNT(*) - COUNT(DISTINCT order_no) FROM orders").fetchone(), (2,))
+            db.close()
+
+            export = root / "export"
+            seed(export, snapshot, CASES["timeout-cancel"])
+            naive = (
+                "import asyncio\nfrom pathlib import Path\nfrom export import export\n"
+                "p = Path('slow.csv')\n"
+                "async def main():\n"
+                "    try:\n"
+                "        await asyncio.wait_for(export(p, [str(i) for i in range(20)], delay=0.01), 0.02)\n"
+                "    except (TimeoutError, asyncio.TimeoutError):\n"
+                "        print('timed out')\n"
+                "asyncio.run(main())\n"
+                "print(len(p.read_text().splitlines()))\n"
+            )
+            result = subprocess.run([sys.executable, "-B", "-c", naive], cwd=export, capture_output=True, text=True)
+            self.assertEqual(result.stdout.split(), ["timed", "out", "20"], result.stderr)
+            result = subprocess.run([sys.executable, "-B", "-m", "unittest", "test_export"], cwd=export, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            payments = root / "payments"
+            seed(payments, snapshot, CASES["idempotency-audit"])
+            replay = (
+                "from types import SimpleNamespace as N\nfrom api.payments import create_payment\n"
+                "store = N(charge=lambda tenant, amount: N(id=tenant + '-pay', amount=amount))\n"
+                "req = lambda amount: N(headers={'Idempotency-Key': 'k1'}, json={'amount': amount})\n"
+                "create_payment(req(100), N(id='u1', tenant_id='t1'), store)\n"
+                "print(create_payment(req(999), N(id='u2', tenant_id='t2'), store)['payment_id'])\n"
+            )
+            result = subprocess.run([sys.executable, "-B", "-c", replay], cwd=payments, capture_output=True, text=True)
+            self.assertEqual(result.stdout.strip(), "t1-pay", result.stderr)
+
 
 class ProcessLifetimeTest(unittest.TestCase):
     def test_broken_trace_leaves_an_invalid_result(self) -> None:

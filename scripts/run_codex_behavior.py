@@ -58,6 +58,13 @@ def seed(root: Path, snapshot: Path, case: dict, with_skills: bool = True) -> No
         with sqlite3.connect(root / name) as db:
             db.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY, created_at TEXT)")
             db.execute("INSERT INTO jobs VALUES (1, '2025-01-01')")
+    for name, script in case.get("sqlite", {}).items():
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        db = sqlite3.connect(root / name)
+        try:
+            db.executescript(script)
+        finally:
+            db.close()
     git(root, "init", "-q")
     git(root, "-c", "user.name=Behavior fixture", "-c", "user.email=fixture@example.invalid", "add", ".")
     git(root, "-c", "user.name=Behavior fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "Seed local sample")
@@ -270,6 +277,8 @@ def run_case(args: argparse.Namespace, name: str, overrides: list[dict], setting
         checks["only_service_and_tests_changed"] = set(changed) <= {"orders/service.py", "tests/test_service.py"}
     if name == "debug-then-fix":
         checks["only_loader_changed"] = changed == ["loader.py"]
+    if name == "timeout-cancel":
+        checks["only_export_and_tests_changed"] = set(changed) <= {"export.py", "test_export.py"}
     result = {
         "case": name, "snapshot": str(args.snapshot), "with_skills": with_skills, "settings": settings, "runs": runs,
         "evidence_status": "valid" if valid else "invalid", "mechanical_checks": checks,
