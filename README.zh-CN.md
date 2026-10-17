@@ -174,6 +174,8 @@ Windows 没有 `py` 启动器时改用 `python`。`install.sh` 的测试只在 L
 
 这些命令检查的是仓库，不是安装结果。安装后先确认链接(`ls -l ~/.claude/skills`)或 `claude plugin list`，再开新会话点名调用一个技能，例如 `/rumo-verify`，插件方式为 `/rumo-engineering-skills:rumo-verify`。点名调用成功只说明客户端加载了技能，不说明客户端会自动选中它。
 
+自动选用由调用模型的评测覆盖，客户端为 Claude Code 和 Codex CLI。行为评测覆盖单技能用例、跨技能的 `chain-*` 用例，以及会实际运行测试的 Codex 用例。其他客户端只验证过安装和加载。各项评测能证明什么，见 [CONTRIBUTING.md](CONTRIBUTING.md#trigger-evals)。
+
 ## 安全
 
 - 不要提交密码、凭据文件、Token、私钥或含私有材料的证书。

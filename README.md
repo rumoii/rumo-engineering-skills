@@ -174,6 +174,8 @@ On Windows without the `py` launcher, use `python`. The `install.sh` tests run o
 
 These commands check the repository, not an installation. After installing, check the links (`ls -l ~/.claude/skills`) or `claude plugin list`, then start a new session and invoke a skill by name, such as `/rumo-verify` or, for the plugin, `/rumo-engineering-skills:rumo-verify`. A successful explicit call shows that the client loaded the skill; it does not show that the client will choose it automatically.
 
+Automatic selection is tested with model-backed evals in Claude Code and the Codex CLI. Behavior evals cover single-skill cases, the `chain-*` cases that cross skills, and Codex cases that run tests. Other clients are verified only for installation and loading. See [CONTRIBUTING.md](CONTRIBUTING.md#trigger-evals) for what each eval proves.
+
 ## Security
 
 - Never commit passwords, credential files, tokens, private keys, or certificates with private material.

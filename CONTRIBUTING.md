@@ -88,9 +88,28 @@ Without `--runs`, each case runs three times per arm, and without
 `--ablation none` it runs a second arm without the plugin, so a full default
 run costs about six agent runs per case. `llm` graders add judge calls; pass
 `--judge-model sonnet` when a small default judge looks unreliable. These
-evals exercise Claude models only; triggering in other clients and models is
-untested. When the eval tool is unavailable, run the same prompts by hand in
-fresh sessions and compare the skills they pick.
+evals exercise Claude models only. When the eval tool is unavailable, run the
+same prompts by hand in fresh sessions and compare the skills they pick.
+
+### Codex trigger checks
+
+`scripts/run_codex_trigger.py` sends the same trigger prompts to the Codex CLI
+without naming a skill. Each run seeds a sample repository with a snapshot's
+skills in `.agents/skills`, runs read-only, and counts a skill as chosen only
+when Codex read that sample copy of its `SKILL.md`. The `uses-*` and `skips-*`
+graders supply the expectations. It calls a model, so it is opt-in and stays
+out of CI:
+
+```powershell
+python scripts/run_codex_trigger.py --snapshot <snapshot-root> --output-dir <task-evidence-dir> [--case debug-readonly] [--runs 3]
+```
+
+A run that errors, times out, or hits a usage limit is invalid, not a failure,
+and stops the batch. Codex loads `rumo-coding-guidelines` on a small edit, so
+`coding-baseline` can pass there; the runner flags that instead of failing.
+Results describe only the recorded Codex CLI version and model settings.
+Other clients remain untested, and neither client's result stands in for the
+other's.
 
 ## Behavior evals
 
