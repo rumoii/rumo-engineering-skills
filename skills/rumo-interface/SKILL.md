@@ -59,3 +59,17 @@ Add invalid types, missing required values, unknown enums, boundaries, duplicate
 ## Report
 
 The authority, producers, consumers, classification, rollout order, migration owner, failure behavior, rollback cutoff, evidence obtained, and any external or field consumer still unverified.
+
+A plan for adding `PARTIALLY_REFUNDED` to the order status enum:
+
+```text
+Authority: OrderStatus in orders/model.py; serialized as a string.
+Consumers: web list filter, finance report SQL (reports/daily.sql:40), reconciliation export, mobile app 3.x.
+Old readers: the web filter drops unknown values; mobile 3.x throws on an unknown status.
+Rollout: ship readers that map unknown statuses to "other", wait until mobile < 3.4 is unsupported,
+then enable writers; no stored rows change.
+Rollback cutoff: after the first PARTIALLY_REFUNDED row exists, roll back only to a reader-compatible version.
+Unverified: third-party reconciliation tool, owner not identified.
+```
+
+Not a plan: "JSON ignores unknown fields, so adding a value is compatible." Mobile 3.x throws, and the report SQL's `IN (...)` list silently drops the new rows.

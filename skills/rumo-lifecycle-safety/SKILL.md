@@ -74,3 +74,17 @@ Use `rumo-test` to choose the required evidence layers and to apply its high-ass
 ## Report
 
 State the authoritative state, owner, transition table, retry and idempotency rule, timeout and cancellation semantics, disposal order, exact failure paths exercised, and any restart or field behavior still unverified.
+
+A report for adding cancellation to a report-export task:
+
+```text
+Authority: export_jobs.status row; the UI badge reads it, never the worker's future.
+Transitions: queued -> cancelled; running -> cancelling -> cancelled; a completion
+event after cancelling is recorded and discarded, and the partial file is deleted.
+Owner of cleanup: the worker deletes its temp directory in finally; the reaper removes
+directories of jobs left in cancelling for 10 minutes after a crash.
+Tested: cancel before start, cancel mid-write with a latch, late completion, double cancel.
+Unverified: cancellation while the object-storage upload is retrying.
+```
+
+Not a report: "Called future.cancel() and the unit test passes." It says nothing about the status row, the half-written file, or a completion that arrives after cancel.

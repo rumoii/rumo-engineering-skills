@@ -32,6 +32,18 @@ A read-only query loads only the session rules below; it does not need a change 
 
 State the intended state, affected host and resources, current authorization, relevant before-state, verification, and failure handling; a short note is enough for a bounded change. Judge risk by actual effect, not command name: a package install can start services, change repositories or networking, and run privileged scripts. Connectivity, privilege, public exposure, and persistent data call for stronger protection. Changes, service deployments, and artifact deployments default to development or test environments; production needs authorization for the exact action and otherwise stays read-only. Continue within existing authorization without asking again for each command. Database writes go through `rumo-database-change-safety`; file deletion through `rumo-filesystem-safety`.
 
+A change note for raising an nginx upload limit:
+
+```text
+Target: web-test-01 (test), confirmed with hostname and whoami as deploy, nginx 1.24 under systemd.
+Intended state: client_max_body_size 50m in /etc/nginx/conf.d/app.conf; nothing else changes.
+Before-state: current value 10m; copied the file to /etc/nginx/conf.d/app.conf.20261017 outside the include glob.
+Verify: nginx -t, systemctl reload nginx, then a 30 MB upload returns 200 and a 60 MB upload returns 413.
+Failure handling: if nginx -t fails, do not reload; restore the copy and rerun nginx -t.
+```
+
+Not a change note: "SSHed in, edited the config, and restarted nginx." It names no host identity, no before-state, no check, and no way back.
+
 ## Stop And Reconcile
 
 - When target identity or task-relevant configuration conflicts with the record, report the difference before changing anything; do not auto-repair drift. Normal variation between dated snapshots of resources is not drift.

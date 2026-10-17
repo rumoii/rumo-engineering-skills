@@ -44,6 +44,22 @@ Read [references/procedure.md](references/procedure.md) for the details of each 
 
 Before writing an existing database, present: target environment, host, database, schema, and application version; the migration or SQL artifact with revision or checksum; risk class, affected objects, expected row range, lock or downtime expectation, services to pause; preconditions and the exact command; backup location and verification result; success checks, rollback triggers, rollback procedure, and recovery owner; and evidence still missing. If the user has not already authorized that exact write, wait.
 
+A checkpoint for adding a required `currency` column to a large table:
+
+```text
+Target: test environment, host db-test-02, database shop, schema public, app 4.12.0.
+Artifact: migrations/0087_orders_currency.sql, sha256 3f9c...e1.
+Class: restrictive (NOT NULL); orders, about 8.2M rows; batched backfill of 5k rows,
+then NOT NULL; expected lock under 2 s per batch; pause the nightly import job.
+Preconditions: 0 rows with NULL currency after backfill; app 4.12 already writes currency.
+Backup: snapshot snap-0087 taken 10:05, restored to a scratch instance and row-counted.
+Success: constraint present, 0 NULLs, order create and list tests pass on 4.12.
+Rollback: drop the constraint, keep the column; owner: the user.
+Missing: lock timing on the full table; measured only on a 1M-row copy.
+```
+
+Not a checkpoint: "It's just adding a column, I'll run the migration." It names no target, no row count, no backup, and no way back.
+
 ## Stop Conditions
 
 Stop and report, without improvising a live repair, on failed preconditions, unexpected row counts, timeouts, lock contention, partial execution, or migration drift. Never run a destructive rollback automatically because verification failed; preserve evidence and decide with the user whether rollback or forward repair is safer.
