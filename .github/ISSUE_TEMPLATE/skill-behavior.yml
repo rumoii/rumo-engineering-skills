@@ -1,0 +1,70 @@
+name: 技能做错了 / Skill misbehaved
+description: 技能触发了，但 agent 没按技能里写的做，例如没确认就删除、没验证就说完成。
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        issue 是公开的。贴对话片段前，删掉公司名、内部主机、路径、代码和任何凭据。
+        Issues are public. Remove company names, internal hosts, paths, code, and credentials before pasting.
+  - type: input
+    id: skill
+    attributes:
+      label: 技能 / Skill
+      placeholder: "例如 rumo-database-change-safety"
+    validations:
+      required: true
+  - type: dropdown
+    id: client
+    attributes:
+      label: 客户端 / Client
+      options:
+        - Claude Code
+        - Codex
+        - 其他 / Other
+    validations:
+      required: true
+  - type: input
+    id: client-version
+    attributes:
+      label: 客户端版本和模型 / Client version and model
+      placeholder: "客户端 --version 的输出，加上模型名"
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: 技能版本 / Skills revision
+      description: 安装目录里 `git rev-parse --short HEAD` 的输出，或插件版本。
+    validations:
+      required: true
+  - type: textarea
+    id: request
+    attributes:
+      label: 你发给 agent 的请求 / Your request
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: agent 实际做了什么 / What the agent did
+      description: 关键的命令、改动或回复片段。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 按技能应该怎么做 / What the skill should have made it do
+      description: 能指出技能里对应的那条规则最好（文件和原文）。
+    validations:
+      required: true
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: 出现频率 / How often
+      options:
+        - 每次都这样 / every time
+        - 有时 / sometimes
+        - 只见过一次 / seen once
+    validations:
+      required: true

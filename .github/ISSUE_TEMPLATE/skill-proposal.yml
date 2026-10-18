@@ -1,0 +1,36 @@
+name: 新技能或改进建议 / Skill proposal
+description: 提议新增技能，或给现有技能补一类场景。
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: scenario
+    attributes:
+      label: 场景 / Scenario
+      description: 什么样的任务，现在 agent 在这类任务上会出什么问题。
+    validations:
+      required: true
+  - type: textarea
+    id: existing
+    attributes:
+      label: 为什么现有技能不够 / Why existing skills are not enough
+      description: 看过哪些相近的技能，为什么不能直接补进去。
+    validations:
+      required: true
+  - type: dropdown
+    id: placement
+    attributes:
+      label: 默认还是扩展 / Default or extra
+      description: 大多数任务都会经过、或者防止不可逆损坏的放默认；特定交付格式、窄领域、依赖外部服务或个人手动流程的放扩展。
+      options:
+        - 默认技能 / default
+        - 可选扩展 / extra
+        - 不确定 / not sure
+    validations:
+      required: true
+  - type: checkboxes
+    id: generic
+    attributes:
+      label: 通用性 / Generic
+      options:
+        - label: 这个技能不依赖特定公司、产品、主机或部署环境 / It does not depend on a specific company, product, host, or deployment
+          required: true

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 使用说明 / Getting started
+    url: https://github.com/rumoii/rumo-engineering-skills/blob/main/GETTING_STARTED.md
+    about: 装不上、技能没加载、不知道怎么用，先按使用说明检查一遍。
+  - name: 报告安全问题 / Report a security issue
+    url: https://github.com/rumoii/rumo-engineering-skills/security/advisories/new
+    about: 泄露的凭据、内部主机或其他敏感信息请私下报告，不要开公开 issue。见 SECURITY.md。

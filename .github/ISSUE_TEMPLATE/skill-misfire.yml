@@ -1,0 +1,80 @@
+name: 技能选错了 / Wrong skill picked
+description: 该触发的技能没触发，或者触发了不该触发的技能。
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        issue 是公开的。贴请求原文前，删掉公司名、内部主机、路径、代码和任何凭据。
+        Issues are public. Remove company names, internal hosts, paths, code, and credentials before pasting.
+  - type: dropdown
+    id: client
+    attributes:
+      label: 客户端 / Client
+      options:
+        - Claude Code
+        - Codex
+        - 其他 / Other
+    validations:
+      required: true
+  - type: input
+    id: client-version
+    attributes:
+      label: 客户端版本和模型 / Client version and model
+      placeholder: "客户端 --version 的输出，加上模型名"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: 安装方式 / Install method
+      options:
+        - 安装脚本 / installer (install.ps1, install.sh)
+        - Claude Code 插件 / Claude Code plugin
+        - 手动复制或链接 / manual copy or link
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: 技能版本 / Skills revision
+      description: 安装目录里 `git rev-parse --short HEAD` 的输出，或插件版本。
+      placeholder: "例如 85493dc 或 v0.4.0"
+    validations:
+      required: true
+  - type: textarea
+    id: request
+    attributes:
+      label: 你发给 agent 的请求 / Your request
+      description: 原话，去掉敏感信息。
+    validations:
+      required: true
+  - type: input
+    id: expected
+    attributes:
+      label: 应该用的技能 / Expected skill
+      placeholder: "例如 rumo-debug；或“不应该触发任何技能”"
+    validations:
+      required: true
+  - type: input
+    id: actual
+    attributes:
+      label: 实际用的技能 / Skill actually used
+      placeholder: "例如 rumo-review；或“没有触发技能”"
+    validations:
+      required: true
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: 出现频率 / How often
+      options:
+        - 每次都这样 / every time
+        - 有时 / sometimes
+        - 只见过一次 / seen once
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: 补充 / Notes
+      description: 同时装了哪些别的技能或插件，项目里有没有 AGENTS.md / CLAUDE.md 之类的说明。

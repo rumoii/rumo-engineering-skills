@@ -1,5 +1,7 @@
 # Contributing
 
+欢迎用中文提 issue 和 PR，规则与下文相同。
+
 Contributions should keep every skill independent of a specific company,
 product, repository layout, host, or deployment environment.
 
@@ -200,5 +202,45 @@ which skips cases that edit files), compares the candidate snapshot against
 validity counts, mechanical checks, and each final reply for grading. Options after `--` go to the runner. Run it
 before and after any change that removes or rewrites skill text.
 
-Pull requests should explain the user scenario, changed behavior, verification
-performed, and any environment or acceptance boundary that was not exercised.
+## Issues and pull requests
+
+- Open issues through the [issue forms](https://github.com/rumoii/rumo-engineering-skills/issues/new/choose):
+  a skill that should have fired and did not (or the reverse), a skill that
+  fired but was not followed, or a proposal. Include the client, its version,
+  the model, and the skills revision. Issues are public, so remove company
+  names, internal hosts, paths, code, and credentials first.
+- Report leaked credentials or private infrastructure privately as described in
+  [SECURITY.md](SECURITY.md).
+- Discuss a new skill or a large rewrite in an issue before opening a pull
+  request.
+- Keep one change per pull request. Unrelated fixes bundled together will be
+  asked to split.
+- Fill in the pull request template: the user scenario, the changed behavior,
+  the checks actually run, any environment or acceptance boundary that was not
+  exercised, and the AI disclosure.
+
+## AI disclosure
+
+AI help is welcome, and most changes here are tested with agents anyway. State
+it honestly:
+
+- Say whether you used AI. If you did, name the exact tool and model version
+  rather than just "AI", and say what it did: finding the problem, drafting
+  skill text, writing scripts, or writing tests.
+- Read every changed line yourself and run the checks above before opening the
+  pull request.
+- Confirm an AI-reported misfire or misbehavior in a fresh session before
+  filing it, or mark it unconfirmed.
+- Undisclosed or unverified automated pull requests will be closed.
+
+## Not accepted
+
+- Skills or rules that only make sense for one company, product, repository,
+  host, or agent client without a client-neutral alternative.
+- Text copied from other skill collections, prompts, or documentation.
+- Private project facts, credentials, or customer data, even as examples.
+
+## License
+
+By contributing, you agree that your contribution is released under the
+repository's [MIT License](LICENSE).
