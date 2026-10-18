@@ -191,5 +191,22 @@ uncommitted edits, the turns, the skills, and the acceptance criterion. Keep
 manifests and their evidence outside this checkout when the repositories are
 private.
 
+`scripts/run_dsh_behavior.py` runs every case, including ones that edit files,
+through DeepSeek Harness headless (`--dsh-root` names a built checkout,
+`--api-key-file` a file holding the API key, which stays in memory). It does
+not rely on dsh alone for safety. Each run gets a fresh dsh home, agents home,
+and temporary directory, so installed plugins, profiles, skills, and sessions
+stay out of reach. The permission mode is pinned to `workspace-write`; web,
+MCP, directory switching, and configuration editing are disabled. The runner
+watches the real homes, both checkouts, and the key's directory, and stops the
+batch when any of them changes, when a tool call touches the key's directory,
+or when the key appears in any output. Run `--canary-only` first: it aims
+writes and deletes outside the workspace, directly, through a junction, and
+into the system temporary directory, and every case run then requires that
+canary's passing result for the same runner and dsh state. Keep the output
+outside the system temporary directory, which `workspace-write` admits, and,
+on Windows, on a path where your account holds full control, or the sandbox
+cannot grant the workspace and every shell command fails.
+
 Pull requests should explain the user scenario, changed behavior, verification
 performed, and any environment or acceptance boundary that was not exercised.

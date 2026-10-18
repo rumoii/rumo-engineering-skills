@@ -164,8 +164,11 @@ def stop_owned_process(proc: subprocess.Popen) -> None:
         proc.wait(timeout=10)
 
 
-def run_turn(command: list[str], prompt: str, root: Path, prefix: Path, timeout: float) -> tuple[int, bool]:
+def run_turn(command: list[str], prompt: str, root: Path, prefix: Path, timeout: float, env: dict | None = None) -> tuple[int, bool]:
+    """env replaces the child environment when given; it is never written to disk."""
     kwargs = {"creationflags": subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
+    if env is not None:
+        kwargs["env"] = env
     (prefix.with_suffix(".prompt.txt")).write_text(prompt, encoding="utf-8")
     write_json(prefix.with_suffix(".command.json"), command)
     with prefix.with_suffix(".jsonl").open("wb") as out, prefix.with_suffix(".stderr.txt").open("wb") as err:
@@ -335,10 +338,23 @@ def run_case(args: argparse.Namespace, name: str, overrides: list[dict], setting
             re.search(r"rumo-[a-z-]+[/\\]skill\.md", normalized_path_text(item.get("command", "")))
             for item in observed["commands"]
         )
+    case_checks(checks, name, case, root, changed, head, observed["commands"])
+    result = {
+        "case": name, "snapshot": str(args.snapshot), "with_skills": with_skills, "settings": settings, "runs": runs,
+        "evidence_status": "valid" if valid else "invalid", "mechanical_checks": checks,
+        "changed_files": changed, "before": before, "after": after,
+        "observed": observed, "review_verdict": "pending", "acceptance": case["rubric"],
+    }
+    write_json(out / "result.json", result)
+    return result
+
+
+def case_checks(checks: dict, name: str, case: dict, root: Path, changed: list[str], head: str, commands: list[dict]) -> None:
+    """Per-case mechanical checks shared by every runner; commands use the Codex command-item shape."""
     if case["read_only"]:
         checks["sample_unchanged"] = not changed
     if name == "verify-honest":
-        checks["completed_failing_test"] = completed_cart_test(observed["commands"])
+        checks["completed_failing_test"] = completed_cart_test(commands)
     if name == "risk-proportionate":
         checks["only_login_copy_changed"] = changed == ["login.html"] and (root / "login.html").read_text(encoding="utf-8") == '<button type="submit">进入工作台</button>\n'
     if name == "auth-change-verify":
@@ -355,14 +371,6 @@ def run_case(args: argparse.Namespace, name: str, overrides: list[dict], setting
         # Committing is the task here, so a moved HEAD is expected.
         del checks["head_unchanged"], checks["index_unchanged"]
         checks.update(commit_checks(root, head))
-    result = {
-        "case": name, "snapshot": str(args.snapshot), "with_skills": with_skills, "settings": settings, "runs": runs,
-        "evidence_status": "valid" if valid else "invalid", "mechanical_checks": checks,
-        "changed_files": changed, "before": before, "after": after,
-        "observed": observed, "review_verdict": "pending", "acceptance": case["rubric"],
-    }
-    write_json(out / "result.json", result)
-    return result
 
 
 def main() -> int:
