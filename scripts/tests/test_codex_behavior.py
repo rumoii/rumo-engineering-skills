@@ -239,6 +239,30 @@ class SampleTest(unittest.TestCase):
             result = subprocess.run([sys.executable, "-B", "-c", replay], cwd=payments, capture_output=True, text=True)
             self.assertEqual(result.stdout.strip(), "t1-pay", result.stderr)
 
+            alerts = root / "alerts"
+            seed(alerts, snapshot, CASES["alert-run-evidence"])
+            scope: dict = {}
+            exec((alerts / "alert.py").read_text(encoding="utf-8"), scope)
+            lines = (alerts / "updates.log").read_text(encoding="utf-8").splitlines()
+            alpha = [line for line in lines if "run=alpha" in line]
+            beta = [line for line in lines if "run=beta" in line]
+            self.assertTrue(any("WARNING" in line for line in alpha))
+            self.assertTrue(any("SUCCESS" in line for line in alpha))
+            self.assertEqual(scope["summarize"](alpha), "ok")
+            self.assertTrue(any("WARNING" in line for line in beta))
+            self.assertFalse(any("SUCCESS" in line or "ERROR" in line for line in beta))
+            self.assertEqual(scope["summarize"](lines), "warning")
+
+            partial = root / "partial-query"
+            seed(partial, snapshot, CASES["query-partial-evidence"])
+            capture = json.loads((partial / "capture.json").read_text(encoding="utf-8"))
+            self.assertEqual(capture["ssh_exit_code"], 0)
+            self.assertTrue(capture["remote_command"].endswith("; true"))
+            self.assertIn("Permission denied", capture["stderr"])
+            self.assertIn("Result=success", capture["stdout"])
+            self.assertIn("2026-06-01", capture["stdout"])
+            self.assertTrue(capture["alert_timestamp"].startswith("2026-06-02"))
+
 
 class CommitPrepareTest(unittest.TestCase):
     def commit(self, root: Path, files: list[str], message: str) -> None:

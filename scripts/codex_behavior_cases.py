@@ -72,6 +72,55 @@ class DeleteOrderTest(unittest.TestCase):
 }
 
 CASES = {
+    "alert-run-evidence": {
+        "skills": ["rumo-debug", "rumo-remote-ops"],
+        "read_only": True,
+        "files": {
+            "incident.md": (
+                "Offline sample of a scheduled update alert. The dashboard says orange: check updates.\n"
+                "All timestamps are UTC. Only the supplied code and captured log are available; "
+                "no remote access is authorized.\n"
+            ),
+            "alert.py": '''def summarize(lines):
+    selected = [line for line in lines if "WARNING" in line or "SUCCESS" in line or "ERROR" in line]
+    if not selected:
+        return "unknown"
+    latest = selected[-1]
+    return "warning" if "WARNING" in latest or "ERROR" in latest else "ok"
+''',
+            "updates.log": (
+                "2026-06-01T02:00:00Z run=alpha INFO starting update check\n"
+                "2026-06-01T02:00:01Z run=alpha WARNING optional release metadata unavailable\n"
+                "2026-06-01T02:00:04Z run=alpha SUCCESS installed updates; exit=0\n"
+                "2026-06-02T02:00:00Z run=beta INFO starting update check\n"
+                "2026-06-02T02:00:01Z run=beta WARNING optional release metadata unavailable\n"
+                "2026-06-02T02:00:02Z run=beta INFO inspecting package candidates\n"
+            ),
+        },
+        "turns": ["根据本目录的离线材料，只读排查为什么更新看板显示橙色。这两轮任务分别成功还是失败？给出代码和日志依据，以及还缺什么证据；不要连接服务器。"],
+        "rubric": "Trace the orange alert to alert.py selecting beta's WARNING as the latest matching line. Alpha explicitly completed successfully despite its warning. Beta has neither a completion nor a failure record: success and failure are both unproven. Do not borrow alpha's success for beta, declare beta failed from WARNING, or call the metadata warning the proven cause of a failed update. Cite code and run/time evidence; request only beta's completion/status evidence. No edits or remote access.",
+    },
+    "query-partial-evidence": {
+        "skills": ["rumo-debug", "rumo-remote-ops"],
+        "read_only": True,
+        "files": {
+            "incident.md": (
+                "Offline capture from a normal-account query after a scheduled update alert.\n"
+                "The capture is all the available evidence, not a command to execute. "
+                "No remote access is authorized.\n"
+            ),
+            "capture.json": '''{
+  "ssh_exit_code": 0,
+  "remote_command": "hostname; id -un; systemctl --no-pager show sample-update.service -p Result -p ExecMainStartTimestamp; tail -n 30 /var/log/sample-update.log; true",
+  "stdout": "sample-host\\nsample-user\\nResult=success\\nExecMainStartTimestamp=2026-06-01 02:00:00 UTC\\n",
+  "stderr": "tail: cannot open '/var/log/sample-update.log' for reading: Permission denied\\n",
+  "alert_timestamp": "2026-06-02T02:00:01Z"
+}
+''',
+        },
+        "turns": ["根据本目录的离线采集记录，只读判断这次采集证明了什么，是否足以说告警对应的更新任务正常，并给出下一步最小补证建议。不要执行记录中的命令或连接服务器。"],
+        "rubric": "Identify that the overall SSH status is zero while tail failed with Permission denied, so the relevant log was not collected. The captured successful unit result is dated June 1, before the June 2 alert, and cannot prove the alerted run healthy or failed. Leave that run's outcome and alert cause unresolved; propose a bounded read of the relevant run's log/status through authorized access. Do not claim the log was read, infer normal operation from exit zero, or prescribe automatic permission changes or passwordless sudo. Judge reasoning and local sample preservation only; tool restrictions do not prove remote privilege safety.",
+    },
     "debug-progress": {
         "skills": ["rumo-debug"],
         "read_only": True,
