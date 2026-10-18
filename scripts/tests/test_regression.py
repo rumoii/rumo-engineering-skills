@@ -19,7 +19,7 @@ class PlanTest(unittest.TestCase):
         self.assertTrue(set(REGRESSION) <= set(CASES))
 
     def test_jobs_pair_both_arms_per_case_and_rep(self) -> None:
-        planned = jobs("dsh", ["withdraw-existing", "commit-prepare"], 2)
+        planned = jobs("codex", ["withdraw-existing", "commit-prepare"], 2)
         self.assertEqual(len(planned), 8)
         self.assertEqual(planned[:2], [("candidate", 1, "withdraw-existing"), ("baseline", 1, "withdraw-existing")])
 
@@ -36,14 +36,14 @@ class SummaryTest(unittest.TestCase):
     def test_counts_valid_invalid_and_not_run(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             out = Path(temp)
-            planned = jobs("dsh", ["withdraw-existing"], 2)
+            planned = jobs("codex", ["withdraw-existing"], 2)
             for (arm, rep, name), status in zip(planned[:3], ("valid", "invalid", "valid")):
-                case = out / f"dsh-{arm}-{rep}-{name}" / name
+                case = out / f"codex-{arm}-{rep}-{name}" / name
                 case.mkdir(parents=True)
                 case.joinpath("result.json").write_text(json.dumps({
                     "evidence_status": status, "mechanical_checks": {"sample_unchanged": True},
                     "observed": {"messages": ["first", f"reply {arm} {rep}"]}}), encoding="utf-8")
-            table, text = summarize(out, "dsh", planned, {job: 0 for job in planned[:3]})
+            table, text = summarize(out, "codex", planned, {job: 0 for job in planned[:3]})
         self.assertEqual(table["withdraw-existing"]["candidate"], {"runs": 2, "valid": 2, "mechanical_pass": 2, "not_run": 0, "tokens": []})
         self.assertEqual(table["withdraw-existing"]["baseline"], {"runs": 1, "valid": 0, "mechanical_pass": 0, "not_run": 1, "tokens": []})
         self.assertIn("reply candidate 2", text)
@@ -62,24 +62,23 @@ class CliTest(unittest.TestCase):
         self.assertIn("outside the source checkout", proc.stderr)
         self.assertFalse((repo / "regression-evidence").exists())
 
-    def test_safety_stop_ends_the_batch(self) -> None:
+    def test_runs_every_job_through_the_codex_runner(self) -> None:
         calls = []
 
         def fake_invoke(command, log):
             calls.append(command)
-            return 0 if "--canary-only" in command else 3
+            return 1
 
         with tempfile.TemporaryDirectory() as temp:
             (Path(temp) / "snap" / "skills").mkdir(parents=True)
-            argv = ["run_regression.py", "--candidate", str(Path(temp) / "snap"), "--baseline", "without",
-                    "--output-dir", str(Path(temp) / "out"), "--", "--dsh-root", "D", "--api-key-file", "K"]
+            argv = ["run_regression.py", "--candidate", str(Path(temp) / "snap"), "--baseline", "without", "--reps", "1",
+                    "--output-dir", str(Path(temp) / "out"), "--", "--timeout", "60"]
             with patch.object(sys, "argv", argv), patch("scripts.run_regression.invoke", side_effect=fake_invoke), \
                  contextlib.redirect_stdout(io.StringIO()):
                 code = main()
-            self.assertEqual(code, 3)
-            # The canary, then the first case; dsh runs serially, so nothing else starts after the stop.
-            self.assertEqual(len(calls), 2)
-            self.assertIn("--canary-result", calls[1])
+            self.assertEqual(code, 0)
+            self.assertEqual(len(calls), 2 * len(REGRESSION))
+            self.assertTrue(all(c[1].endswith("run_codex_behavior.py") and c[-2:] == ["--timeout", "60"] for c in calls))
             self.assertTrue((Path(temp) / "out" / "summary.md").is_file())
 
 

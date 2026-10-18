@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Rerun the regression cases for a candidate skill snapshot against a baseline, through one behavior runner.
 
-Runner-specific options go after `--`, for example the dsh checkout and key file:
-  run_regression.py --candidate SNAP --baseline without --output-dir OUT -- --dsh-root D --api-key-file K
+Runner-specific options go after `--`, for example the per-case timeout:
+  run_regression.py --candidate SNAP --baseline without --output-dir OUT -- --timeout 1200
 """
 
 from __future__ import annotations
@@ -14,7 +14,6 @@ import statistics
 from pathlib import Path
 import subprocess
 import sys
-import threading
 
 try:
     from .codex_behavior_cases import CASES, REGRESSION
@@ -23,12 +22,11 @@ except ImportError:
 
 
 SCRIPTS = Path(__file__).resolve().parent
-RUNNERS = {"dsh": "run_dsh_behavior.py", "pi": "run_pi_behavior.py", "codex": "run_codex_behavior.py"}
-SAFETY_STOP = 3
+RUNNERS = {"pi": "run_pi_behavior.py", "codex": "run_codex_behavior.py"}
 
 
 def jobs(runner: str, cases: list[str], reps: int) -> list[tuple[str, int, str]]:
-    """Every case in both arms, repetitions interleaved so a late stop still leaves paired runs."""
+    """Every case in both arms, repetitions interleaved so an interrupted batch still leaves paired runs."""
     usable = [name for name in cases if runner != "pi" or CASES[name]["read_only"]]
     return [(arm, rep, name) for rep in range(1, reps + 1) for name in usable for arm in ("candidate", "baseline")]
 
@@ -85,7 +83,7 @@ def summarize(output_dir: Path, runner: str, planned: list[tuple[str, int, str]]
                 continue
             result = load_result(run_dir(output_dir, runner, job), name) or {}
             messages = (result.get("observed") or {}).get("messages") or []
-            status = "key leak, quarantined" if result.get("key_leak") else result.get("evidence_status", f"no result (exit {codes[job]})")
+            status = result.get("evidence_status", f"no result (exit {codes[job]})")
             lines += [f"### {job[0]} {job[1]} ({status})", "", "```text", (messages[-1] if messages else "(no reply)").replace("```", "'''"), "```", ""]
     return table, "\n".join(lines)
 
@@ -97,9 +95,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--candidate", type=Path, required=True, help="Snapshot containing the skills under test.")
     parser.add_argument("--baseline", required=True, help="A snapshot to compare against, or `without` for no skills.")
-    parser.add_argument("--runner", choices=sorted(RUNNERS), default="dsh")
+    parser.add_argument("--runner", choices=sorted(RUNNERS), default="codex")
     parser.add_argument("--reps", type=int, default=3)
-    parser.add_argument("--jobs", type=int, default=3, help="Parallel runs; dsh always runs one at a time.")
+    parser.add_argument("--jobs", type=int, default=3, help="Parallel runs.")
     parser.add_argument("--case", action="append", choices=sorted(REGRESSION), help="Default: the whole regression set.")
     parser.add_argument("--output-dir", type=Path, required=True, help="New directory outside the skill checkout.")
     args = parser.parse_args(argv)
@@ -114,38 +112,22 @@ def main() -> int:
         parser.error("--baseline must be `without` or a snapshot containing skills/.")
     args.output_dir.mkdir(parents=True, exist_ok=False)
     runner = [sys.executable, str(SCRIPTS / RUNNERS[args.runner])]
-    if args.runner == "dsh" and "--canary-result" not in passthrough:
-        # One canary for the whole batch; every dsh run then refuses to start unless it passed.
-        code = invoke([*runner, *arm_options("candidate", args.candidate, args.baseline), "--output-dir", str(args.output_dir / "dsh-canary"),
-                       "--canary-only", *passthrough], args.output_dir / "dsh-canary.log")
-        if code != 0:
-            print(f"Stopped: the dsh canary did not pass; see {args.output_dir / 'dsh-canary.log'}.", flush=True)
-            return SAFETY_STOP
-        passthrough = [*passthrough, "--canary-result", str(args.output_dir / "dsh-canary" / "canary" / "result.json")]
     planned = jobs(args.runner, args.case or list(REGRESSION), args.reps)
     codes: dict[tuple[str, int, str], int] = {}
-    stop = threading.Event()
 
     def one(job: tuple[str, int, str]) -> None:
-        if stop.is_set():
-            return
         directory = run_dir(args.output_dir, args.runner, job)
         command = [*runner, *arm_options(job[0], args.candidate, args.baseline), "--output-dir", str(directory), "--case", job[2], *passthrough]
         code = invoke(command, directory.with_suffix(".log"))
         codes[job] = code
         print(f"{directory.name}: exit {code}", flush=True)
-        if code == SAFETY_STOP:
-            stop.set()
 
-    with ThreadPoolExecutor(max_workers=1 if args.runner == "dsh" else args.jobs) as pool:
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
         list(pool.map(one, planned))
     table, text = summarize(args.output_dir, args.runner, planned, codes)
     (args.output_dir / "summary.md").write_text(text + "\n", encoding="utf-8")
     (args.output_dir / "summary.json").write_text(json.dumps(table, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"Summary: {args.output_dir / 'summary.md'}", flush=True)
-    if stop.is_set():
-        print("Stopped early: a run hit a safety stop; inspect its log before rerunning.", flush=True)
-        return SAFETY_STOP
     return 0
 
 

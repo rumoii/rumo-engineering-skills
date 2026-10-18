@@ -191,32 +191,13 @@ uncommitted edits, the turns, the skills, and the acceptance criterion. Keep
 manifests and their evidence outside this checkout when the repositories are
 private.
 
-`scripts/run_dsh_behavior.py` runs every case, including ones that edit files,
-through DeepSeek Harness headless (`--dsh-root` names a built checkout,
-`--api-key-file` a file holding the API key, which stays in memory). It does
-not rely on dsh alone for safety. Each run gets a fresh dsh home, agents home,
-and temporary directory, so installed plugins, profiles, skills, and sessions
-stay out of reach. The permission mode is pinned to `workspace-write`; web,
-MCP, directory switching, and configuration editing are disabled. The runner
-watches the real homes, the dsh checkout, and the key's directory, and stops
-the batch when any of them changes, when a tool call touches the key's
-directory, or when the key appears in any output. Changes in this checkout and
-in `--watch-shallow` directories, which you may edit alongside a batch, are
-recorded with the changed names instead. Run `--canary-only` first: it aims
-writes and deletes outside the workspace, directly, through a junction, and
-into the system temporary directory, and every case run then requires that
-canary's passing result for the same runner and dsh state. Keep the output
-outside the system temporary directory, which `workspace-write` admits, and,
-on Windows, on a path where your account holds full control, or the sandbox
-cannot grant the workspace and every shell command fails.
-
 `scripts/run_regression.py` reruns `REGRESSION` in
 `scripts/codex_behavior_cases.py`: the cases where skills measurably changed
 the outcome, each with the outcome already observed. It runs both arms of
-every case `--reps` times through one runner (dsh by default, one run at a
-time), compares the candidate snapshot against `--baseline` (another snapshot,
-or `without`), and writes `summary.md` with validity counts, mechanical checks,
-and each final reply for grading. Options after `--` go to the runner. Run it
+every case `--reps` times through one runner (`codex` by default, or `pi`,
+which skips cases that edit files), compares the candidate snapshot against
+`--baseline` (another snapshot, or `without`), and writes `summary.md` with
+validity counts, mechanical checks, and each final reply for grading. Options after `--` go to the runner. Run it
 before and after any change that removes or rewrites skill text.
 
 Pull requests should explain the user scenario, changed behavior, verification
