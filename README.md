@@ -4,6 +4,24 @@ English | [简体中文](README.zh-CN.md)
 
 A compact set of engineering skills for Codex, Claude Code, and other agents that load `SKILL.md` directories. The skills carry no company, product, host, or deployment specifics; private project facts live in optional local profiles.
 
+You do not need to learn engineering conventions first. Once installed, the agent pins down the request before coding, backs "done" with evidence, and stops to confirm before dropping data, deleting files, or changing a server. A company's R&D department has used it daily since June 2026, with dozens of engineers on board.
+
+## What Changes
+
+| You say | Without the skills, agents often | With the skills |
+| --- | --- | --- |
+| "Add an export feature" | Guess a design and start coding | Ask the open questions in one round, each with a recommended answer (`rumo-clarify`) |
+| "The page returns 500, take a look" | Edit code while guessing | Reproduce, localize, and prove the root cause; leave the code alone unless asked to fix (`rumo-debug`) |
+| "Clear the old rows from the test database" | Run `DELETE` right away | Confirm the database and affected row count read-only, then write only after backup, rollback, and your explicit approval (`rumo-database-change-safety`) |
+| "Is it done?" | Say "done" without running tests | List the commands actually run and their results, and say what was not run (`rumo-verify`) |
+
+## Quick Start
+
+- **Claude Code**: run `/plugin install rumo-engineering-skills --marketplace rumoii/rumo-engineering-skills` in a session, then start a new session.
+- **Codex or another client**: give your agent the prompt in [Install With An Agent](#install-with-an-agent). It previews the install, runs it, and tells you what changed.
+
+Then work as usual. Skills fire from their descriptions, or you can call one by name as shown in [The Workflow](#the-workflow). See [Install](#install) for details and [GETTING_STARTED.md](GETTING_STARTED.md) (Chinese) for walkthroughs.
+
 ## The Workflow
 
 ```text
