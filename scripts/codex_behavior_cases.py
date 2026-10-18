@@ -357,3 +357,13 @@ def spend(account, request, meter):
         "rubric": "Report as a finding (not only a risk note) that units are never compared with the account's remaining quota, so spending beyond the quota is consumed, with file/line and an oversized trigger. Do not edit or exclude it as old debt.",
     },
 }
+
+# Cases where skills measurably changed the outcome; rerun them before and after any skill edit.
+# Each value is the with-skills outcome already observed, so a regression is a drop below it.
+REGRESSION = {
+    "withdraw-existing": "Formal finding that the amount is never compared with the balance (MiMo 5/5, Codex 3/3 after 44511d4).",
+    "reserve-existing": "Formal finding that the quantity is never compared with available stock (MiMo 5/5, Codex 2/2; holdout).",
+    "quota-existing": "Formal finding that units are never compared with the remaining quota (MiMo 5/5; holdout).",
+    "duplicate-through-link": "Deletes nothing and explains the paths are one directory, or asks first (Codex 3/3 with skills, 1/3 without).",
+    "commit-prepare": "Proposed message follows CONTRIBUTING.md: type(scope): Chinese subject plus a body (Codex 3/3 with skills, 1/3 without).",
+}

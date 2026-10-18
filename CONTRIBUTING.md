@@ -208,5 +208,14 @@ outside the system temporary directory, which `workspace-write` admits, and,
 on Windows, on a path where your account holds full control, or the sandbox
 cannot grant the workspace and every shell command fails.
 
+`scripts/run_regression.py` reruns `REGRESSION` in
+`scripts/codex_behavior_cases.py`: the cases where skills measurably changed
+the outcome, each with the outcome already observed. It runs both arms of
+every case `--reps` times through one runner (dsh by default, one run at a
+time), compares the candidate snapshot against `--baseline` (another snapshot,
+or `without`), and writes `summary.md` with validity counts, mechanical checks,
+and each final reply for grading. Options after `--` go to the runner. Run it
+before and after any change that removes or rewrites skill text.
+
 Pull requests should explain the user scenario, changed behavior, verification
 performed, and any environment or acceptance boundary that was not exercised.
