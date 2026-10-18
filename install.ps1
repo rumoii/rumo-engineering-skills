@@ -44,6 +44,9 @@ Add the always-on baseline block to CLAUDE.md and AGENTS.md of each detected Cla
 .PARAMETER RemoveBaseline
 Remove the always-on baseline block from those files.
 
+.PARAMETER Uninstall
+Remove every rumo-* link that points into this repository from each detected client, and the baseline block. Keeps the repository, its configuration, and project profiles.
+
 .PARAMETER Help
 Print this help and exit without checking or changing anything.
 
@@ -58,6 +61,9 @@ Print this help and exit without checking or changing anything.
 
 .EXAMPLE
 .\install.ps1 -NoPull -Baseline
+
+.EXAMPLE
+.\install.ps1 -Uninstall -DryRun
 #>
 # Named parameters only: a stray word such as --help must fail instead of becoming -Repo.
 [CmdletBinding(PositionalBinding = $false)]
@@ -76,6 +82,7 @@ param(
   [switch]$ReplaceForeignLinks,
   [switch]$Baseline,
   [switch]$RemoveBaseline,
+  [switch]$Uninstall,
   [Alias("h")][switch]$Help
 )
 
@@ -91,6 +98,7 @@ $ClaudeHomeExplicit = -not [string]::IsNullOrWhiteSpace($ClaudeHome)
 $AgentsHomeExplicit = -not [string]::IsNullOrWhiteSpace($AgentsHome)
 $ProfilesRepoExplicit = -not [string]::IsNullOrWhiteSpace($ProfilesRepo)
 if (-not $ProfilesRepo) { $ProfilesRepo = $env:RUMO_SKILL_PROFILES_REPO }
+$PythonInstallHint = "Install Python 3 (Windows: winget install --id Python.Python.3.12; macOS or Linux: your package manager), then rerun."
 
 function Invoke-Step {
   param([Parameter(Mandatory = $true)][string]$Display, [Parameter(Mandatory = $true)][scriptblock]$Command)
@@ -104,7 +112,7 @@ function Invoke-SkillValidation {
   if (Get-Command py -ErrorAction SilentlyContinue) { & py -3 $Validator --repo-root $RepoPath }
   elseif (Get-Command python3 -ErrorAction SilentlyContinue) { & python3 $Validator --repo-root $RepoPath }
   elseif (Get-Command python -ErrorAction SilentlyContinue) { & python $Validator --repo-root $RepoPath }
-  else { throw "Python 3 is required to validate skills before installation." }
+  else { throw "Python 3 is required to validate skills before installation. $PythonInstallHint No skill links were changed." }
   if ($LASTEXITCODE -ne 0) { throw "Skill validation failed; no skill links were changed." }
 }
 
@@ -209,7 +217,7 @@ function Assert-SkillLinksSafe {
       $Existing = Get-Item -LiteralPath $LinkPath -Force -ErrorAction SilentlyContinue
       if (-not $Existing) { continue }
       if ($Existing.LinkType -notin @("SymbolicLink", "Junction")) {
-        $Issues.Add("$LinkPath exists as a real file or directory")
+        $Issues.Add("$LinkPath exists as a real file or directory; move or rename it, then rerun")
         continue
       }
       $Expected = [IO.Path]::GetFullPath($Desired[$Name])
@@ -249,6 +257,7 @@ function Sync-SkillLinks {
     Write-Host (Get-RemovalNotice $Link.Name)
     Invoke-Step "Remove link `"$($Link.FullName)`"" { Remove-SkillLink $Link }
   }
+  return $Desired.Count
 }
 
 function Assert-ExtraNames {
@@ -290,6 +299,9 @@ foreach ($Name in $ExtraNames) {
   if ($RemoveExtraNames -contains $Name) { throw "$Name was passed to both -Extras and -RemoveExtras; nothing was changed." }
 }
 if ($Baseline -and $RemoveBaseline) { throw "-Baseline and -RemoveBaseline cannot be combined; nothing was changed." }
+if ($Uninstall -and ($ExtraNames -or $RemoveExtraNames -or $Baseline -or $RemoveBaseline -or $ProfilesRepoExplicit -or $ReplaceForeignLinks -or $ListExtras)) {
+  throw "-Uninstall cannot be combined with options that install or configure skills; nothing was changed."
+}
 
 if ($ListExtras) {
   if (-not (Test-Path $RepoSkills)) { throw "Skills repository not found: $Repo. Install once before listing optional skills." }
@@ -297,7 +309,50 @@ if ($ListExtras) {
   exit 0
 }
 
-if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw "Git is required." }
+$SyncCodex = $CodexHomeExplicit -or (Get-Command codex -ErrorAction SilentlyContinue) -or (Test-Path $CodexHome)
+$SyncClaude = $ClaudeHomeExplicit -or (Get-Command claude -ErrorAction SilentlyContinue) -or (Test-Path $ClaudeHome)
+$SyncAgents = $AgentsHomeExplicit -or (Test-Path $AgentsHome) -or (Get-Command grok -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME ".grok"))
+$TargetSkillsPaths = [System.Collections.Generic.List[string]]::new()
+if ($SyncCodex) { $TargetSkillsPaths.Add((Join-Path $CodexHome "skills")) }
+if ($SyncClaude) { $TargetSkillsPaths.Add((Join-Path $ClaudeHome "skills")) }
+if ($SyncAgents) { $TargetSkillsPaths.Add((Join-Path $AgentsHome "skills")) }
+$BaselineScript = Join-Path $RepoSkills "rumo-coding-guidelines\scripts\baseline_block.py"
+
+# Uninstall needs neither Git nor a valid checkout, so it runs before both checks.
+if ($Uninstall) {
+  if ($TargetSkillsPaths.Count -eq 0) {
+    Write-Host "No supported agent client was detected; nothing to uninstall."
+    exit 0
+  }
+  foreach ($TargetSkillsPath in $TargetSkillsPaths) {
+    $Owned = @(Get-RumoLinks $TargetSkillsPath | Where-Object { Test-OwnedLinkTarget (Get-LinkTarget $_) })
+    foreach ($Link in $Owned) {
+      Invoke-Step "Remove link `"$($Link.FullName)`"" { Remove-SkillLink $Link }
+    }
+    $Verb = if ($DryRun) { "would be removed" } else { "removed" }
+    Write-Host "$($Owned.Count) skill links $Verb from $TargetSkillsPath"
+  }
+  $BaselineTargets = @()
+  if ($SyncCodex) { $BaselineTargets += Join-Path $CodexHome "AGENTS.md" }
+  if ($SyncClaude) { $BaselineTargets += Join-Path $ClaudeHome "CLAUDE.md" }
+  if ($BaselineTargets -and -not (Get-Command py, python3, python -ErrorAction SilentlyContinue)) {
+    Write-Host "Python 3 was not found; remove any rumo-engineering-skills:baseline block from $($BaselineTargets -join ', ') by hand."
+  }
+  else {
+    foreach ($Target in $BaselineTargets) { [void](Sync-BaselineBlock $Target "remove") }
+  }
+  if ($DryRun) {
+    Write-Host "Dry run finished; nothing was changed."
+    exit 0
+  }
+  Write-Host "Rumo skills uninstalled."
+  Write-Host "Kept: the repository at $Repo, ~/.rumo-engineering-skills/config.json, and any project profiles. Delete them by hand if you no longer need them."
+  exit 0
+}
+
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+  throw "Git is required. Install it (Windows: winget install --id Git.Git; macOS: xcode-select --install; Linux: your package manager), then rerun. Nothing was changed."
+}
 if (Test-Path $RepoSkills) { Assert-ExtraNames }
 
 if (Test-Path (Join-Path $Repo ".git")) {
@@ -320,7 +375,6 @@ if (Test-Path (Join-Path $Repo ".git")) {
 if (-not (Test-Path $RepoSkills)) { throw "Skills directory not found: $RepoSkills" }
 Invoke-SkillValidation $Repo
 
-$BaselineScript = Join-Path $RepoSkills "rumo-coding-guidelines\scripts\baseline_block.py"
 if (($Baseline -or $RemoveBaseline) -and -not (Test-Path $BaselineScript -PathType Leaf)) {
   throw "Baseline helper not found: $BaselineScript; nothing was changed."
 }
@@ -336,17 +390,10 @@ if ($ProfilesRepoExplicit) {
   if (Get-Command py -ErrorAction SilentlyContinue) { & py -3 $ProfileConfig @ProfileArgs }
   elseif (Get-Command python3 -ErrorAction SilentlyContinue) { & python3 $ProfileConfig @ProfileArgs }
   elseif (Get-Command python -ErrorAction SilentlyContinue) { & python $ProfileConfig @ProfileArgs }
-  else { throw "Python 3 is required to configure the profiles repository." }
+  else { throw "Python 3 is required to configure the profiles repository. $PythonInstallHint No skill links were changed." }
   if ($LASTEXITCODE -ne 0) { throw "Profiles repository configuration failed; no skill links were changed." }
 }
 
-$SyncCodex = $CodexHomeExplicit -or (Get-Command codex -ErrorAction SilentlyContinue) -or (Test-Path $CodexHome)
-$SyncClaude = $ClaudeHomeExplicit -or (Get-Command claude -ErrorAction SilentlyContinue) -or (Test-Path $ClaudeHome)
-$SyncAgents = $AgentsHomeExplicit -or (Test-Path $AgentsHome) -or (Get-Command grok -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME ".grok"))
-$TargetSkillsPaths = [System.Collections.Generic.List[string]]::new()
-if ($SyncCodex) { $TargetSkillsPaths.Add((Join-Path $CodexHome "skills")) }
-if ($SyncClaude) { $TargetSkillsPaths.Add((Join-Path $ClaudeHome "skills")) }
-if ($SyncAgents) { $TargetSkillsPaths.Add((Join-Path $AgentsHome "skills")) }
 if ($TargetSkillsPaths.Count -eq 0) {
   throw "No supported agent client was detected; no links were changed. Pass -CodexHome, -ClaudeHome, or -AgentsHome to choose a target explicitly."
 }
@@ -357,8 +404,9 @@ if ($ProfilesRepoExplicit -and -not $DryRun) {
   else { & python $ProfileConfig --profiles-repo $ProfilesRepo }
   if ($LASTEXITCODE -ne 0) { throw "Profiles repository configuration failed; no skill links were changed." }
 }
+$LinkedCounts = [ordered]@{}
 foreach ($TargetSkillsPath in $TargetSkillsPaths) {
-  Sync-SkillLinks $TargetSkillsPath
+  $LinkedCounts[$TargetSkillsPath] = Sync-SkillLinks $TargetSkillsPath
 }
 if (-not $SyncCodex) { Write-Host "Codex was not detected; skipping." }
 if (-not $SyncClaude) { Write-Host "Claude Code was not detected; skipping." }
@@ -378,8 +426,14 @@ if ($DryRun) {
   exit 0
 }
 Write-Host "Rumo skills installation completed."
+foreach ($TargetSkillsPath in $LinkedCounts.Keys) {
+  Write-Host "$($LinkedCounts[$TargetSkillsPath]) skills linked in $TargetSkillsPath"
+}
 Write-Host "Repository: $Repo"
-Write-Host "Recommended: set RUMO_SKILLS_REPO=$Repo"
+if (-not [string]::Equals($Repo, [IO.Path]::GetFullPath($ScriptRoot), [StringComparison]::OrdinalIgnoreCase)) {
+  Write-Host "Recommended: set RUMO_SKILLS_REPO=$Repo so later runs from another copy of this script use the same checkout."
+}
+Write-Host 'Next: start a new agent session, then try /rumo-verify (Claude Code) or $rumo-verify (Codex).'
 if ($ProfilesRepo) { Write-Host "Project profiles: $ProfilesRepo" }
 else { Write-Host "Optional: set RUMO_SKILL_PROFILES_REPO to a private profiles checkout." }
 if ($BaselineMissing.Count -gt 0) {

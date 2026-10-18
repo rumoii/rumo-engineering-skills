@@ -23,6 +23,8 @@ BASELINE_MISSING=""
 EXTRAS_REQUEST=""
 REMOVE_EXTRAS_REQUEST=""
 LIST_EXTRAS=0
+UNINSTALL=0
+LINK_SUMMARY=""
 
 usage() {
   printf '%s\n' \
@@ -41,7 +43,9 @@ usage() {
     '  --replace-foreign-links  Replace same-name links from another repository.' \
     '  --baseline           Add the always-on baseline block to CLAUDE.md and AGENTS.md' \
     '                       of each detected Claude Code and Codex home.' \
-    '  --remove-baseline    Remove that block.'
+    '  --remove-baseline    Remove that block.' \
+    '  --uninstall          Remove the rumo-* links into this repository and the baseline' \
+    '                       block from each detected client; keep the repository and profiles.'
 }
 
 while [ "$#" -gt 0 ]; do
@@ -60,6 +64,7 @@ while [ "$#" -gt 0 ]; do
     --replace-foreign-links) REPLACE_FOREIGN_LINKS=1; shift ;;
     --baseline) BASELINE_MODE=install; BASELINE_FLAGS=$((BASELINE_FLAGS + 1)); shift ;;
     --remove-baseline) BASELINE_MODE=remove; BASELINE_FLAGS=$((BASELINE_FLAGS + 1)); shift ;;
+    --uninstall) UNINSTALL=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'Unknown option: %s\n' "$1" >&2; usage >&2; exit 1 ;;
   esac
@@ -146,6 +151,11 @@ if [ "$BASELINE_FLAGS" -gt 1 ]; then
   echo '--baseline and --remove-baseline cannot be combined; nothing was changed.' >&2
   exit 1
 fi
+if [ "$UNINSTALL" -eq 1 ] && { [ -n "$EXTRA_NAMES$REMOVE_EXTRA_NAMES" ] || [ "$BASELINE_FLAGS" -gt 0 ] || [ "$PROFILES_REPO_EXPLICIT" -eq 1 ] || [ "$REPLACE_FOREIGN_LINKS" -eq 1 ] || [ "$LIST_EXTRAS" -eq 1 ]; }; then
+  echo '--uninstall cannot be combined with options that install or configure skills; nothing was changed.' >&2
+  exit 1
+fi
+PYTHON_INSTALL_HINT='Install Python 3 (macOS or Linux: your package manager; Windows: winget install --id Python.Python.3.12), then rerun.'
 
 if [ "$LIST_EXTRAS" -eq 1 ]; then
   [ -d "$REPO_PATH/skills" ] || { echo "Skills repository not found: $REPO_PATH. Install once before listing optional skills." >&2; exit 1; }
@@ -158,30 +168,6 @@ if [ "$LIST_EXTRAS" -eq 1 ]; then
   done
   [ "$found" -eq 1 ] || echo "No optional skills are available in $REPO_PATH."
   exit 0
-fi
-
-command -v git >/dev/null 2>&1 || { echo 'Git is required.' >&2; exit 1; }
-[ ! -d "$REPO_PATH/skills" ] || check_extra_names
-if [ -e "$REPO_PATH/.git" ]; then
-  [ "$RUN_PULL" -eq 0 ] || run git -C "$REPO_PATH" pull --ff-only
-elif [ ! -d "$REPO_PATH/skills" ]; then
-  run mkdir -p "$(dirname "$REPO_PATH")"
-  run git clone "$REMOTE_URL" "$REPO_PATH"
-  [ "$DRY_RUN" -eq 0 ] || exit 0
-fi
-REPO_PATH=$(CDPATH= cd -- "$REPO_PATH" && pwd -P)
-
-validator="$REPO_PATH/scripts/verify_skills.py"
-[ -f "$validator" ] || { echo "Validator not found: $validator" >&2; exit 1; }
-if command -v python3 >/dev/null 2>&1; then python3 "$validator" --repo-root "$REPO_PATH"
-elif command -v python >/dev/null 2>&1; then python "$validator" --repo-root "$REPO_PATH"
-else echo 'Python 3 is required.' >&2; exit 1
-fi
-check_extra_names
-BASELINE_SCRIPT="$REPO_PATH/skills/rumo-coding-guidelines/scripts/baseline_block.py"
-if [ "$BASELINE_MODE" != refresh ] && [ ! -f "$BASELINE_SCRIPT" ]; then
-  echo "Baseline helper not found: $BASELINE_SCRIPT; nothing was changed." >&2
-  exit 1
 fi
 
 resolve_link_target() {
@@ -204,6 +190,82 @@ is_owned_target() {
   esac
   return 1
 }
+
+SYNC_CODEX=0
+SYNC_CLAUDE=0
+SYNC_AGENTS=0
+if [ "$CODEX_HOME_EXPLICIT" -eq 1 ] || command -v codex >/dev/null 2>&1 || [ -d "$CODEX_HOME_DIR" ]; then SYNC_CODEX=1; fi
+if [ "$CLAUDE_HOME_EXPLICIT" -eq 1 ] || command -v claude >/dev/null 2>&1 || [ -d "$CLAUDE_HOME_DIR" ]; then SYNC_CLAUDE=1; fi
+if [ "$AGENTS_HOME_EXPLICIT" -eq 1 ] || [ -d "$AGENTS_HOME_DIR" ] || command -v grok >/dev/null 2>&1 || [ -d "$HOME/.grok" ]; then SYNC_AGENTS=1; fi
+
+remove_owned_links() {
+  skills_dir="$1"
+  removed=0
+  for link_path in "$skills_dir"/rumo-*; do
+    [ -L "$link_path" ] || continue
+    if is_owned_target "$(resolve_link_target "$link_path")"; then
+      run rm "$link_path"
+      removed=$((removed + 1))
+    fi
+  done
+  if [ "$DRY_RUN" -eq 1 ]; then echo "$removed skill links would be removed from $skills_dir"
+  else echo "$removed skill links removed from $skills_dir"
+  fi
+}
+
+# Uninstall needs neither Git nor a valid checkout, so it runs before both checks.
+if [ "$UNINSTALL" -eq 1 ]; then
+  if [ "$SYNC_CODEX" -eq 0 ] && [ "$SYNC_CLAUDE" -eq 0 ] && [ "$SYNC_AGENTS" -eq 0 ]; then
+    echo 'No supported agent client was detected; nothing to uninstall.'
+    exit 0
+  fi
+  [ ! -d "$REPO_PATH" ] || REPO_PATH=$(CDPATH= cd -- "$REPO_PATH" && pwd -P)
+  BASELINE_SCRIPT="$REPO_PATH/skills/rumo-coding-guidelines/scripts/baseline_block.py"
+  [ "$SYNC_CODEX" -eq 0 ] || remove_owned_links "$CODEX_HOME_DIR/skills"
+  [ "$SYNC_CLAUDE" -eq 0 ] || remove_owned_links "$CLAUDE_HOME_DIR/skills"
+  [ "$SYNC_AGENTS" -eq 0 ] || remove_owned_links "$AGENTS_HOME_DIR/skills"
+  BASELINE_MODE=remove
+  if command -v python3 >/dev/null 2>&1 || command -v python >/dev/null 2>&1; then
+    [ "$SYNC_CODEX" -eq 0 ] || sync_baseline "$CODEX_HOME_DIR/AGENTS.md"
+    [ "$SYNC_CLAUDE" -eq 0 ] || sync_baseline "$CLAUDE_HOME_DIR/CLAUDE.md"
+  elif [ "$SYNC_CODEX" -eq 1 ] || [ "$SYNC_CLAUDE" -eq 1 ]; then
+    echo 'Python 3 was not found; remove any rumo-engineering-skills:baseline block from AGENTS.md or CLAUDE.md by hand.'
+  fi
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo 'Dry run finished; nothing was changed.'
+    exit 0
+  fi
+  echo 'Rumo skills uninstalled.'
+  echo "Kept: the repository at $REPO_PATH, ~/.rumo-engineering-skills/config.json, and any project profiles. Delete them by hand if you no longer need them."
+  exit 0
+fi
+
+command -v git >/dev/null 2>&1 || {
+  echo 'Git is required. Install it (macOS: xcode-select --install; Linux: your package manager; Windows: winget install --id Git.Git), then rerun. Nothing was changed.' >&2
+  exit 1
+}
+[ ! -d "$REPO_PATH/skills" ] || check_extra_names
+if [ -e "$REPO_PATH/.git" ]; then
+  [ "$RUN_PULL" -eq 0 ] || run git -C "$REPO_PATH" pull --ff-only
+elif [ ! -d "$REPO_PATH/skills" ]; then
+  run mkdir -p "$(dirname "$REPO_PATH")"
+  run git clone "$REMOTE_URL" "$REPO_PATH"
+  [ "$DRY_RUN" -eq 0 ] || exit 0
+fi
+REPO_PATH=$(CDPATH= cd -- "$REPO_PATH" && pwd -P)
+
+validator="$REPO_PATH/scripts/verify_skills.py"
+[ -f "$validator" ] || { echo "Validator not found: $validator" >&2; exit 1; }
+if command -v python3 >/dev/null 2>&1; then python3 "$validator" --repo-root "$REPO_PATH"
+elif command -v python >/dev/null 2>&1; then python "$validator" --repo-root "$REPO_PATH"
+else echo "Python 3 is required to validate skills before installation. $PYTHON_INSTALL_HINT No skill links were changed." >&2; exit 1
+fi
+check_extra_names
+BASELINE_SCRIPT="$REPO_PATH/skills/rumo-coding-guidelines/scripts/baseline_block.py"
+if [ "$BASELINE_MODE" != refresh ] && [ ! -f "$BASELINE_SCRIPT" ]; then
+  echo "Baseline helper not found: $BASELINE_SCRIPT; nothing was changed." >&2
+  exit 1
+fi
 
 # Print default skills, requested extras, and extras this checkout already installed here.
 desired_sources() {
@@ -262,7 +324,7 @@ preflight_links() {
         status=1
       fi
     elif [ -e "$link_path" ]; then
-      echo "Conflict: $link_path exists as a real file or directory." >&2
+      echo "Conflict: $link_path exists as a real file or directory; move or rename it, then rerun." >&2
       status=1
     fi
   done
@@ -299,27 +361,14 @@ sync_links() {
       run rm "$link_path"
     fi
   done
+  linked=$(printf '%s\n' "$desired" | sed '/^$/d' | wc -l | tr -d ' ')
+  LINK_SUMMARY="${LINK_SUMMARY}$linked skills linked in $skills_dir$NEWLINE"
 }
 
 PREFLIGHT_STATUS=0
-if [ "$CODEX_HOME_EXPLICIT" -eq 1 ] || command -v codex >/dev/null 2>&1 || [ -d "$CODEX_HOME_DIR" ]; then
-  SYNC_CODEX=1
-  preflight_links "$CODEX_HOME_DIR/skills" || PREFLIGHT_STATUS=1
-else
-  SYNC_CODEX=0
-fi
-if [ "$CLAUDE_HOME_EXPLICIT" -eq 1 ] || command -v claude >/dev/null 2>&1 || [ -d "$CLAUDE_HOME_DIR" ]; then
-  SYNC_CLAUDE=1
-  preflight_links "$CLAUDE_HOME_DIR/skills" || PREFLIGHT_STATUS=1
-else
-  SYNC_CLAUDE=0
-fi
-if [ "$AGENTS_HOME_EXPLICIT" -eq 1 ] || [ -d "$AGENTS_HOME_DIR" ] || command -v grok >/dev/null 2>&1 || [ -d "$HOME/.grok" ]; then
-  SYNC_AGENTS=1
-  preflight_links "$AGENTS_HOME_DIR/skills" || PREFLIGHT_STATUS=1
-else
-  SYNC_AGENTS=0
-fi
+[ "$SYNC_CODEX" -eq 0 ] || preflight_links "$CODEX_HOME_DIR/skills" || PREFLIGHT_STATUS=1
+[ "$SYNC_CLAUDE" -eq 0 ] || preflight_links "$CLAUDE_HOME_DIR/skills" || PREFLIGHT_STATUS=1
+[ "$SYNC_AGENTS" -eq 0 ] || preflight_links "$AGENTS_HOME_DIR/skills" || PREFLIGHT_STATUS=1
 if [ "$SYNC_CODEX" -eq 0 ] && [ "$SYNC_CLAUDE" -eq 0 ] && [ "$SYNC_AGENTS" -eq 0 ]; then
   echo 'No supported agent client was detected; no links were changed.' >&2
   echo 'Pass --codex-home, --claude-home, or --agents-home to choose a target explicitly.' >&2
@@ -332,11 +381,11 @@ if [ "$PROFILES_REPO_EXPLICIT" -eq 1 ]; then
   if [ "$DRY_RUN" -eq 1 ]; then
     if command -v python3 >/dev/null 2>&1; then python3 "$config_script" --profiles-repo "$PROFILES_REPO" --dry-run
     elif command -v python >/dev/null 2>&1; then python "$config_script" --profiles-repo "$PROFILES_REPO" --dry-run
-    else echo 'Python 3 is required to configure the profiles repository.' >&2; exit 1
+    else echo "Python 3 is required to configure the profiles repository. $PYTHON_INSTALL_HINT No skill links were changed." >&2; exit 1
     fi
   elif command -v python3 >/dev/null 2>&1; then python3 "$config_script" --profiles-repo "$PROFILES_REPO"
   elif command -v python >/dev/null 2>&1; then python "$config_script" --profiles-repo "$PROFILES_REPO"
-  else echo 'Python 3 is required to configure the profiles repository.' >&2; exit 1
+  else echo "Python 3 is required to configure the profiles repository. $PYTHON_INSTALL_HINT No skill links were changed." >&2; exit 1
   fi
 fi
 
@@ -357,7 +406,11 @@ if [ "$DRY_RUN" -eq 1 ]; then
   exit 0
 fi
 echo "Rumo skills installed from $REPO_PATH"
-echo "Set RUMO_SKILLS_REPO=$REPO_PATH for later updates."
+printf '%s' "$LINK_SUMMARY"
+if [ "$REPO_PATH" != "$SCRIPT_DIR" ]; then
+  echo "Recommended: set RUMO_SKILLS_REPO=$REPO_PATH so later runs from another copy of this script use the same checkout."
+fi
+echo 'Next: start a new agent session, then try /rumo-verify (Claude Code) or $rumo-verify (Codex).'
 if [ -n "$PROFILES_REPO" ]; then echo "Project profiles: $PROFILES_REPO"
 else echo 'Optionally set RUMO_SKILL_PROFILES_REPO to a private profiles checkout.'
 fi

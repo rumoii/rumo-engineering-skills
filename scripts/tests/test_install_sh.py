@@ -430,6 +430,13 @@ class InstallShellTests(unittest.TestCase):
             self.assertEqual(claude_md.read_bytes(), b"# mine\r\n")
             self.assertNotIn(BASELINE_START, codex_md.read_text(encoding="utf-8"))
 
+            self.assertEqual(install("--baseline").returncode, 0)
+            result = install("--uninstall")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(claude_md.read_bytes(), b"# mine\r\n")
+            self.assertNotIn(BASELINE_START, codex_md.read_text(encoding="utf-8"))
+            self.assertFalse(any((claude_home / "skills").iterdir()))
+
     def assert_link_targets(self, skills_dir: Path, expected_names: list[str]) -> None:
         for name in expected_names:
             link = skills_dir / name
@@ -601,6 +608,41 @@ class InstallShellExtrasTests(unittest.TestCase):
         self.assertIn("Baseline helper not found", result.stderr)
         for home in self.homes.values():
             self.assertFalse(home.exists())
+
+    def test_uninstall_removes_only_this_repository_links(self) -> None:
+        result = self.run_installer("--extras", "rumo-gamma")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn(f"3 skills linked in {self.homes['claude'] / 'skills'}", result.stdout)
+        self.assertIn("Next: start a new agent session", result.stdout)
+        skills = self.homes["claude"] / "skills"
+        foreign = self.temp_root / "personal" / "rumo-foreign"
+        foreign.mkdir(parents=True)
+        self.create_link(skills / "rumo-foreign", foreign)
+        (skills / "rumo-real").mkdir()
+        (skills / "other-skill").mkdir()
+
+        result = self.run_installer("--uninstall", "--dry-run")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn(f"3 skill links would be removed from {skills}", result.stdout)
+        self.assertEqual(self.installed("codex"), sorted((*CORE_SKILLS, "rumo-gamma")))
+
+        result = self.run_installer("--uninstall")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Rumo skills uninstalled.", result.stdout)
+        self.assertEqual(self.installed("codex"), [])
+        self.assertEqual(self.installed("claude"), ["other-skill", "rumo-foreign", "rumo-real"])
+        for name in CORE_SKILLS:
+            self.assertTrue((self.repo / "skills" / name / "SKILL.md").is_file(), name)
+        self.assertTrue((self.repo / "extras" / "rumo-gamma" / "SKILL.md").is_file())
+
+    def test_uninstall_rejects_install_options(self) -> None:
+        self.assertEqual(self.run_installer().returncode, 0)
+        for extra in (("--baseline",), ("--extras", "rumo-gamma"), ("--replace-foreign-links",)):
+            result = self.run_installer("--uninstall", *extra)
+
+            self.assertNotEqual(result.returncode, 0, extra)
+            self.assertIn("--uninstall cannot be combined", result.stderr)
+            self.assertEqual(self.installed("claude"), sorted(CORE_SKILLS))
 
 
 if __name__ == "__main__":
