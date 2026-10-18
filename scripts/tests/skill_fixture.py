@@ -38,6 +38,6 @@ def build_fixture_repo(root: Path) -> Path:
 
     core = "".join(f"- `{name}`: fixture.\n" for name in CORE_SKILLS)
     extras = "".join(f"- `{name}`: fixture.\n" for name in EXTRA_SKILLS)
-    for readme in (repo / "README.md", repo / "README.zh-CN.md", repo / "skills" / "README.md"):
+    for readme in (repo / "README.md", repo / "README.en.md", repo / "skills" / "README.md"):
         readme.write_text(f"# Fixture\n\n{core}\n## Extras\n\n{extras}", encoding="utf-8")
     return repo

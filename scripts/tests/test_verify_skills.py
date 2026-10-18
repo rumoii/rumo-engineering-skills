@@ -21,13 +21,13 @@ class VerifySkillsTest(unittest.TestCase):
         skill_dir = self.repo_root / "skills" / "rumo-example"
         (skill_dir / "agents").mkdir(parents=True)
         (self.repo_root / "README.md").write_text(
-            "# Catalog\n\nEnglish | [简体中文](README.zh-CN.md)\n\n"
-            "- `rumo-example`: example.\n",
+            "# 中文清单\n\n简体中文 | [English](README.en.md)\n\n"
+            "- `rumo-example`: 示例。\n",
             encoding="utf-8",
         )
-        (self.repo_root / "README.zh-CN.md").write_text(
-            "# 中文清单\n\n[English](README.md) | 简体中文\n\n"
-            "- `rumo-example`: 示例。\n",
+        (self.repo_root / "README.en.md").write_text(
+            "# Catalog\n\n[简体中文](README.md) | English\n\n"
+            "- `rumo-example`: example.\n",
             encoding="utf-8",
         )
         (self.repo_root / "skills" / "README.md").write_text(
@@ -154,7 +154,7 @@ class VerifySkillsTest(unittest.TestCase):
         self.assert_error_contains("lists nonexistent skills")
 
     def test_rejects_stale_chinese_readme_inventory(self) -> None:
-        readme_path = self.repo_root / "README.zh-CN.md"
+        readme_path = self.repo_root / "README.md"
         readme_path.write_text(
             readme_path.read_text(encoding="utf-8")
             + "- `rumo-missing`: 不存在的技能。\n",
@@ -307,7 +307,7 @@ class VerifySkillsTest(unittest.TestCase):
         )
         for readme in (
             self.repo_root / "README.md",
-            self.repo_root / "README.zh-CN.md",
+            self.repo_root / "README.en.md",
             self.repo_root / "skills" / "README.md",
         ):
             with readme.open("a", encoding="utf-8") as handle:
@@ -343,7 +343,7 @@ class VerifySkillsTest(unittest.TestCase):
 
     def test_rejects_default_skill_listed_under_extras(self) -> None:
         self.add_extra()
-        readme = self.repo_root / "README.zh-CN.md"
+        readme = self.repo_root / "README.md"
         readme.write_text(
             readme.read_text(encoding="utf-8").replace("- `rumo-example`: 示例。\n", "")
             + "- `rumo-example`: 示例。\n",

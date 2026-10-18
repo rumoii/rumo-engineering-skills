@@ -256,13 +256,13 @@ class AlwaysOnSnippetTest(unittest.TestCase):
 README_INSTALL_RULES = {
     "README.md": (
         "--dry-run",
-        "Ask me before writing to my user-level CLAUDE.md or AGENTS.md.",
-        "it never adds `--baseline` or `-Baseline` without the user's explicit agreement",
-    ),
-    "README.zh-CN.md": (
-        "--dry-run",
         "写入我的用户级 CLAUDE.md 或 AGENTS.md 之前先问我",
         "没有用户明确同意，绝不加 `--baseline` 或 `-Baseline`",
+    ),
+    "README.en.md": (
+        "--dry-run",
+        "Ask me before writing to my user-level CLAUDE.md or AGENTS.md.",
+        "it never adds `--baseline` or `-Baseline` without the user's explicit agreement",
     ),
 }
 

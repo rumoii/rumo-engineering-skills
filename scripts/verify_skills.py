@@ -376,7 +376,7 @@ def validate_repository(
 
     readme_paths = (
         repo_root / "README.md",
-        repo_root / "README.zh-CN.md",
+        repo_root / "README.en.md",
         skills_root / "README.md",
     )
     for readme_path in readme_paths:
