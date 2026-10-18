@@ -40,11 +40,11 @@ List the verified scope, each command with its actual result, skipped or unavail
 "Not run" lists checks and evidence boundaries only. Controlled actions you did not take, such as commits, pushes, or publication, are not verification gaps; mention them in one line, and only when the user could assume they happened.
 
 ```text
-Scope: branch fix/refund-limit vs main, 2 commits, no uncommitted files.
-- pytest tests/orders/test_refund.py: 7 passed
-- ruff check services/refund.py: no issues
+Scope: branch fix/report-local-date vs main, 2 commits, no uncommitted files.
+- pytest tests/reports/test_daily.py: 7 passed
+- ruff check services/reports.py: no issues
 - git diff --check: clean
-Not run: refund flow against the test environment (needs a deployment the user has not approved).
+Not run: report export against the test environment (needs a deployment the user has not approved).
 ```
 
 A report that says "all tests pass, should be good to merge" names no scope, no commands, and no gaps; it is not evidence.

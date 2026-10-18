@@ -31,10 +31,10 @@ Tests are evidence for claims. A large suite, a coverage number, an HTTP 200, or
 4. Refactor only while green, without touching behavioral assertions. An assertion change that alters accepted behavior goes back to step 1.
 5. Never edit the implementation and its assertion together to manufacture a pass.
 
-Example, for a bug where refunds can exceed the amount paid:
+Example, for a bug where an order placed just before local midnight lands in the next day's sales report:
 
-- Strong: `refund_rejects_amount_above_paid_total` creates a paid order through the real service, requests a larger refund, and asserts both the rejection error and that no refund row was stored. It failed before the fix with a stored refund.
-- Weak: a test that mocks `issue_refund` and asserts it was called. It passed before the fix, so it proves nothing about the bug.
+- Strong: `daily_report_keeps_order_placed_at_2359_local` stores an order through the real service at 23:59 in the shop's time zone, then asserts it appears in that day's report and not in the next. It failed before the fix, which grouped orders by UTC date.
+- Weak: a test that mocks `to_local_date` and asserts it was called. It passed before the fix, so it proves nothing about the bug.
 
 ## High Assurance
 
