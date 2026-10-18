@@ -2,7 +2,7 @@
 
 [English](README.md) | 简体中文
 
-一套精简的工程技能，适用于 Codex、Claude Code 以及其他能加载 `SKILL.md` 目录的 agent。技能本身不含任何公司、产品、主机或部署环境的信息；项目私有事实放在可选的本地 Profile 中。
+一套精简的工程技能，适用于 Codex、Claude Code 以及其他能加载 `SKILL.md` 目录的 agent。技能本身不含任何公司、产品、主机或部署环境的信息。
 
 不需要先学工程规范：装上之后，agent 会自己先问清需求、改完拿证据验证，遇到删库、删文件、改服务器这类操作会先停下来确认。一家公司的研发部门自 2026 年 6 月起已有数十人在日常使用。
 
@@ -17,7 +17,7 @@
 
 ## 快速开始
 
-- **Claude Code**：在会话里运行 `/plugin install rumo-engineering-skills --marketplace rumoii/rumo-engineering-skills`，然后开一个新会话。
+- **Claude Code**：在会话里运行 `/plugin install rumo-engineering-skills --marketplace rumoii/rumo-engineering-skills`，然后开一个新会话。需要 Claude Code 2.1.275 或更高版本，更早的版本见 [Claude Code 插件](#claude-code-插件)。
 - **Codex 或其他客户端**：把[让 AI 帮你安装](#让-ai-帮你安装)里的提示词发给你的 agent，它会先预演、再安装，并告诉你改了什么。
 
 装好后照常提需求，技能会按描述自动触发，也可以按[工作主线](#工作主线)里的表格点名调用。安装细节见[安装](#安装)，上手示例见 [GETTING_STARTED.md](GETTING_STARTED.md)。
@@ -39,6 +39,8 @@ clarify -> plan -> test -> verify -> review -> git-commit
 | 声称完成前检查改动 | `$rumo-verify` | `/rumo-verify` |
 | 只读评审差异 | `$rumo-review` | `/rumo-review` |
 | 提交、合入、推送或开 PR | `$rumo-git-commit` | `/rumo-git-commit` |
+
+用插件安装时，技能名带前缀，例如 `/rumo-engineering-skills:rumo-clarify`。
 
 客户端也会根据技能描述自动选择；除“仅手动调用”的技能外，点名不是必需的。[完整案例](GETTING_STARTED.md#完整案例)展示了三个请求从提出到交付的全过程。
 
@@ -80,6 +82,8 @@ clarify -> plan -> test -> verify -> review -> git-commit
 | `rumo-imagegen` | 通过用户自配的 OpenAI 兼容接口生成单张图片(仅手动调用) |
 
 ## 安装
+
+需要 Git 和 Python 3，不需要管理员权限。`-ExecutionPolicy Bypass` 只对这一次运行生效，不改系统设置。
 
 ```powershell
 git clone https://github.com/rumoii/rumo-engineering-skills.git
@@ -144,7 +148,7 @@ claude plugin install rumo-engineering-skills@rumo-engineering-skills
 
 插件里的技能名带前缀，例如 `rumo-engineering-skills:rumo-clarify`。插件只对 Claude Code 生效，不含扩展；其他客户端仍用安装器。
 
-同一台机器只选一种方式。安装器已经把技能链接进 `~/.claude/skills` 时再装插件，每个技能都会出现两次。更新插件：先执行 `claude plugin marketplace update rumo-engineering-skills`，再执行 `claude plugin update rumo-engineering-skills@rumo-engineering-skills`，然后开新会话。
+同一台机器只选一种方式。安装器已经把技能链接进 `~/.claude/skills` 时再装插件，每个技能都会出现两次。
 
 ### 常驻基线
 
@@ -161,6 +165,36 @@ claude plugin install rumo-engineering-skills@rumo-engineering-skills
 ```
 
 写入的内容位于 `rumo-engineering-skills:baseline` 标记之间，标记之外的内容不会改动。之后不带参数重跑安装器时会自动更新这段内容；没写入过的，安装结束时会提示一行。插件用户和其他客户端可以直接运行辅助脚本，例如 `python3 skills/rumo-coding-guidelines/scripts/baseline_block.py --target ~/.claude/CLAUDE.md --install`，也可以手动把 [agents-snippet.md](skills/rumo-coding-guidelines/references/agents-snippet.md) 里的代码块贴进去。
+
+### 更新
+
+安装器：去掉 `-NoPull`(`--no-pull`)重跑，它会先 `git pull --ff-only` 拉取最新版本，再重新链接，已装的扩展和基线会保留。然后开新会话。
+
+```powershell
+.\install.ps1
+```
+
+```bash
+./install.sh
+```
+
+插件：先执行 `claude plugin marketplace update rumo-engineering-skills`，再执行 `claude plugin update rumo-engineering-skills@rumo-engineering-skills`，然后开新会话。
+
+### 卸载
+
+安装器：可以先加 `-DryRun`(`--dry-run`)看会删什么。卸载只删除指向本仓库的 `rumo-*` 链接和常驻基线，不碰其他来源的技能；clone 下来的仓库、`~/.rumo-engineering-skills/config.json` 和项目 Profile 都会保留，不再需要时手动删除。
+
+```powershell
+.\install.ps1 -Uninstall
+```
+
+```bash
+./install.sh --uninstall
+```
+
+不要在资源管理器里删除 `rumo-*` 链接，也不要用 `Remove-Item -Recurse` 删除：这些操作可能顺着链接删掉仓库里的技能文件。
+
+插件：执行 `claude plugin uninstall rumo-engineering-skills@rumo-engineering-skills`，然后开新会话。
 
 ## 项目 Profile
 

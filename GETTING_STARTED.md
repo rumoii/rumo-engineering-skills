@@ -33,7 +33,9 @@ cd /path/to/rumo-engineering-skills
 - 未检测到的客户端会跳过；一个都没检测到时直接失败，不做任何改动。
 - 安装器只管理 `rumo-*` 链接，不会删除其他来源的技能。
 - 同名链接如果来自另一个仓库，安装器会先停下；确认要切换来源后再加 `-ReplaceForeignLinks` / `--replace-foreign-links`。
+- 成功时每个客户端会输出一行 `<数量> skills linked in <目录>`，最后一行以 `Next:` 开头，提示下一步。
 - 安装完成后重新开一个客户端会话，让技能列表重新加载。
+- 装不上或装完看不到技能，见[遇到问题](#6-遇到问题)。
 - 想让基线规则每次会话都生效，加 `-Baseline` / `--baseline`，见 README 的“常驻基线”；让 AI 代你安装时，用 README“让 AI 帮你安装”一节的提示词。
 
 只用 Claude Code 的话，也可以不跑安装器，改为把默认技能装成插件，见 README 的“Claude Code 插件”一节。两种方式只能选一种，否则技能会重复出现。
@@ -58,7 +60,7 @@ cd /path/to/rumo-engineering-skills
 
 ### 其他客户端
 
-安装器只直接管理上表的三个目录。其他客户端统一接到共享目录 `~/.agents/skills`，以后更新或增减扩展只需重跑安装器。如果安装器没有检测到共享目录，安装时显式加 `-AgentsHome "$HOME\.agents"` 或 `--agents-home ~/.agents`。
+安装器只直接管理上表的三个目录。其他客户端统一接到共享目录 `~/.agents/skills`，以后增减扩展只需重跑安装器，更新见 README 的“更新”一节。如果安装器没有检测到共享目录，安装时显式加 `-AgentsHome "$HOME\.agents"` 或 `--agents-home ~/.agents`。
 
 | 客户端 | 接入方式 |
 | --- | --- |
@@ -212,3 +214,48 @@ python3 skills/rumo-project-profile/scripts/verify_profile.py \
 - 个人凭据放在本机被忽略的文件或环境变量里。
 - 团队共享项目事实时，放进自己的私有 Profile 仓库；这不是使用技能的必需步骤。
 - 不要把任何组织或项目的私有 Profile 复制到公共仓库。
+
+## 6. 遇到问题
+
+按看到的现象找对应小节。安装器报错时，提示原文是英文，可以直接搜索原文。
+
+### 新会话里看不到 rumo-* 技能
+
+1. 看安装器的输出里有没有 `skills linked in` 开头的那几行，目录是不是你在用的客户端(`.claude`、`.codex` 或 `.agents`)。缺了某个客户端，说明安装器没检测到它，用 `-ClaudeHome` / `--claude-home` 这类参数显式指定目录后重跑。
+2. 按[第 2 节](#2-验证安装)第二层检查链接。
+3. 一定要开新会话，已经打开的会话不会重新加载技能列表。
+4. 用插件安装时，执行 `claude plugin list` 确认插件已启用；插件的技能名带前缀，例如 `/rumo-engineering-skills:rumo-verify`。
+
+### 每个技能出现两次
+
+同时用了安装器和插件，或者客户端同时读取多个技能目录(见[其他客户端](#其他客户端))。只保留一种方式：保留插件，就运行 `.\install.ps1 -Uninstall` 删掉安装器建的链接；保留安装器，就按 README 的“卸载”一节卸载插件。
+
+### 提示 `Git is required` 或 `Python 3 is required`
+
+按提示里的命令安装，Windows 上是 `winget install --id Git.Git` 或 `winget install --id Python.Python.3.12`。装完关掉终端再重新打开，让新的 PATH 生效，然后重跑安装器。安装器在这一步退出时没有改动任何东西。
+
+如果 Windows 上执行 `python --version` 打开了 Microsoft Store 或没有任何输出，说明只有系统自带的占位程序，仍然需要按上面的命令安装 Python。
+
+### 提示 `exists as a real file or directory`
+
+客户端的技能目录里已经有一个同名的普通目录，例如以前手动复制过技能。安装器不会覆盖它。确认里面没有你自己改过的内容后，把它移走或改名，再重跑安装器。
+
+### 提示 `points to ... use -ReplaceForeignLinks`
+
+同名链接指向另一个仓库，例如你在别处另外 clone 过一份。确认要改用当前这份时，加 `-ReplaceForeignLinks`(`--replace-foreign-links`)重跑。
+
+### PowerShell 提示“因为在此系统上禁止运行脚本”
+
+直接运行了 `.\install.ps1`。改用完整命令 `powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -NoPull`；或者先在同一个窗口里执行 `Set-ExecutionPolicy -Scope Process Bypass`，之后就能直接运行 `.\install.ps1`。这两种方式都只对当前这次运行或当前窗口生效。
+
+### 插件命令报 unknown option，或者不认识 `--marketplace`
+
+Claude Code 版本太旧。执行 `claude --version` 查看版本：低于 2.1.275 时，升级 Claude Code，或者按 README“Claude Code 插件”一节先添加插件市场再安装。
+
+### 还是解决不了
+
+开 issue 时附上下面三项，贴出前删掉用户名、公司路径和其他敏感信息：
+
+- 安装器加 `-DryRun`(`--dry-run`)重跑的完整输出；
+- `git -C <仓库路径> rev-parse HEAD` 的输出；
+- 客户端名称和版本。

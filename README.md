@@ -2,7 +2,7 @@
 
 English | [简体中文](README.zh-CN.md)
 
-A compact set of engineering skills for Codex, Claude Code, and other agents that load `SKILL.md` directories. The skills carry no company, product, host, or deployment specifics; private project facts live in optional local profiles.
+A compact set of engineering skills for Codex, Claude Code, and other agents that load `SKILL.md` directories. The skills carry no company, product, host, or deployment specifics.
 
 You do not need to learn engineering conventions first. Once installed, the agent pins down the request before coding, backs "done" with evidence, and stops to confirm before dropping data, deleting files, or changing a server. A company's R&D department has used it daily since June 2026, with dozens of engineers on board.
 
@@ -17,7 +17,7 @@ You do not need to learn engineering conventions first. Once installed, the agen
 
 ## Quick Start
 
-- **Claude Code**: run `/plugin install rumo-engineering-skills --marketplace rumoii/rumo-engineering-skills` in a session, then start a new session.
+- **Claude Code**: run `/plugin install rumo-engineering-skills --marketplace rumoii/rumo-engineering-skills` in a session, then start a new session. This needs Claude Code 2.1.275 or later; for older versions see [Claude Code Plugin](#claude-code-plugin).
 - **Codex or another client**: give your agent the prompt in [Install With An Agent](#install-with-an-agent). It previews the install, runs it, and tells you what changed.
 
 Then work as usual. Skills fire from their descriptions, or you can call one by name as shown in [The Workflow](#the-workflow). See [Install](#install) for details and [GETTING_STARTED.md](GETTING_STARTED.md) (Chinese) for walkthroughs.
@@ -39,6 +39,8 @@ Each step is a skill. Use only the ones a task needs: a one-line fix goes straig
 | Check the change before calling it done | `$rumo-verify` | `/rumo-verify` |
 | Review a diff without editing | `$rumo-review` | `/rumo-review` |
 | Commit, land, push, or open a pull request | `$rumo-git-commit` | `/rumo-git-commit` |
+
+With the plugin, skill names carry a prefix, such as `/rumo-engineering-skills:rumo-clarify`.
 
 Clients also pick skills automatically from their descriptions; naming one is optional except for manual-only skills. [Worked examples](GETTING_STARTED.md#完整案例) follow three requests from prompt to delivery.
 
@@ -80,6 +82,8 @@ Not installed by default. Add them with `-Extras` (PowerShell) or `--extras` (sh
 | `rumo-imagegen` | One image through a user-configured OpenAI-compatible endpoint (manual only) |
 
 ## Install
+
+You need Git and Python 3, but not administrator rights. `-ExecutionPolicy Bypass` applies to this one run and leaves system settings unchanged.
 
 ```powershell
 git clone https://github.com/rumoii/rumo-engineering-skills.git
@@ -144,7 +148,7 @@ claude plugin install rumo-engineering-skills@rumo-engineering-skills
 
 Plugin skills carry a prefix, such as `rumo-engineering-skills:rumo-clarify`. The plugin covers Claude Code only and has no extras; other clients use the installer.
 
-Choose one method per machine. If the installer already linked skills into `~/.claude/skills`, adding the plugin loads every skill twice. To update the plugin, run `claude plugin marketplace update rumo-engineering-skills`, then `claude plugin update rumo-engineering-skills@rumo-engineering-skills`, and start a new session.
+Choose one method per machine. If the installer already linked skills into `~/.claude/skills`, adding the plugin loads every skill twice.
 
 ### Always-On Baseline
 
@@ -161,6 +165,36 @@ Clients load a skill only when its description matches the request, so a small e
 ```
 
 The block sits between `rumo-engineering-skills:baseline` markers, and nothing outside them changes. Later runs without options keep the block current, and when it is absent they end with a one-line reminder. Plugin users and other clients can run the helper directly, for example `python3 skills/rumo-coding-guidelines/scripts/baseline_block.py --target ~/.claude/CLAUDE.md --install`, or paste the block from [agents-snippet.md](skills/rumo-coding-guidelines/references/agents-snippet.md) by hand.
+
+### Update
+
+Installer: rerun it without `-NoPull` (`--no-pull`). It runs `git pull --ff-only` first, then relinks, keeping installed extras and the baseline block. Start a new session afterwards.
+
+```powershell
+.\install.ps1
+```
+
+```bash
+./install.sh
+```
+
+Plugin: run `claude plugin marketplace update rumo-engineering-skills`, then `claude plugin update rumo-engineering-skills@rumo-engineering-skills`, and start a new session.
+
+### Uninstall
+
+Installer: add `-DryRun` (`--dry-run`) first to see what would go. Uninstall removes only the `rumo-*` links into this repository and the always-on baseline block, and leaves skills from other sources alone. It keeps the cloned repository, `~/.rumo-engineering-skills/config.json`, and project profiles; delete those by hand when you no longer need them.
+
+```powershell
+.\install.ps1 -Uninstall
+```
+
+```bash
+./install.sh --uninstall
+```
+
+Do not delete `rumo-*` links in File Explorer or with `Remove-Item -Recurse`: those can follow the link and delete the skill files inside the repository.
+
+Plugin: run `claude plugin uninstall rumo-engineering-skills@rumo-engineering-skills`, then start a new session.
 
 ## Project Profiles
 
