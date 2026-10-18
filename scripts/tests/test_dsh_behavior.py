@@ -118,7 +118,7 @@ class IsolationTest(unittest.TestCase):
 
 
 class RunCaseTest(unittest.TestCase):
-    def run_with(self, make_events, name: str, without_skills: bool, moves: bool = False) -> tuple[dict, list]:
+    def run_with(self, make_events, name: str, without_skills: bool, moves: str | None = None) -> tuple[dict, list]:
         calls = []
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -133,9 +133,12 @@ class RunCaseTest(unittest.TestCase):
                 prefix.with_suffix(".jsonl").write_text("\n".join(json.dumps(e) for e in events), encoding="utf-8")
                 return 0, False
 
-            states = iter([{"x": "1"}, {"x": "2" if moves else "1"}])
+            before = {"home": {"a": ["file", 1]}, "workspace": {"HEAD": "h"}}
+            after = {**before, **({moves: {**before[moves], " M notes.md": ""}} if moves else {})}
+            states = iter([before, after])
             args = argparse.Namespace(output_dir=root / "results", snapshot=snapshot, dsh_root=root / "dsh", key="sk-fake",
-                                      api_key_file=root / "key" / "k.txt", timeout=10, without_skills=without_skills)
+                                      api_key_file=root / "key" / "k.txt", timeout=10, without_skills=without_skills,
+                                      watch_shallow=[Path("workspace")])
             with patch("scripts.run_dsh_behavior.run_turn", side_effect=fake_turn), \
                  patch("scripts.run_dsh_behavior.sentinel", side_effect=lambda _: next(states)):
                 return run_case(args, name), calls
@@ -160,8 +163,13 @@ class RunCaseTest(unittest.TestCase):
     def test_session_outside_sample_or_moved_sentinel_is_invalid(self) -> None:
         elsewhere = self.run_with(lambda s: [session("C:/elsewhere"), *done("C:/elsewhere")], "withdraw-existing", without_skills=True)[0]
         self.assertEqual(elsewhere["evidence_status"], "invalid")
-        result = self.run_with(lambda s: [session(str(s)), *done(str(s))], "withdraw-existing", without_skills=True, moves=True)[0]
-        self.assertEqual((result["evidence_status"], result["sentinel_moved"]), ("invalid", ["x"]))
+        result = self.run_with(lambda s: [session(str(s)), *done(str(s))], "withdraw-existing", without_skills=True, moves="home")[0]
+        self.assertEqual((result["evidence_status"], result["sentinel_moved"]), ("invalid", ["home"]))
+
+    def test_user_edits_in_advisory_locations_are_recorded_not_fatal(self) -> None:
+        result = self.run_with(lambda s: [session(str(s)), *done(str(s))], "withdraw-existing", without_skills=True, moves="workspace")[0]
+        self.assertEqual((result["evidence_status"], result["sentinel_moved"]), ("valid", []))
+        self.assertEqual(result["concurrent_changes"], {"workspace": [" M notes.md"]})
 
     def test_shared_case_checks_apply(self) -> None:
         result = self.run_with(lambda s: [session(str(s)), *call("skill", {"name": "rumo-filesystem-safety"}), *done(str(s))],

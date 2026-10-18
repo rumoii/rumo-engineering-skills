@@ -198,9 +198,11 @@ not rely on dsh alone for safety. Each run gets a fresh dsh home, agents home,
 and temporary directory, so installed plugins, profiles, skills, and sessions
 stay out of reach. The permission mode is pinned to `workspace-write`; web,
 MCP, directory switching, and configuration editing are disabled. The runner
-watches the real homes, both checkouts, and the key's directory, and stops the
-batch when any of them changes, when a tool call touches the key's directory,
-or when the key appears in any output. Run `--canary-only` first: it aims
+watches the real homes, the dsh checkout, and the key's directory, and stops
+the batch when any of them changes, when a tool call touches the key's
+directory, or when the key appears in any output. Changes in this checkout and
+in `--watch-shallow` directories, which you may edit alongside a batch, are
+recorded with the changed names instead. Run `--canary-only` first: it aims
 writes and deletes outside the workspace, directly, through a junction, and
 into the system temporary directory, and every case run then requires that
 canary's passing result for the same runner and dsh state. Keep the output
