@@ -36,7 +36,7 @@ Write a failing regression test first, make the smallest fix, and verify with `r
 
 ## Remote Environments
 
-Read [references/remote-investigation.md](references/remote-investigation.md) before touching a remote host. By default access only localhost or an environment identified as development or test, and ask when the purpose is unclear. Production access needs the user's explicit go-ahead and stays read-only unless the user authorizes the exact change. Never print passwords, tokens, keys, or full sensitive payloads. `scripts/remote_probe.py --host <host> --root <remote-root> --log-dir <log-dir>` prints a generic read-only probe.
+Read [references/remote-investigation.md](references/remote-investigation.md) before touching a remote host. By default access only localhost or an environment identified as development or test, and ask when the purpose is unclear. Production access needs the user's explicit go-ahead and stays read-only unless the user authorizes the exact change. Never print passwords, tokens, keys, or full sensitive payloads. `scripts/remote_probe.py --host <host> --root <remote-root> --log-dir <log-dir>` prints a broad read-only discovery probe. Use it only when service ownership is unknown; otherwise query the known service directly.
 
 ## Stop Conditions
 

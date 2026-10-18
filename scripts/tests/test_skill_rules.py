@@ -34,6 +34,7 @@ RULES = {
         "Respect the user's explicit budget",
         "stays read-only unless the user authorizes the exact change",
         "Keep source reasoning separate from runtime proof.",
+        "Use it only when service ownership is unknown",
     ),
     "rumo-filesystem-safety": (
         "Use the light path only when every one of these holds",
@@ -175,6 +176,7 @@ REFERENCE_RULES = {
         "Do not let the script apply fixes.",
     ),
     "rumo-debug/references/remote-investigation.md": (
+        "Choose process, listener, or container queries only when the symptom requires them.",
         "Stop and report the boundary when the environment purpose is unclear, credentials are unavailable, a query would require writes",
     ),
 }
