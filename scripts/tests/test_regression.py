@@ -102,7 +102,8 @@ class CliTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp:
             (Path(temp) / "snap" / "skills").mkdir(parents=True)
-            out = Path(temp) / "out"
+            # main() resolves --output-dir; a Windows temp path may be an 8.3 short name that resolves to the long one.
+            out = (Path(temp) / "out").resolve()
             argv = ["run_regression.py", "--candidate", str(Path(temp) / "snap"), "--baseline", "without", "--reps", "1",
                     "--case", "withdraw-existing", "--output-dir", str(out)]
             with patch.object(sys, "argv", argv), patch("scripts.run_regression.invoke", side_effect=through_runner), \
