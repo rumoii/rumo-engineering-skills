@@ -294,6 +294,30 @@ class VerifySkillsTest(unittest.TestCase):
         invalid.write_text('{"broken":\n', encoding="utf-8")
         self.assert_error_contains("invalid UTF-8 JSON")
 
+    def write_plugin(self, version: str, changelog: str | None) -> None:
+        (self.repo_root / ".claude-plugin").mkdir()
+        (self.repo_root / ".claude-plugin" / "plugin.json").write_text(
+            f'{{"name": "fixture", "version": "{version}"}}\n', encoding="utf-8"
+        )
+        if changelog is not None:
+            (self.repo_root / "CHANGELOG.md").write_text(changelog, encoding="utf-8")
+
+    def test_accepts_plugin_version_with_changelog_section(self) -> None:
+        self.write_plugin("1.2.0", "# Changes\n\n## 1.2.0 - 2026-01-01\n\n- First.\n")
+        self.assertEqual(validate_repository(self.repo_root), [])
+
+    def test_rejects_plugin_version_without_changelog_section(self) -> None:
+        self.write_plugin("1.3.0", "# Changes\n\n## 1.2.0 - 2026-01-01\n\n- See 1.3.0 later.\n")
+        self.assert_error_contains("add a '## 1.3.0' section")
+
+    def test_rejects_plugin_version_without_changelog(self) -> None:
+        self.write_plugin("1.3.0", None)
+        self.assert_error_contains("add a '## 1.3.0' section")
+
+    def test_rejects_non_semver_plugin_version(self) -> None:
+        self.write_plugin("v1", "## v1\n")
+        self.assert_error_contains("version must be a semantic version")
+
     def add_extra(self, name: str = "rumo-optional") -> Path:
         extra_dir = self.repo_root / "extras" / name
         extra_dir.mkdir(parents=True)

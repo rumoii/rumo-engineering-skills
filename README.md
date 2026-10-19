@@ -201,7 +201,7 @@ clarify -> plan -> test -> verify -> review -> git-commit
 ./install.sh
 ```
 
-插件：先执行 `claude plugin marketplace update rumo-engineering-skills`，再执行 `claude plugin update rumo-engineering-skills@rumo-engineering-skills`，然后开新会话。
+插件：先执行 `claude plugin marketplace update rumo-engineering-skills`，再执行 `claude plugin update rumo-engineering-skills@rumo-engineering-skills`，然后开新会话。已装的插件只在 `version` 提升(即发版)后才会更新，两次发版之间推到 main 的改动要等下一版；每版改了什么见 [CHANGELOG.md](CHANGELOG.md)。
 
 ### 卸载
 

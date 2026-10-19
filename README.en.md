@@ -201,7 +201,7 @@ Installer: rerun it without `-NoPull` (`--no-pull`). It runs `git pull --ff-only
 ./install.sh
 ```
 
-Plugin: run `claude plugin marketplace update rumo-engineering-skills`, then `claude plugin update rumo-engineering-skills@rumo-engineering-skills`, and start a new session.
+Plugin: run `claude plugin marketplace update rumo-engineering-skills`, then `claude plugin update rumo-engineering-skills@rumo-engineering-skills`, and start a new session. An installed plugin updates only when its `version` changes at a release; commits pushed to main between releases wait for the next one. See [CHANGELOG.md](CHANGELOG.md) for what each version changed.
 
 ### Uninstall
 

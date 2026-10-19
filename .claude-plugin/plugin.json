@@ -1,5 +1,6 @@
 {
   "name": "rumo-engineering-skills",
+  "version": "0.4.0",
   "description": "Engineering workflow and safety skills: clarify, plan, coding guidelines, test, debug, verify, review, commit, interfaces, lifecycle, database, filesystem, remote operations, prose, frontend, handoff, and project profiles.",
   "author": {
     "name": "rumoii"

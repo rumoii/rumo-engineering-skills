@@ -29,6 +29,7 @@ H2_RE = re.compile(r"^## +(.+?)\s*$", re.MULTILINE)
 MAX_NAME_LENGTH = 64
 MAX_DESCRIPTION_LENGTH = 1024
 MAX_DEFAULT_SKILL_LINES = 150
+SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$")
 FORBIDDEN_TERMS_ENV = "RUMO_FORBIDDEN_TERMS_FILE"
 FORBIDDEN_SECRET_PATTERNS = (
     re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----"),
@@ -394,6 +395,7 @@ def validate_repository(
     validate_markdown_links(repo_root, markdown_files, errors)
 
     validate_json_files(candidate_files, errors)
+    validate_plugin_version(repo_root, errors)
 
     for path in candidate_files:
         if not path.is_file() or ".git" in path.parts or "node_modules" in path.parts:
@@ -481,6 +483,25 @@ def validate_json_files(candidate_files: list[Path], errors: list[str]) -> None:
             json.loads(path.read_text(encoding="utf-8"))
         except (OSError, UnicodeError, json.JSONDecodeError) as exc:
             errors.append(f"{path}: invalid UTF-8 JSON: {exc}")
+
+
+
+def validate_plugin_version(repo_root: Path, errors: list[str]) -> None:
+    """Plugin users update only when the version changes, so each version needs a changelog entry."""
+    manifest = repo_root / ".claude-plugin" / "plugin.json"
+    if not manifest.is_file():
+        return
+    try:
+        version = json.loads(manifest.read_text(encoding="utf-8")).get("version")
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return
+    if not isinstance(version, str) or not SEMVER_RE.fullmatch(version):
+        errors.append(f"{manifest}: version must be a semantic version such as 1.2.3")
+        return
+    changelog = repo_root / "CHANGELOG.md"
+    text = changelog.read_text(encoding="utf-8") if changelog.is_file() else ""
+    if not re.search(rf"^## \[?{re.escape(version)}\]?(?:\s|$)", text, re.MULTILINE):
+        errors.append(f"{changelog}: add a '## {version}' section for the plugin version")
 
 
 def main() -> int:

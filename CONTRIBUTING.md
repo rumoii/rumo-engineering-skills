@@ -218,6 +218,14 @@ words `candidate` or `baseline`, or a case name. Decide whether a step
 happened from the transcript or event stream, never from the agent's own
 account of it.
 
+## Releases
+
+Claude Code plugin users receive an update only when `version` in
+`.claude-plugin/plugin.json` changes. For each release, raise that version,
+move the `CHANGELOG.md` entries under the new version's heading, and tag the
+final commit `v<version>`. `scripts/verify_skills.py` fails when the plugin
+version has no matching `## <version>` section in `CHANGELOG.md`.
+
 ## Issues and pull requests
 
 - Open issues through the [issue forms](https://github.com/rumoii/rumo-engineering-skills/issues/new/choose):
