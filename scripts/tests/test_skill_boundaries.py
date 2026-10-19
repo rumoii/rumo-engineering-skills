@@ -143,6 +143,14 @@ class SkillBoundariesTest(unittest.TestCase):
                     "to at least one frontmatter description.",
                 )
 
+    def test_failing_pull_request_checks_go_to_git_commit(self) -> None:
+        # rumo-verify also owns "diagnosing a CI check", so it must hand an open
+        # pull request's failing checks to rumo-git-commit and its pr-checks rules.
+        verify = read_description(REPO_ROOT / "skills" / "rumo-verify" / "SKILL.md")
+        self.assertRegex(verify, r"failing checks on an open pull request, use rumo-git-commit instead")
+        commit = read_description(REPO_ROOT / "skills" / "rumo-git-commit" / "SKILL.md")
+        self.assertRegex(commit, r"watch or fix the CI checks of an open pull request")
+
     def test_merged_skill_descriptions_cover_every_mode(self) -> None:
         for skill, patterns in MODE_TRIGGERS.items():
             description = read_description(REPO_ROOT / "skills" / skill / "SKILL.md")

@@ -1,6 +1,6 @@
 ---
 name: rumo-git-commit
-description: Use when the user explicitly asks to commit, tag, release, push, clean up history, land a worktree or feature branch, or open or update a pull request. Follow repository conventions for branch selection, commit language, message format, verification, and release versioning. Do not use merely because work is finished; without an explicit request, stop after rumo-verify.
+description: Use when the user explicitly asks to commit, tag, release, push, clean up history, land a worktree or feature branch, open or update a pull request, or watch or fix the CI checks of an open pull request. Follow repository conventions for branch selection, commit language, message format, verification, and release versioning. Do not use merely because work is finished; without an explicit request, stop after rumo-verify.
 ---
 
 # Git Commit
@@ -50,6 +50,8 @@ Open or update a pull request only when the user asks.
 - Write the body in four parts: why the change is needed, what behavior changes, the verification actually run (taken from the `rumo-verify` report), and risks, rollback, and boundaries not verified.
 - Add signatures, trailers, labels, and reviewers only as the repository convention or the user requires. Never merge it automatically, and do not edit someone else's pull request.
 - Use the hosting platform's CLI or web interface; when neither is available, give the user the title and body to paste.
+
+When the user asks to watch or fix the checks of an open pull request, read [references/pr-checks.md](references/pr-checks.md) first. Watching reports results only. A request to fix covers local fixes; committing and pushing them still need the user's explicit request, as above. Neither merges nor marks the pull request ready.
 
 ## Release
 

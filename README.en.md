@@ -130,7 +130,7 @@ Installed by default.
 | `rumo-debug` | Reproduce, localize, and prove a root cause; read-only unless the fix is requested |
 | `rumo-verify` | Exact change scope and the smallest sufficient checks before claiming done; building repository gates |
 | `rumo-review` | Read-only diff review or named-scope audit, an explicit review-fix loop, a simplification audit, addressing review feedback, or, with your consent, a cross-model review through another installed CLI |
-| `rumo-git-commit` | Commits, branch landing, history cleanup, releases, pushes, and pull requests following repository conventions |
+| `rumo-git-commit` | Commits, branch landing, history cleanup, releases, pushes, pull requests, and following an open pull request's CI checks, per repository conventions |
 | `rumo-interface` | Compatible evolution of APIs, messages, configuration, and stored formats, with HTTP contract checks |
 | `rumo-lifecycle-safety` | Ownership, retry, cancellation, timeout, shutdown, and cleanup for long-lived work |
 | `rumo-database-change-safety` | Authorized, backed-up, bounded, and reversible database writes |

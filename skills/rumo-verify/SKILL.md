@@ -1,6 +1,6 @@
 ---
 name: rumo-verify
-description: Use before claiming work is done, marking it ready, committing for handoff, or pushing, and when asked to verify a change; establish the exact committed and dirty change scope, run the smallest sufficient checks, and report only commands actually run. Also use when adding, changing, reviewing, or diagnosing a repository-owned CI check, static verifier, generated-file check, pre-commit rule, or aggregate test entry point. Never commits, pushes, deploys, or changes remote systems; do not use for test planning before implementation, or for a semantic code review (use rumo-review instead).
+description: Use before claiming work is done, marking it ready, committing for handoff, or pushing, and when asked to verify a change; establish the exact committed and dirty change scope, run the smallest sufficient checks, and report only commands actually run. Also use when adding, changing, reviewing, or diagnosing a repository-owned CI check, static verifier, generated-file check, pre-commit rule, or aggregate test entry point. Never commits, pushes, deploys, or changes remote systems; do not use for test planning before implementation, or for a semantic code review (use rumo-review instead). For failing checks on an open pull request, use rumo-git-commit instead.
 ---
 
 # Rumo Verify

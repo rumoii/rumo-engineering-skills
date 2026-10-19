@@ -130,7 +130,7 @@ clarify -> plan -> test -> verify -> review -> git-commit
 | `rumo-debug` | 复现、定位并用证据证明根因；除非请求包含修复，否则只读 |
 | `rumo-verify` | 声称完成前确定真实改动范围并跑最小充分检查；建设仓库门禁 |
 | `rumo-review` | 只读评审差异或审计指定范围的现存问题；明确要求时进入修复循环、做可删复杂度审计、处理评审意见，或经你同意后调用本机另一个 CLI 跨模型复审 |
-| `rumo-git-commit` | 按仓库约定提交、合入分支、整理历史、发布、推送与开 PR |
+| `rumo-git-commit` | 按仓库约定提交、合入分支、整理历史、发布、推送、开 PR，以及跟进已开 PR 的 CI 检查 |
 | `rumo-interface` | API、消息、配置和持久化格式的兼容演进，含 HTTP 契约检查 |
 | `rumo-lifecycle-safety` | 长期运行任务的归属、重试、取消、超时、关闭与资源清理 |
 | `rumo-database-change-safety` | 经授权、有备份、影响有界且可回滚的数据库写入 |

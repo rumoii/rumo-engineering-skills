@@ -59,6 +59,7 @@ RULES = {
         "Open or update a pull request only when the user asks.",
         "Never merge it automatically",
         "require a preview and explicit confirmation",
+        "A request to fix covers local fixes; committing and pushing them still need the user's explicit request",
     ),
     "rumo-handoff": (
         "Verify each fact now; do not copy it from memory.",
@@ -185,6 +186,13 @@ REFERENCE_RULES = {
     ),
     "rumo-review/references/judging-findings.md": (
         "Security, data-loss, and correctness findings get a full check even when only one reviewer raised them",
+    ),
+    "rumo-git-commit/references/pr-checks.md": (
+        "A request to watch only reports results: no reruns, edits, commits, or pushes.",
+        "otherwise stop after local verification and report what is ready to push",
+        "Never edit an assertion only to make it pass, skip hooks, mark a required check optional, or disable a test to get green.",
+        "Rerun that job once; a second failure makes it a real failure.",
+        "stop and report instead of overwriting",
     ),
     "rumo-debug/references/remote-investigation.md": (
         "Choose process, listener, or container queries only when the symptom requires them.",
