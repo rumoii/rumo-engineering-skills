@@ -114,6 +114,7 @@ RULES = {
         "For a named-scope audit, report existing actionable issues inside that scope",
         "A guarantee you cannot see elsewhere is an open question attached to the finding, not a reason to withhold it.",
         "Each finding names the repository, file and line, the consequence, the triggering condition, and the evidence.",
+        "nothing is sent to another CLI until the user agrees",
     ),
     "rumo-test": (
         "watch it fail because the behavior is missing",
@@ -174,6 +175,16 @@ REFERENCE_RULES = {
     ),
     "rumo-review/references/codex-app-server.md": (
         "Do not let the script apply fixes.",
+    ),
+    "rumo-review/references/other-cli.md": (
+        "Never start another CLI on your own.",
+        "Run only after the user agrees to that CLI and that content.",
+        "Without a read-only setting you have confirmed, do not use that CLI.",
+        "It is not evidence that the change has no findings.",
+        "Never sign in, copy credentials, or change the CLI's configuration on the user's behalf.",
+    ),
+    "rumo-review/references/judging-findings.md": (
+        "Security, data-loss, and correctness findings get a full check even when only one reviewer raised them",
     ),
     "rumo-debug/references/remote-investigation.md": (
         "Choose process, listener, or container queries only when the symptom requires them.",

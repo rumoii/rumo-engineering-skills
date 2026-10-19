@@ -14,7 +14,7 @@ Every skill uses the `rumo-` namespace and stays independent of any company, pro
 | `rumo-test` | Evidence planning, test-first implementation, and high-assurance spec and evidence |
 | `rumo-debug` | Reproduce, localize, and prove a root cause; read-only by default |
 | `rumo-verify` | Exact change scope and smallest sufficient checks; repository gates |
-| `rumo-review` | Read-only diff review or named-scope audit, explicit review-fix loop, simplification audit, or responding to feedback |
+| `rumo-review` | Read-only diff review or named-scope audit, explicit review-fix loop, simplification audit, responding to feedback, or a consented review through another CLI |
 | `rumo-git-commit` | Commit, branch landing, history cleanup, release, push, and pull request workflow |
 | `rumo-interface` | Compatible interface and stored-format evolution, with HTTP contract checks |
 | `rumo-lifecycle-safety` | Ownership, retry, cancellation, timeout, shutdown, and cleanup |

@@ -18,6 +18,8 @@ Lead with actionable findings, not a tour of the diff.
 
 Review (default) and Simplify modes never edit code; only Loop and Respond do, and only on an explicit request.
 
+When the user asks for a second opinion from a different model or CLI, read [references/other-cli.md](references/other-cli.md); nothing is sent to another CLI until the user agrees.
+
 ## Settle The Target
 
 1. Read the repository guidance and the nearest module instructions.
@@ -52,7 +54,7 @@ When the target is a CI job, verifier, threshold, or other gate, also apply the 
 
 ## Respond To Feedback
 
-1. Check each comment against the code: is the problem real, and is it inside the reviewed change?
+1. Check each comment against the code: is the problem real, and is it inside the reviewed change? Read [references/judging-findings.md](references/judging-findings.md) before dismissing or accepting comments from a person, bot, or another model.
 2. Sort each one: fix; decline with evidence (file, line, test, or documentation); needs clarification; or out of scope, recorded but not fixed now. Order the fixes with the must-fix and consider buckets in [references/loop.md](references/loop.md).
 3. Ask about unclear comments first; hold the edits that depend on them and continue with the rest.
 4. Fix in severity order, add a regression test for behavior findings, and verify with `rumo-verify`.
