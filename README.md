@@ -153,6 +153,7 @@ clarify -> plan -> test -> verify -> review -> git-commit
 | `rumo-daily-report` | 按日期文本文件增量生成中文日报(仅手动调用) |
 | `rumo-linux-inspect` | 只读采集 Linux 硬件配置或巡检内存(仅手动调用) |
 | `rumo-imagegen` | 通过用户自配的 OpenAI 兼容接口生成单张图片(仅手动调用) |
+| `rumo-reflect` | 复盘当前会话的反复错误与纠正，逐条讨论该固化到哪里，你批准后才改 |
 
 ```powershell
 .\install.ps1 -NoPull -ListExtras

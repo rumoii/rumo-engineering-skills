@@ -19,6 +19,7 @@ RULES = {
         'never substitute "should work"',
         "A high-assurance final run is always a fresh run after the last edit",
         "Only after the user agrees, add it to their `AGENTS.md` or `CLAUDE.md`",
+        "Do not start the review or edit any skill or instruction file unless the user accepts.",
     ),
     "rumo-database-change-safety": (
         "Start read-only.",
@@ -200,6 +201,16 @@ REFERENCE_RULES = {
     ),
 }
 
+# Optional skills under extras/ whose rules guard the user's authority.
+EXTRA_RULES = {
+    "rumo-reflect": (
+        "Then stop and wait.",
+        "Apply only items the user explicitly accepts",
+        "never open issues, tickets, or notes on your own",
+        "Do not invent lessons to fill the table.",
+    ),
+}
+
 # Each always-on snippet bullet must restate a rule a skill already owns, so the
 # pasted copy cannot grow rules of its own. Keys match the bullet; values are
 # (skill, phrase in that skill's body).
@@ -211,6 +222,7 @@ SNIPPET_SOURCES = {
     "No speculative abstractions, drive-by refactors": ("rumo-coding-guidelines", "Do not reformat, rename, reorder, or refactor neighboring code."),
     "load rumo-test and apply its risk gate": ("rumo-coding-guidelines", "load the `rumo-test` skill and apply its high-assurance risk gate before editing"),
     "use rumo-verify before handing back": ("rumo-coding-guidelines", "Use `rumo-verify` before claiming the change is ready."),
+    "offer once to review the session": ("rumo-coding-guidelines", "end with a one-line offer to review the session for lessons, at most once per session"),
 }
 SNIPPET_INDEX_PREFIXES = ("- Flow:", "- Full rules:")
 
@@ -239,6 +251,13 @@ class SkillRulesTest(unittest.TestCase):
             for rule in rules:
                 with self.subTest(reference=reference, rule=rule):
                     self.assertTrue(rule in text, f"{reference}: pinned rule missing")
+
+    def test_pinned_extra_rules_remain(self) -> None:
+        for skill, rules in EXTRA_RULES.items():
+            text = " ".join((REPO_ROOT / "extras" / skill / "SKILL.md").read_text(encoding="utf-8").split())
+            for rule in rules:
+                with self.subTest(skill=skill, rule=rule):
+                    self.assertTrue(rule in text, f"{skill}: pinned rule missing")
 
 
 class AlwaysOnSnippetTest(unittest.TestCase):

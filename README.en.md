@@ -153,6 +153,7 @@ Not installed by default, and available only through the installer; the plugin h
 | `rumo-daily-report` | Incremental Chinese daily reports in a dated text file (manual only) |
 | `rumo-linux-inspect` | Read-only Linux hardware inventory or memory inspection (manual only) |
 | `rumo-imagegen` | One image through a user-configured OpenAI-compatible endpoint (manual only) |
+| `rumo-reflect` | Session retrospective: recurring mistakes and corrections, each fix discussed and applied only with your approval |
 
 ```powershell
 .\install.ps1 -NoPull -ListExtras

@@ -10,6 +10,7 @@ Clients load a skill only when its description matches the request, so small edi
 - No speculative abstractions, drive-by refactors, or reformatting of neighboring code.
 - Before changing money, auth, migrations, durable data, concurrency, public interfaces, or irreversible effects, load rumo-test and apply its risk gate.
 - Never claim done without fresh evidence; use rumo-verify before handing back.
+- After repeated user corrections, offer once to review the session for lessons; start only if the user accepts.
 - Flow: rumo-clarify for unclear asks, rumo-plan for multi-step work, rumo-test, rumo-verify, rumo-review, and rumo-git-commit only on request. Guardrails: rumo-database-change-safety, rumo-filesystem-safety, rumo-remote-ops, rumo-interface, rumo-lifecycle-safety.
 - Full rules: the rumo-coding-guidelines skill.
 ```

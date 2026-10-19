@@ -62,3 +62,4 @@ Treat review, explanation, and monitoring requests as read-only until the user a
 - No unrequested abstraction, option, or capability slipped in.
 - Existing dependencies and patterns were checked before custom code was added.
 - When handing back changed work, the final message separates what changed, what was verified, and what remains unverified or blocked. A read-only or planning turn reports what it found and what the user must decide next.
+- When the user corrected you twice or more in this task, or the same kind of mistake recurred, end with a one-line offer to review the session for lessons, at most once per session. Do not start the review or edit any skill or instruction file unless the user accepts. Use the `rumo-reflect` skill for the review when it is installed; otherwise list the lessons and change nothing without approval.

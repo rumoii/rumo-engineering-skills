@@ -36,3 +36,4 @@ Every skill uses the `rumo-` namespace and stays independent of any company, pro
 | `rumo-daily-report` | Incremental Chinese daily reports (manual only) |
 | `rumo-linux-inspect` | Read-only Linux hardware inventory or memory inspection (manual only) |
 | `rumo-imagegen` | One image through a configured OpenAI-compatible endpoint (manual only) |
+| `rumo-reflect` | Session retrospective that proposes where to fix recurring mistakes and applies only approved items |
