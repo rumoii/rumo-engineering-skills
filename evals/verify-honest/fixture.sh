@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 git init -q
-git config user.email eval@example.invalid
-git config user.name eval
+git config user.email sam@example.invalid
+git config user.name "Sam Lee"
 cat > cart.py <<'PY'
 def total(items):
     return sum(item["price"] * item["qty"] for item in items)

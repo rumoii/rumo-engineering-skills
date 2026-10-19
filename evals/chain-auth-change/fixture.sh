@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 git init -q
-git config user.email eval@example.invalid
-git config user.name eval
+git config user.email sam@example.invalid
+git config user.name "Sam Lee"
 mkdir -p orders tests
 touch orders/__init__.py tests/__init__.py
 cat > orders/service.py <<'PY'

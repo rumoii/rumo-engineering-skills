@@ -116,5 +116,25 @@ class TriggerEvalsTest(unittest.TestCase):
         self.assertNotRegex("services/refund.py:7 缺少正数校验以外的问题未发现。", pattern)
 
 
+
+class BlindCasesTest(unittest.TestCase):
+    """What the model sees must not reveal that it is being graded."""
+
+    WORDS = re.compile(r"\b(?:benchmark|evals?|evaluation|fixtures?|graders?|judge|rubric)\b", re.I)
+
+    def test_prompts_name_no_evaluation(self) -> None:
+        for prompt in sorted(EVALS_ROOT.glob("*/prompt.md")):
+            with self.subTest(case=prompt.parent.name):
+                body = prompt.read_text(encoding="utf-8").split("\n---\n", 1)[1]
+                self.assertIsNone(self.WORDS.search(body))
+
+    def test_scaffold_git_metadata_names_no_evaluation(self) -> None:
+        for script in sorted(EVALS_ROOT.glob("*/fixture.sh")):
+            with self.subTest(case=script.parent.name):
+                for line in script.read_text(encoding="utf-8").splitlines():
+                    if re.match(r"\s*git (?:config user\.|commit)", line):
+                        self.assertIsNone(self.WORDS.search(line), line)
+
+
 if __name__ == "__main__":
     unittest.main()

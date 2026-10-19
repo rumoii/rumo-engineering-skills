@@ -17,6 +17,7 @@ import subprocess
 import tarfile
 import time
 import tomllib
+import uuid
 
 try:
     from .codex_behavior_cases import CASES
@@ -39,6 +40,25 @@ def file_state(root: Path) -> dict[str, str]:
 
 def git(root: Path, *args: str) -> str:
     return subprocess.check_output(["git", "-C", str(root), *args], text=True, encoding="utf-8").strip()
+
+
+# A model that can tell it is being graded behaves unlike one doing real work, so
+# the path it works in names neither the case nor the evaluation.
+BLIND_WORDS = {"baseline", "benchmark", "candidate", "eval", "evals", "evaluation", "fixture", "fixtures",
+               "grader", "graders", "judge", "rubric", "test", "tests", "testing"}
+SAMPLE_AUTHOR = ("-c", "user.name=Sam Lee", "-c", "user.email=sam@example.invalid")
+
+
+def leaked_words(path: Path, case_names: object = ()) -> list[str]:
+    """Evaluation words and case names that appear in a path the model can see."""
+    tokens = {token for part in path.parts for token in re.split(r"[^a-z0-9]+", part.lower())}
+    text = path.as_posix().lower()
+    return sorted((tokens & BLIND_WORDS) | {name for name in case_names if name.lower() in text})
+
+
+def blind_workspace(workspace_root: Path) -> Path:
+    """Working copy under the workspace root, apart from the case's logs, named only by a random token."""
+    return workspace_root / "w" / uuid.uuid4().hex[:8] / "project"
 
 
 def seed(root: Path, snapshot: Path, case: dict, with_skills: bool = True) -> None:
@@ -68,8 +88,8 @@ def seed(root: Path, snapshot: Path, case: dict, with_skills: bool = True) -> No
         finally:
             db.close()
     git(root, "init", "-q")
-    git(root, "-c", "user.name=Behavior fixture", "-c", "user.email=fixture@example.invalid", "add", ".")
-    git(root, "-c", "user.name=Behavior fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "Seed local sample")
+    git(root, *SAMPLE_AUTHOR, "add", ".")
+    git(root, *SAMPLE_AUTHOR, "commit", "-qm", "Seed local sample")
     for name, content in case.get("dirty", {}).items():
         (root / name).write_text(content, encoding="utf-8")
     for link, target in case.get("links", {}).items():
@@ -96,8 +116,8 @@ def seed_from_commit(root: Path, snapshot: Path, case: dict, with_skills: bool =
     ignore = root / ".gitignore"
     ignore.write_text((ignore.read_text(encoding="utf-8") + "\n" if ignore.exists() else "") + ".agents/\n", encoding="utf-8")
     git(root, "init", "-q")
-    git(root, "-c", "user.name=Behavior fixture", "-c", "user.email=fixture@example.invalid", "add", ".")
-    git(root, "-c", "user.name=Behavior fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", f"Seed {case['commit']}")
+    git(root, *SAMPLE_AUTHOR, "add", ".")
+    git(root, *SAMPLE_AUTHOR, "commit", "-qm", f"Seed {case['commit']}")
     if not case.get("dirty_commit"):
         return
     changes = git(Path(case["repo"]), "diff", "--no-renames", "--name-status", "-z", case["commit"], case["dirty_commit"]).split("\0")
@@ -284,7 +304,7 @@ def run_case(args: argparse.Namespace, name: str, overrides: list[dict], setting
     case = CASES[name]
     out = args.output_dir / name
     out.mkdir(parents=True, exist_ok=False)
-    root = out / "sample"
+    root = blind_workspace(getattr(args, "workspace_root", None) or args.output_dir)
     with_skills = not getattr(args, "without_skills", False)
     seed(root, args.snapshot, case, with_skills)
     before = file_state(root)
@@ -340,7 +360,7 @@ def run_case(args: argparse.Namespace, name: str, overrides: list[dict], setting
         )
     case_checks(checks, name, case, root, changed, head, observed["commands"])
     result = {
-        "case": name, "snapshot": str(args.snapshot), "with_skills": with_skills, "settings": settings, "runs": runs,
+        "case": name, "workspace": str(root), "snapshot": str(args.snapshot), "with_skills": with_skills, "settings": settings, "runs": runs,
         "evidence_status": "valid" if valid else "invalid", "mechanical_checks": checks,
         "changed_files": changed, "before": before, "after": after,
         "observed": observed, "review_verdict": "pending", "acceptance": case["rubric"],
@@ -381,6 +401,7 @@ def main() -> int:
     parser.add_argument("--case", action="append", choices=sorted(CASES))
     parser.add_argument("--timeout", type=int, default=600, help="Overall seconds per case, across its turns.")
     parser.add_argument("--without-skills", action="store_true", help="Baseline arm: no skills in the sample or the prompt.")
+    parser.add_argument("--workspace-root", type=Path, help="Where working copies go; default --output-dir. The model sees this path.")
     args = parser.parse_args()
     args.snapshot = args.snapshot.resolve()
     args.output_dir = args.output_dir.resolve()
@@ -389,6 +410,9 @@ def main() -> int:
     repo = Path(__file__).resolve().parents[1]
     if args.output_dir.is_relative_to(repo) or args.output_dir.is_relative_to(args.snapshot):
         parser.error("Evidence must be outside the source checkout and snapshot.")
+    args.workspace_root = (args.workspace_root or args.output_dir).resolve()
+    if leaked_words(args.workspace_root, CASES):
+        parser.error(f"The model sees the workspace root's path; rename it without: {', '.join(leaked_words(args.workspace_root, CASES))}.")
     args.codex = shutil.which(args.codex) or args.codex
     overrides, settings = skill_overrides()
     args.output_dir.mkdir(parents=True, exist_ok=False)

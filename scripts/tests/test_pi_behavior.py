@@ -72,7 +72,8 @@ class RunCaseTest(unittest.TestCase):
 
             def fake_turn(command, prompt, sample, prefix, timeout):
                 prompts.append(prompt)
-                self.assertEqual(sample.name, "sample")
+                self.assertEqual(sample.name, "project")
+                self.assertNotIn("withdraw-existing", str(sample))
                 prefix.with_suffix(".jsonl").write_text("\n".join(json.dumps(e) for e in events), encoding="utf-8")
                 return 0, False
 

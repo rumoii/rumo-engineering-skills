@@ -13,9 +13,9 @@ import shutil
 import subprocess
 
 try:
-    from .run_codex_behavior import evidence, file_state, git, read_events, run_turn, skill_overrides, toml_overrides, write_json
+    from .run_codex_behavior import SAMPLE_AUTHOR, blind_workspace, evidence, file_state, git, leaked_words, read_events, run_turn, skill_overrides, toml_overrides, write_json
 except ImportError:
-    from run_codex_behavior import evidence, file_state, git, read_events, run_turn, skill_overrides, toml_overrides, write_json
+    from run_codex_behavior import SAMPLE_AUTHOR, blind_workspace, evidence, file_state, git, leaked_words, read_events, run_turn, skill_overrides, toml_overrides, write_json
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -77,14 +77,14 @@ def seed_trigger(root: Path, snapshot: Path) -> None:
     (root / ".gitignore").write_text(".agents/\n", encoding="utf-8")
     (root / "AGENTS.md").write_text(SAMPLE_AGENTS, encoding="utf-8")
     git(root, "init", "-q")
-    git(root, "-c", "user.name=Trigger fixture", "-c", "user.email=fixture@example.invalid", "add", ".")
-    git(root, "-c", "user.name=Trigger fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "Seed trigger sample")
+    git(root, *SAMPLE_AUTHOR, "add", ".")
+    git(root, *SAMPLE_AUTHOR, "commit", "-qm", "Seed trigger sample")
 
 
 def run_case(args: argparse.Namespace, name: str, case: dict, run: int, overrides: list[dict], settings: dict) -> dict:
     out = args.output_dir / name / f"run-{run}"
     out.mkdir(parents=True, exist_ok=False)
-    root = out / "sample"
+    root = blind_workspace(args.output_dir)
     seed_trigger(root, args.snapshot)
     skills = sorted(path.parent.name for path in (root / ".agents" / "skills").glob("rumo-*/SKILL.md"))
     command = [args.codex, "exec", "--json", "-c", toml_overrides(overrides), "-c", 'approval_policy="never"']
@@ -103,7 +103,7 @@ def run_case(args: argparse.Namespace, name: str, case: dict, run: int, override
     valid = code == 0 and not timed_out and observed["turn_completed"] and not observed["errors"] and not parse_error
     verdict = "invalid" if not valid else "pass" if judge(case, read) else "fail"
     result = {
-        "case": name, "run": run, "verdict": verdict, "expected_failure": name in EXPECTED_FAILURES,
+        "case": name, "run": run, "workspace": str(root), "verdict": verdict, "expected_failure": name in EXPECTED_FAILURES,
         "expect": case["expect"], "avoid": case["avoid"], "no_rumo": case["no_rumo"], "read": sorted(read),
         "exit_code": code, "timed_out": timed_out, "parse_error": parse_error, "errors": observed["errors"],
         "messages": observed["messages"],
@@ -130,6 +130,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("Use a positive timeout and run count, and a snapshot containing skills/.")
     if args.output_dir.is_relative_to(REPO_ROOT) or args.output_dir.is_relative_to(args.snapshot):
         parser.error("Evidence must be outside the source checkout and snapshot.")
+    if leaked_words(args.output_dir, cases):
+        parser.error(f"The model sees the output directory's path; rename it without: {', '.join(leaked_words(args.output_dir, cases))}.")
     if args.output_dir.exists():
         parser.error("Use a new output directory.")
     args.codex = shutil.which(args.codex) or args.codex

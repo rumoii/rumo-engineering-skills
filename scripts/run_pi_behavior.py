@@ -15,10 +15,10 @@ import uuid
 
 try:
     from .codex_behavior_cases import CASES
-    from .run_codex_behavior import file_state, git, load_manifest, normalized_path_text, read_events, run_turn, seed, seed_from_commit, write_json
+    from .run_codex_behavior import blind_workspace, file_state, git, leaked_words, load_manifest, normalized_path_text, read_events, run_turn, seed, seed_from_commit, write_json
 except ImportError:
     from codex_behavior_cases import CASES
-    from run_codex_behavior import file_state, git, load_manifest, normalized_path_text, read_events, run_turn, seed, seed_from_commit, write_json
+    from run_codex_behavior import blind_workspace, file_state, git, leaked_words, load_manifest, normalized_path_text, read_events, run_turn, seed, seed_from_commit, write_json
 
 
 # pi has no sandbox, so cases get file reads and searches only: no shell, no edits.
@@ -108,7 +108,7 @@ def run_case(args: argparse.Namespace, name: str) -> dict:
         raise ValueError(f"{name} edits files; pi runs read-only cases only")
     out = args.output_dir / name
     out.mkdir(parents=True, exist_ok=False)
-    root = out / "sample"
+    root = blind_workspace(getattr(args, "workspace_root", None) or args.output_dir)
     with_skills = not getattr(args, "without_skills", False)
     (seed_from_commit if "repo" in case else seed)(root, args.snapshot, case, with_skills)
     before = file_state(root)
@@ -156,7 +156,7 @@ def run_case(args: argparse.Namespace, name: str) -> dict:
         # The baseline arm is valid only if no Rumo skill reached the model by any path.
         checks["no_rumo_skill_read"] = not read_any_rumo_skill(all_events)
     result = {
-        "case": name, "snapshot": str(args.snapshot), "with_skills": with_skills, "model": args.model,
+        "case": name, "workspace": str(root), "snapshot": str(args.snapshot), "with_skills": with_skills, "model": args.model,
         "session_id": session_id, "runs": runs, "evidence_status": "valid" if valid else "invalid",
         "mechanical_checks": checks, "changed_files": changed, "before": before, "after": after,
         "observed": observed, "review_verdict": "pending", "acceptance": case["rubric"],
@@ -175,6 +175,7 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, help="JSON list of replay cases from local repositories, kept outside this checkout.")
     parser.add_argument("--timeout", type=int, default=600, help="Overall seconds per case, across its turns.")
     parser.add_argument("--without-skills", action="store_true", help="Baseline arm: no skills in the sample or the prompt.")
+    parser.add_argument("--workspace-root", type=Path, help="Where working copies go; default --output-dir. The model sees this path.")
     args = parser.parse_args()
     args.snapshot = args.snapshot.resolve()
     args.output_dir = args.output_dir.resolve()
@@ -183,6 +184,9 @@ def main() -> int:
     repo = Path(__file__).resolve().parents[1]
     if args.output_dir.is_relative_to(repo) or args.output_dir.is_relative_to(args.snapshot):
         parser.error("Evidence must be outside the source checkout and snapshot.")
+    args.workspace_root = (args.workspace_root or args.output_dir).resolve()
+    if leaked_words(args.workspace_root, CASES):
+        parser.error(f"The model sees the workspace root's path; rename it without: {', '.join(leaked_words(args.workspace_root, CASES))}.")
     try:
         replays = load_manifest(args.manifest, repo) if args.manifest else {}
     except (OSError, ValueError) as exc:

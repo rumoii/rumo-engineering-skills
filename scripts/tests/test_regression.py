@@ -81,6 +81,51 @@ class CliTest(unittest.TestCase):
             self.assertTrue(all(c[1].endswith("run_codex_behavior.py") and c[-2:] == ["--timeout", "60"] for c in calls))
             self.assertTrue((Path(temp) / "out" / "summary.md").is_file())
 
+    def test_batch_working_copies_name_no_arm_or_case(self) -> None:
+        import argparse
+        from scripts import run_codex_behavior
+        samples = []
+
+        def fake_turn(command, prompt, sample, prefix, timeout):
+            samples.append((sample, prefix.parent.parent))
+            prefix.with_suffix(".jsonl").write_text("", encoding="utf-8")
+            return 1, False
+
+        def through_runner(command, log):
+            option = lambda flag: Path(command[command.index(flag) + 1])
+            args = argparse.Namespace(output_dir=option("--output-dir"), workspace_root=option("--workspace-root"),
+                                      snapshot=option("--snapshot"), codex="not-invoked", timeout=10,
+                                      without_skills="--without-skills" in command)
+            with patch.object(run_codex_behavior, "run_turn", side_effect=fake_turn):
+                run_codex_behavior.run_case(args, command[command.index("--case") + 1], [], {})
+            return 0
+
+        with tempfile.TemporaryDirectory() as temp:
+            (Path(temp) / "snap" / "skills").mkdir(parents=True)
+            out = Path(temp) / "out"
+            argv = ["run_regression.py", "--candidate", str(Path(temp) / "snap"), "--baseline", "without", "--reps", "1",
+                    "--case", "withdraw-existing", "--output-dir", str(out)]
+            with patch.object(sys, "argv", argv), patch("scripts.run_regression.invoke", side_effect=through_runner), \
+                 contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(main(), 0)
+            self.assertEqual(len(samples), 2)
+            for sample, logs in samples:
+                with self.subTest(logs=logs.name):
+                    self.assertIn("candidate" if "candidate" in logs.name else "baseline", logs.name)
+                    self.assertEqual(run_codex_behavior.leaked_words(sample.relative_to(out), CASES), [])
+                    self.assertNotIn(logs, sample.parents)
+
+    def test_output_dir_naming_an_arm_or_case_is_rejected(self) -> None:
+        repo = Path(__file__).resolve().parents[2]
+        with tempfile.TemporaryDirectory() as temp:
+            (Path(temp) / "skills").mkdir()
+            out = Path(temp) / "withdraw-existing-run"
+            proc = subprocess.run([sys.executable, str(repo / "scripts" / "run_regression.py"), "--candidate", temp, "--baseline", "without",
+                                   "--output-dir", str(out)], capture_output=True, text=True)
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("withdraw-existing", proc.stderr)
+            self.assertFalse(out.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

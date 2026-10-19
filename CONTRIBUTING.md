@@ -202,6 +202,22 @@ which skips cases that edit files), compares the candidate snapshot against
 validity counts, mechanical checks, and each final reply for grading. Options after `--` go to the runner. Run it
 before and after any change that removes or rewrites skill text.
 
+## Keep cases blind
+
+A model that can tell it is being graded behaves differently from one doing
+real work. Keep evaluation words and case names out of everything the model
+sees: prompts, the git identity and commit messages in scaffold scripts, and
+the path it works in. `scripts/tests/test_trigger_evals.py` checks prompts and
+scaffold git metadata. The Codex and pi runners seed each working copy at
+`<workspace-root>/w/<random>/project`, away from the case's logs, and record
+that path as `workspace` in `result.json`. `--workspace-root` defaults to
+`--output-dir`; `run_regression.py` passes its own top-level output directory,
+so per-arm log directories named after the case stay out of the path. Each
+runner refuses a workspace root whose path contains evaluation words, the
+words `candidate` or `baseline`, or a case name. Decide whether a step
+happened from the transcript or event stream, never from the agent's own
+account of it.
+
 ## Issues and pull requests
 
 - Open issues through the [issue forms](https://github.com/rumoii/rumo-engineering-skills/issues/new/choose):

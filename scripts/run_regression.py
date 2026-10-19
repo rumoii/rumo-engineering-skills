@@ -17,8 +17,10 @@ import sys
 
 try:
     from .codex_behavior_cases import CASES, REGRESSION
+    from .run_codex_behavior import leaked_words
 except ImportError:
     from codex_behavior_cases import CASES, REGRESSION
+    from run_codex_behavior import leaked_words
 
 
 SCRIPTS = Path(__file__).resolve().parent
@@ -106,6 +108,8 @@ def main() -> int:
     repo = SCRIPTS.parent
     if args.output_dir.is_relative_to(repo):
         parser.error("Evidence must be outside the source checkout.")
+    if leaked_words(args.output_dir, CASES):
+        parser.error(f"Working copies go under the output directory, whose path the model sees; rename it without: {', '.join(leaked_words(args.output_dir, CASES))}.")
     if args.reps <= 0 or args.jobs <= 0 or not (args.candidate / "skills").is_dir():
         parser.error("Use positive --reps and --jobs and a candidate snapshot containing skills/.")
     if args.baseline != "without" and not (Path(args.baseline) / "skills").is_dir():
@@ -117,7 +121,9 @@ def main() -> int:
 
     def one(job: tuple[str, int, str]) -> None:
         directory = run_dir(args.output_dir, args.runner, job)
-        command = [*runner, *arm_options(job[0], args.candidate, args.baseline), "--output-dir", str(directory), "--case", job[2], *passthrough]
+        # Logs go to a directory named after the arm and case; the working copy stays under the neutral top level.
+        command = [*runner, *arm_options(job[0], args.candidate, args.baseline), "--output-dir", str(directory),
+                   "--workspace-root", str(args.output_dir), "--case", job[2], *passthrough]
         code = invoke(command, directory.with_suffix(".log"))
         codes[job] = code
         print(f"{directory.name}: exit {code}", flush=True)

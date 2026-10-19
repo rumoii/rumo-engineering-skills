@@ -386,5 +386,24 @@ class WithoutSkillsTest(unittest.TestCase):
         self.assertFalse(result["mechanical_checks"]["no_rumo_skill_read"])
 
 
+class BlindingTest(unittest.TestCase):
+    def test_output_paths_that_name_an_evaluation_are_flagged(self) -> None:
+        from scripts.run_codex_behavior import leaked_words
+        self.assertEqual(leaked_words(Path("D:/work/skill-evals/run-1")), ["evals"])
+        self.assertEqual(leaked_words(Path("/tmp/judge_test")), ["judge", "test"])
+        self.assertEqual(leaked_words(Path("C:/Users/x/AppData/Local/Temp/latest-runs")), [])
+        self.assertEqual(leaked_words(Path("D:/evidence/run/codex-candidate-1-withdraw-existing"), CASES), ["candidate", "withdraw-existing"])
+
+    def test_workspace_path_names_no_case_and_sits_apart_from_logs(self) -> None:
+        from scripts.run_codex_behavior import SAMPLE_AUTHOR, blind_workspace, leaked_words
+        output = Path("/evidence/run")
+        workspace = blind_workspace(output)
+        self.assertEqual(leaked_words(workspace.relative_to(output)), [])
+        self.assertNotEqual(workspace.parent.parent, output / "verify-honest")
+        self.assertNotIn(output / "verify-honest", workspace.parents)
+        self.assertNotEqual(workspace, blind_workspace(output))
+        self.assertEqual(leaked_words(Path(" ".join(SAMPLE_AUTHOR))), [])
+
+
 if __name__ == "__main__":
     unittest.main()
