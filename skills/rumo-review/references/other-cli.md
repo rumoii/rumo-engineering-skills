@@ -2,7 +2,7 @@
 
 Read when the user asks for a second opinion from a different model or provider, or before offering one. It works in any client that can run shell commands: the current agent calls another installed agent CLI in its non-interactive mode, so no subagent or orchestration feature is needed. A client that cannot run shell commands cannot use this route.
 
-## Ask First
+## Authorization
 
 Never start another CLI on your own. Before running anything, tell the user:
 
@@ -12,6 +12,8 @@ Never start another CLI on your own. Before running anything, tell the user:
 
 Run only after the user agrees to that CLI and that content. Agreement covers this review target; ask again for a new target or a different CLI.
 
+A request naming the CLI, review target, and scope already supplies that agreement; do not ask again for the same scope. State the content and quota use above, then run. For an adapter not yet verified, show the command and known limits first. Unverified status alone does not require repeated approval. Extra content, a different route, or greater access needs separate agreement.
+
 ## Choose And Check The CLI
 
 1. Prefer a provider different from the current client's model; a second run of the same model adds little independence.
@@ -20,6 +22,7 @@ Run only after the user agrees to that CLI and that content. Agreement covers th
 
 ## Run
 
+- Use `rumo-agent-collaboration` for CLI execution and records with `--access read-only`; this review skill owns the review standard and assessment. Every rule in this file still applies. If the collaboration skill is unavailable, run the CLI directly as described here. A disabled adapter cannot be used; do not bypass that decision by launching its CLI directly.
 - Pass only the target (the exact `git diff` range or files), the review standard from SKILL.md, and the repository guidance. Withhold the fix history, earlier findings, and your own conclusions.
 - When the read-only sandbox blocks the CLI from running Git, include the diff text in the prompt instead.
 - Capture the output to a file outside the repository.

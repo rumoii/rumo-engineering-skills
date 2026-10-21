@@ -1,0 +1,91 @@
+{
+  "name": "gemini",
+  "executable": "gemini",
+  "verified": null,
+  "disabled_reason": "Headless Plan Mode can automatically enter unrestricted implementation; no reliable read-only boundary is established.",
+  "help": [
+    {
+      "args": [
+        "--help"
+      ],
+      "flags": [
+        "--output-format",
+        "--approval-mode",
+        "--resume",
+        "--model"
+      ]
+    }
+  ],
+  "prompt": "stdin",
+  "access": {
+    "read-only": [
+      "--approval-mode",
+      "plan"
+    ]
+  },
+  "model": [
+    "--model",
+    "{model}"
+  ],
+  "start": [
+    "-o",
+    "stream-json",
+    "{access}",
+    "{model}"
+  ],
+  "resume": [
+    "-o",
+    "stream-json",
+    "{access}",
+    "--resume",
+    "{session}",
+    "{model}"
+  ],
+  "session": {
+    "source": "event",
+    "match": {
+      "type": "init"
+    },
+    "field": [
+      "session_id",
+      "sessionId"
+    ]
+  },
+  "output": {
+    "format": "jsonl",
+    "final": {
+      "match": {
+        "type": "message",
+        "role": "assistant"
+      },
+      "field": "content",
+      "pick": "join"
+    },
+    "error": [
+      {
+        "match": {
+          "type": "error"
+        },
+        "field": [
+          "message",
+          "error"
+        ]
+      },
+      {
+        "match": {
+          "type": "result",
+          "status": "error"
+        },
+        "field": [
+          "error.message",
+          "error"
+        ]
+      }
+    ]
+  },
+  "interactive": [
+    "--resume",
+    "{session}"
+  ],
+  "notes": "Disabled by the runner, including recovery of old snapshots. https://geminicli.com/docs/cli/plan-mode/#non-interactive-execution says headless exit_plan_mode is approved automatically and switches to unrestricted implementation. The plan flag alone does not establish read-only access; a separate restrictive policy must be established before enabling this declaration. Not run here. Both documented session field spellings are tried; assistant chunks are joined."
+}

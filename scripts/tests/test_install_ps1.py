@@ -9,7 +9,7 @@ import sys
 import tempfile
 import unittest
 
-from scripts.tests.skill_fixture import CORE_SKILLS, build_fixture_repo
+from scripts.tests.skill_fixture import CORE_SKILLS, build_fixture_repo, promote_extra
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -578,6 +578,32 @@ class InstallPowerShellExtrasTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         for home in self.homes:
             self.assert_links_to(home, "rumo-gamma", "extras")
+
+    def test_upgrade_promotes_extra_to_default_without_flags(self) -> None:
+        result = self.run_installer("-Extras", "rumo-gamma")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        promote_extra(self.repo, "rumo-gamma")
+        for _ in range(2):
+            result = self.run_installer()
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            for home in self.homes:
+                self.assert_links_to(home, "rumo-gamma", "skills")
+                self.assertEqual(self.installed(home), sorted((*CORE_SKILLS, "rumo-gamma")))
+        listed = self.run_installer("-ListExtras")
+        self.assertEqual(listed.returncode, 0, listed.stdout + listed.stderr)
+        self.assertNotIn("rumo-gamma", listed.stdout)
+        self.assertIn("rumo-delta", listed.stdout)
+
+    def test_promoted_default_preserves_foreign_link_and_stops_all_clients(self) -> None:
+        promote_extra(self.repo, "rumo-gamma")
+        foreign = self.temp_root / "personal" / "rumo-gamma"
+        self.create_junction(self.homes["ClaudeHome"] / "skills" / "rumo-gamma", foreign)
+        result = self.run_installer()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Skill link preflight failed", result.stdout + result.stderr)
+        self.assertTrue(os.path.samefile(self.homes["ClaudeHome"] / "skills" / "rumo-gamma", foreign))
+        self.assertFalse(self.homes["CodexHome"].exists())
+        self.assertFalse(self.homes["AgentsHome"].exists())
 
     def test_foreign_extra_link_stops_all_clients(self) -> None:
         foreign = self.temp_root / "personal" / "rumo-gamma"

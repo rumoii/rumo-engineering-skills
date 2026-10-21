@@ -41,3 +41,17 @@ def build_fixture_repo(root: Path) -> Path:
     for readme in (repo / "README.md", repo / "README.en.md", repo / "skills" / "README.md"):
         readme.write_text(f"# Fixture\n\n{core}\n## Extras\n\n{extras}", encoding="utf-8")
     return repo
+
+
+def promote_extra(repo: Path, name: str) -> None:
+    """Move one fixture extra into the default catalog, leaving old links dangling."""
+    source = (repo / "extras" / name).resolve()
+    target = (repo / "skills" / name).resolve()
+    assert source.is_relative_to(repo.resolve()) and target.is_relative_to(repo.resolve())
+    assert not target.exists()
+    source.rename(target)
+    row = f"- `{name}`: fixture.\n"
+    for readme in (repo / "README.md", repo / "README.en.md", repo / "skills" / "README.md"):
+        core, separator, extras = readme.read_text(encoding="utf-8").partition("## Extras\n")
+        assert separator and row in extras
+        readme.write_bytes((core + row + "\n" + separator + extras.replace(row, "")).encode("utf-8"))

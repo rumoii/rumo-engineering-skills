@@ -1,0 +1,2 @@
+{"type":"system","subtype":"init","session_id":""}
+{"type":"result","subtype":"error_during_execution","session_id":"","is_error":true,"errors":["Not signed in. To authenticate without a browser, run:\n  grok login --device-code\n\nAlternatively, set the XAI_API_KEY environment variable or run `grok login` on a machine with a browser."]}

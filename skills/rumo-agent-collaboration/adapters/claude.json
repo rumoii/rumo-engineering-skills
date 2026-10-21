@@ -1,0 +1,90 @@
+{
+  "name": "claude",
+  "executable": "claude",
+  "verified": {
+    "version": "2.1.305 (Claude Code)",
+    "on": "2026-10-21",
+    "live_run": false
+  },
+  "help": [
+    {
+      "args": [
+        "--help"
+      ],
+      "flags": [
+        "--print",
+        "--output-format",
+        "--verbose",
+        "--permission-mode",
+        "--session-id",
+        "--resume",
+        "--model"
+      ]
+    }
+  ],
+  "prompt": "stdin",
+  "access": {
+    "read-only": [
+      "--permission-mode",
+      "plan"
+    ],
+    "workspace-write": [
+      "--permission-mode",
+      "acceptEdits"
+    ]
+  },
+  "model": [
+    "--model",
+    "{model}"
+  ],
+  "start": [
+    "-p",
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "{access}",
+    "--session-id",
+    "{session}",
+    "{model}"
+  ],
+  "resume": [
+    "-p",
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "{access}",
+    "--resume",
+    "{session}",
+    "{model}"
+  ],
+  "session": {
+    "source": "preassign"
+  },
+  "output": {
+    "format": "jsonl",
+    "final": {
+      "match": {
+        "type": "result",
+        "is_error": false
+      },
+      "field": "result"
+    },
+    "error": [
+      {
+        "match": {
+          "type": "result",
+          "is_error": true
+        },
+        "field": [
+          "result",
+          "subtype"
+        ]
+      }
+    ]
+  },
+  "interactive": [
+    "--resume",
+    "{session}"
+  ],
+  "notes": "stream-json with --print requires --verbose. acceptEdits approves file edits only; shell commands that need approval are refused in print mode."
+}

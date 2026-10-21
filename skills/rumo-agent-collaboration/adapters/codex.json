@@ -1,0 +1,122 @@
+{
+  "name": "codex",
+  "executable": "codex",
+  "verified": {
+    "version": "codex-cli 0.162.0",
+    "on": "2026-10-21",
+    "live_run": false
+  },
+  "help": [
+    {
+      "args": [
+        "exec",
+        "--help"
+      ],
+      "flags": [
+        "--json",
+        "--sandbox",
+        "--cd",
+        "--model",
+        "--config"
+      ]
+    },
+    {
+      "args": [
+        "exec",
+        "resume",
+        "--help"
+      ],
+      "flags": [
+        "--json",
+        "--model",
+        "--config"
+      ]
+    }
+  ],
+  "prompt": "stdin",
+  "access": {
+    "read-only": [
+      "--sandbox",
+      "read-only"
+    ],
+    "workspace-write": [
+      "--sandbox",
+      "workspace-write"
+    ]
+  },
+  "resume_access": {
+    "read-only": [
+      "-c",
+      "sandbox_mode=\"read-only\""
+    ],
+    "workspace-write": [
+      "-c",
+      "sandbox_mode=\"workspace-write\""
+    ]
+  },
+  "model": [
+    "--model",
+    "{model}"
+  ],
+  "start": [
+    "exec",
+    "--json",
+    "-c",
+    "approval_policy=\"never\"",
+    "{model}",
+    "{access}",
+    "--cd",
+    "{cwd}",
+    "-"
+  ],
+  "resume": [
+    "exec",
+    "resume",
+    "--json",
+    "-c",
+    "approval_policy=\"never\"",
+    "{model}",
+    "{access}",
+    "{session}",
+    "-"
+  ],
+  "session": {
+    "source": "event",
+    "match": {
+      "type": "thread.started"
+    },
+    "field": "thread_id"
+  },
+  "output": {
+    "format": "jsonl",
+    "final": {
+      "match": {
+        "type": "item.completed",
+        "item.type": "agent_message"
+      },
+      "field": "item.text"
+    },
+    "error": [
+      {
+        "match": {
+          "type": "error"
+        },
+        "field": "message"
+      },
+      {
+        "match": {
+          "type": "turn.failed"
+        },
+        "field": [
+          "error.message",
+          "error"
+        ]
+      }
+    ]
+  },
+  "interactive": [
+    "resume",
+    "{session}"
+  ],
+  "notes": "`exec resume` has no --sandbox flag, so resume keeps the level through the sandbox_mode config key. approval_policy=never refuses anything outside the sandbox instead of prompting."
+}

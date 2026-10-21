@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Agent Collaboration"
+  short_description: "把任务交给另一个 CLI 或模型委派、转交和接力，一个任务一个负责人，记录会话便于接续"
+  default_prompt: "Use $rumo-agent-collaboration to hand this part of the task to another agent CLI and report what it did."

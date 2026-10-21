@@ -131,6 +131,28 @@ RULES = {
         "those are separate authorizations",
         "Controlled actions you did not take, such as commits, pushes, or publication, are not verification gaps",
     ),
+    "rumo-agent-collaboration": (
+        "This skill governs only the agents it starts.",
+        "Never start an agent through this skill unless the user asked for it.",
+        "state in one line before launching which CLI and model will run and what content you will send",
+        "Ask first when the user did not name a route, when you would send content the user did not mention, or when the work needs more access than the request implies.",
+        "Wider access, such as shell access for pi, needs its own approval.",
+        "A worktree is not a sandbox.",
+        "Official documentation may establish a write mode while `verified` stays null",
+        "never switch to automatic approval to finish.",
+        "do not transfer ownership without a resumable session.",
+        "when several models match, ask the user which one instead of picking.",
+        "run `agent_run.py show` and show the user the full command and known limits",
+        "Unverified status alone does not require repeated approval.",
+        "For a named external CLI review, use rumo-review for review standards and this skill for execution and records.",
+        "A CLI without a confirmed read-only mode cannot have an adapter.",
+        "Do not launch a disabled adapter, including the bundled Gemini and OpenCode declarations.",
+        "Never give the receiver more access than you have, and never pass a flag that bypasses its sandbox, approvals, or tool limits.",
+        "Do not switch route, model, or access level on your own.",
+        "When you cannot tell whether a turn was delivered, check the recorded session before sending anything again.",
+        "then stop changing that task.",
+        "Cancel only runs this task started; never stop a process the record cannot prove is yours.",
+    ),
 }
 PINNED_ELSEWHERE = {"rumo-clarify"}
 
@@ -181,6 +203,8 @@ REFERENCE_RULES = {
     "rumo-review/references/other-cli.md": (
         "Never start another CLI on your own.",
         "Run only after the user agrees to that CLI and that content.",
+        "A request naming the CLI, review target, and scope already supplies that agreement; do not ask again for the same scope.",
+        "Unverified status alone does not require repeated approval.",
         "Without a read-only setting you have confirmed, do not use that CLI.",
         "It is not evidence that the change has no findings.",
         "Never sign in, copy credentials, or change the CLI's configuration on the user's behalf.",
@@ -198,6 +222,16 @@ REFERENCE_RULES = {
     "rumo-debug/references/remote-investigation.md": (
         "Choose process, listener, or container queries only when the symptom requires them.",
         "Stop and report the boundary when the environment purpose is unclear, credentials are unavailable, a query would require writes",
+    ),
+    "rumo-agent-collaboration/references/adapters.md": (
+        "Approval that the headless turn cannot collect is a blocker, not permission to change modes.",
+        "Constructed samples and mock tests establish parser/rendering behavior only.",
+        "A disabled adapter cannot start or resume a turn, including a run saved before it was disabled.",
+    ),
+    "rumo-agent-collaboration/references/records.md": (
+        "Do not paste tokens or keys into a brief; name where they live instead.",
+        "do not resume it as a writer unless the user hands it back.",
+        "Unknown identity is not proof that a process has exited.",
     ),
 }
 

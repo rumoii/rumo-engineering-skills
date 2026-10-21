@@ -1,0 +1,84 @@
+{
+  "name": "qwen",
+  "executable": "qwen",
+  "verified": {
+    "version": "0.25.2",
+    "on": "2026-10-21",
+    "live_run": true
+  },
+  "help": [
+    {
+      "args": [
+        "--help"
+      ],
+      "flags": [
+        "--output-format",
+        "--approval-mode",
+        "--session-id",
+        "--resume",
+        "--model"
+      ]
+    }
+  ],
+  "prompt": "stdin",
+  "access": {
+    "read-only": [
+      "--approval-mode",
+      "plan"
+    ],
+    "workspace-write": [
+      "--approval-mode",
+      "auto-edit"
+    ]
+  },
+  "model": [
+    "--model",
+    "{model}"
+  ],
+  "start": [
+    "-o",
+    "stream-json",
+    "{access}",
+    "--session-id",
+    "{session}",
+    "{model}"
+  ],
+  "resume": [
+    "-o",
+    "stream-json",
+    "{access}",
+    "--resume",
+    "{session}",
+    "{model}"
+  ],
+  "session": {
+    "source": "preassign"
+  },
+  "output": {
+    "format": "jsonl",
+    "final": {
+      "match": {
+        "type": "result",
+        "is_error": false
+      },
+      "field": "result"
+    },
+    "error": [
+      {
+        "match": {
+          "type": "result",
+          "is_error": true
+        },
+        "field": [
+          "result",
+          "subtype"
+        ]
+      }
+    ]
+  },
+  "interactive": [
+    "--resume",
+    "{session}"
+  ],
+  "notes": "One read-only start turn ran on 0.25.2 and kept the preassigned session ID; resume and the write level are not exercised."
+}

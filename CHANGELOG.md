@@ -8,6 +8,8 @@
 - `rumo-git-commit`：用户明确要求时，可跟进已开 PR 的 CI 检查。等待期间不轮询；修复前先给失败分类；修好后提交、推送仍需用户明确要求；不合并 PR，也不标记 ready。
 - `rumo-plan`：出方案时，各选项须在结构上真正不同，并对照三类设计问题自查。
 - 新增扩展 `rumo-reflect`：复盘当前会话中反复出现的错误和用户的纠正，逐条与用户讨论该在哪里修正，用户批准后才改；用户要求复盘时自动加载，被反复纠正时 agent 会在交付时提议复盘，但不会自动开始。
+- 新增默认技能 `rumo-agent-collaboration`：通过另一个 CLI、模型或 Orca 委派、转交和接力；客户端自带的子 agent 不归它管，每个任务一个负责人。点名 CLI 和任务即视为同意，发出前说明内容；额外内容或权限另行同意，提交、推送等授权不随启动授予。附带 `agent_run.py` 和 JSON 适配器：内置 codex、claude、pi、qwen、grok（本机帮助核对，qwen 有历史单轮证据），以及按官方文档编写、未核实的 cursor、gemini、opencode、GitHub Copilot CLI、Aider、Cline CLI、Goose。新增四个支持只读和 native-write 开发档位；文档可确认写模式，但不等于实跑，native-write 不承诺目录隔离。Copilot、Aider 的检查由调用方执行，Cline Act 默认自动批准，Goose approve 可能需要交互；Aider、Cline、Goose 当前仅单轮。记录加锁，取消与启动登记互斥，终态不被进度回写覆盖，超时覆盖不读 stdin 的子进程；pi 禁用 MCP 和扩展发现。绕过参数及无只读模式的适配器拒绝使用；Kimi、Crush 暂无确认的只读调用组合，未纳入。随默认安装提供；未安装协作技能的客户端仍可使用原交接和评审流程。
+- `rumo-agent-collaboration`：新增声明式 `disabled_reason`，脚本拒绝停用适配器的检查、启动及旧记录恢复，仍可查看、记结论和安全取消。Gemini CLI 的无交互 Plan 模式可进入不受限执行，OpenCode 管理配置可覆盖内联权限，两者暂时停用。Linux/WSL 改用启动周期与内核进程启动计数识别归属；身份不明时拒绝停止或标为遗弃，旧秒级标识不自动迁移，其他未支持平台在启动前拒绝。点名且范围明确即构成授权，未核实状态不重复确认；外部 CLI 评审由 review 管标准、collaboration 管执行和记录。`check` 和模拟测试不能证明真实权限边界。
 - 评测：被测 agent 能看到的提示、git 元数据和工作路径中，不再出现评测相关字样；运行器拒绝名称里含这类字样的输出目录。
 - 插件清单新增 `version` 字段，并新增本文件。
 

@@ -140,6 +140,7 @@ clarify -> plan -> test -> verify -> review -> git-commit
 | `rumo-frontend` | 前端页面开发与新界面设计、可访问性检查、本地开发服务排障、按需采集浏览器证据 |
 | `rumo-handoff` | 生成自包含的交接文档，便于其他会话或客户端接力(仅手动调用) |
 | `rumo-project-profile` | 为其他技能解析和校验私有项目 Profile |
+| `rumo-agent-collaboration` | 把任务交给另一个 CLI 或模型（Codex、Claude Code、pi、qwen、grok、Cursor、GitHub Copilot CLI、Aider、Cline CLI、Goose，或自己加适配器接入的 CLI，以及 Orca）委派、整体转交或接力；客户端自带的子 agent 不归它管。点名且范围明确即构成授权，每个任务一个负责人；支持只读和开发，native-write 不承诺目录隔离，文档适配器仍标未核实。支持 Windows、Linux/WSL；Gemini CLI、OpenCode 声明保留供查看，启动和旧记录恢复均被脚本拒绝 |
 
 ## 可选扩展
 

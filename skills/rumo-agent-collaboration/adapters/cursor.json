@@ -1,0 +1,84 @@
+{
+  "name": "cursor",
+  "executable": "cursor-agent",
+  "verified": null,
+  "help": [
+    {
+      "args": [
+        "--help"
+      ],
+      "flags": [
+        "--print",
+        "--output-format",
+        "--mode",
+        "--sandbox",
+        "--trust",
+        "--resume",
+        "--model"
+      ]
+    }
+  ],
+  "prompt": "stdin",
+  "access": {
+    "read-only": [
+      "--mode",
+      "ask",
+      "--sandbox",
+      "enabled"
+    ]
+  },
+  "model": [
+    "--model",
+    "{model}"
+  ],
+  "start": [
+    "-p",
+    "--output-format",
+    "stream-json",
+    "{access}",
+    "--trust",
+    "{model}"
+  ],
+  "resume": [
+    "-p",
+    "--output-format",
+    "stream-json",
+    "{access}",
+    "--trust",
+    "--resume",
+    "{session}",
+    "{model}"
+  ],
+  "session": {
+    "source": "event",
+    "match": {},
+    "field": "session_id"
+  },
+  "output": {
+    "format": "jsonl",
+    "final": {
+      "match": {
+        "type": "assistant"
+      },
+      "field": "message.content",
+      "transform": "text_parts"
+    },
+    "error": [
+      {
+        "match": {
+          "type": "result",
+          "is_error": true
+        },
+        "field": [
+          "result",
+          "subtype"
+        ]
+      }
+    ]
+  },
+  "interactive": [
+    "--resume",
+    "{session}"
+  ],
+  "notes": "Written from the Cursor CLI reference, not run here. Read-only only: its agent mode can edit outside the working directory. --trust skips the workspace-trust prompt in headless mode."
+}

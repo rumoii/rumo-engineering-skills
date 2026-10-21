@@ -1,0 +1,67 @@
+{
+  "name": "goose",
+  "executable": "goose",
+  "verified": null,
+  "help": [
+    {
+      "args": [
+        "run",
+        "--help"
+      ],
+      "flags": [
+        "--instructions",
+        "--output-format",
+        "--no-session",
+        "--model"
+      ]
+    }
+  ],
+  "prompt": "stdin",
+  "access": {
+    "read-only": [],
+    "native-write": []
+  },
+  "model": [
+    "--model",
+    "{model}"
+  ],
+  "start": [
+    "run",
+    "--instructions",
+    "-",
+    "--output-format",
+    "stream-json",
+    "--no-session",
+    "{access}",
+    "{model}"
+  ],
+  "session": {
+    "source": "none"
+  },
+  "output": {
+    "format": "jsonl",
+    "final": {
+      "match": {
+        "type": "message",
+        "message.role": "assistant"
+      },
+      "field": "message.content",
+      "transform": "text_parts"
+    },
+    "error": {
+      "match": {
+        "type": "error"
+      },
+      "field": "error"
+    }
+  },
+  "access_env": {
+    "read-only": {
+      "GOOSE_MODE": "chat"
+    },
+    "native-write": {
+      "GOOSE_MODE": "approve"
+    }
+  },
+  "notes": "Document-constructed adapter; not installed or run here. https://github.com/aaif-goose/goose/blob/main/documentation/docs/guides/goose-cli-commands.md , https://github.com/aaif-goose/goose/blob/main/documentation/docs/guides/managing-tools/goose-permissions.md , and https://github.com/aaif-goose/goose/blob/main/crates/goose-cli/src/session/mod.rs . read-only is chat-only and cannot read workspace files through tools: include needed material in the brief. native-write keeps native approve mode, without directory isolation. If a tool needs approval that this non-interactive turn cannot collect, stop and report it; do not change mode. --no-session makes this one turn only. Provider configuration and extensions remain native and trusted."
+}

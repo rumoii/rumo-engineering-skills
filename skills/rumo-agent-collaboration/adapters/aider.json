@@ -1,0 +1,69 @@
+{
+  "name": "aider",
+  "executable": "aider",
+  "verified": null,
+  "help": [
+    {
+      "args": [
+        "--help"
+      ],
+      "flags": [
+        "--message-file",
+        "--chat-mode",
+        "--model",
+        "--no-auto-commits",
+        "--no-dirty-commits",
+        "--no-auto-lint",
+        "--no-auto-test",
+        "--no-suggest-shell-commands",
+        "--no-gitignore",
+        "--no-check-update",
+        "--no-show-release-notes",
+        "--no-pretty",
+        "--input-history-file",
+        "--chat-history-file"
+      ]
+    }
+  ],
+  "prompt": "file",
+  "access": {
+    "read-only": [
+      "--chat-mode",
+      "ask"
+    ],
+    "native-write": [
+      "--chat-mode",
+      "code"
+    ]
+  },
+  "model": [
+    "--model",
+    "{model}"
+  ],
+  "start": [
+    "--message-file",
+    "{prompt_file}",
+    "--no-auto-commits",
+    "--no-dirty-commits",
+    "--no-auto-lint",
+    "--no-auto-test",
+    "--no-suggest-shell-commands",
+    "--no-gitignore",
+    "--no-check-update",
+    "--no-show-release-notes",
+    "--no-pretty",
+    "--input-history-file",
+    "{prompt_file}.input-history",
+    "--chat-history-file",
+    "{prompt_file}.chat-history.md",
+    "{access}",
+    "{model}"
+  ],
+  "session": {
+    "source": "none"
+  },
+  "output": {
+    "format": "text"
+  },
+  "notes": "Document-constructed adapter; not installed or run here. https://aider.chat/docs/config/options.html and https://aider.chat/docs/usage/modes.html . ask does not apply code edits; code can edit with native file permissions and has no directory sandbox. Automatic commits, dirty-file commits, lint, tests, shell suggestions, gitignore changes, and update checks are disabled. Histories go beside the recorded prompt. One turn only; run requested checks separately. Local configuration is trusted, not sandboxed."
+}

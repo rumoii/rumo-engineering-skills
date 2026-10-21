@@ -140,6 +140,7 @@ Installed by default.
 | `rumo-frontend` | Frontend page work and new interface design with accessibility checks, local dev-server troubleshooting, and requested browser evidence |
 | `rumo-handoff` | A self-contained handoff document for another session or client (manual only) |
 | `rumo-project-profile` | Resolve and validate private project profiles for other skills |
+| `rumo-agent-collaboration` | Delegate, transfer, or relay work to another agent CLI or model (Codex, Claude Code, pi, qwen, grok, Cursor, GitHub Copilot CLI, Aider, Cline CLI, Goose, any CLI you add an adapter for, or Orca), leaving native subagents alone. A named route and bounded task supply authorization; one owner handles read-only or development work. Native-write promises no directory isolation; documented adapters stay unverified. Supports Windows and Linux/WSL. Gemini CLI and OpenCode declarations remain inspectable, but the runner blocks new turns and recovery of old records |
 
 ## Optional Extras
 

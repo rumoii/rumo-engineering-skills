@@ -1,0 +1,6 @@
+{"type":"thread.started","thread_id":"thread-abc"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"reasoning","text":"thinking"}}
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"first"}}
+{"type":"item.completed","item":{"id":"item_2","type":"agent_message","text":"final answer"}}
+{"type":"turn.completed","usage":{"input_tokens":10,"output_tokens":2}}

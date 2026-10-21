@@ -1,0 +1,5 @@
+{"type":"init","session_id":"gem-1","model":"auto"}
+{"type":"message","role":"user","content":"question"}
+{"type":"message","role":"assistant","content":"final ","delta":true}
+{"type":"message","role":"assistant","content":"answer","delta":true}
+{"type":"result","status":"success","stats":{}}

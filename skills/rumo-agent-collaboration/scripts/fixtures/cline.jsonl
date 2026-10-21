@@ -1,0 +1,2 @@
+{"type": "agent_event", "event": {"type": "done", "reason": "completed", "text": "final answer"}}
+{"type": "run_result", "finishReason": "completed", "iterations": 1, "text": "final answer"}

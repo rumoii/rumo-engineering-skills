@@ -1,0 +1,81 @@
+{
+  "name": "pi",
+  "executable": "pi",
+  "verified": {
+    "version": "1.3.0",
+    "on": "2026-10-21",
+    "live_run": false
+  },
+  "help": [
+    {
+      "args": [
+        "--help"
+      ],
+      "flags": [
+        "--print",
+        "--mode",
+        "--tools",
+        "--session-id",
+        "--model",
+        "--no-mcp",
+        "--no-extensions"
+      ]
+    }
+  ],
+  "prompt": "stdin",
+  "access": {
+    "read-only": [
+      "--tools",
+      "read,grep,find,ls"
+    ],
+    "workspace-write": [
+      "--tools",
+      "read,grep,find,ls,edit,write"
+    ]
+  },
+  "model": [
+    "--model",
+    "{model}"
+  ],
+  "start": [
+    "-p",
+    "--mode",
+    "json",
+    "--no-mcp",
+    "--no-extensions",
+    "{access}",
+    "--session-id",
+    "{session}",
+    "{model}"
+  ],
+  "resume": [
+    "-p",
+    "--mode",
+    "json",
+    "--no-mcp",
+    "--no-extensions",
+    "{access}",
+    "--session-id",
+    "{session}",
+    "{model}"
+  ],
+  "session": {
+    "source": "preassign"
+  },
+  "output": {
+    "format": "jsonl",
+    "final": {
+      "match": {
+        "type": "message_end",
+        "message.role": "assistant"
+      },
+      "field": "message.content",
+      "transform": "text_parts"
+    }
+  },
+  "interactive": [
+    "--session",
+    "{session}"
+  ],
+  "notes": "pi has no sandbox, so the write level adds edit and write but never bash. Resolve a model fragment with `pi --list-models <fragment>`. MCP and extension discovery are disabled because --tools alone retains MCP tools. The existing write level is a tool allowlist, not an OS directory sandbox."
+}

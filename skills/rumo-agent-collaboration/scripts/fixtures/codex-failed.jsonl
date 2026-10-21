@@ -1,0 +1,2 @@
+{"type":"thread.started","thread_id":"thread-abc"}
+{"type":"turn.failed","error":{"message":"usage limit reached"}}

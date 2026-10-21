@@ -25,6 +25,7 @@ Every skill uses the `rumo-` namespace and stays independent of any company, pro
 | `rumo-frontend` | Frontend page work, new interface design, accessibility checks, dev-server troubleshooting, and requested browser evidence |
 | `rumo-handoff` | Self-contained handoff documents (manual only) |
 | `rumo-project-profile` | Private project profile resolution and validation |
+| `rumo-agent-collaboration` | Delegate, transfer, or relay work to Codex, Claude Code, pi, qwen, grok, Cursor, Copilot CLI, Aider, Cline CLI, Goose, or Orca; supports read-only and development access on Windows and Linux/WSL, with one owner and records. Named, bounded requests supply authorization. Gemini CLI and OpenCode declarations remain inspectable; the runner blocks their new turns and old-record recovery |
 
 ## Extras
 

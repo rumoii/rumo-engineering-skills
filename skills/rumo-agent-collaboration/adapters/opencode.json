@@ -1,0 +1,80 @@
+{
+  "name": "opencode",
+  "executable": "opencode",
+  "verified": null,
+  "disabled_reason": "Managed configuration can override the inline permission policy; effective read-only permissions have not been established.",
+  "help": [
+    {
+      "args": [
+        "run",
+        "--help"
+      ],
+      "flags": [
+        "--format",
+        "--session",
+        "--model",
+        "--title"
+      ]
+    }
+  ],
+  "prompt": "stdin",
+  "access": {
+    "read-only": []
+  },
+  "env": {
+    "OPENCODE_CONFIG_CONTENT": "{\"share\":\"disabled\",\"permission\":{\"*\":\"deny\",\"glob\":\"allow\",\"grep\":\"allow\",\"list\":\"allow\",\"lsp\":\"allow\",\"read\":{\"*\":\"allow\",\"*.env\":\"deny\",\"*.env.*\":\"deny\",\"*.env.example\":\"allow\"}}}"
+  },
+  "model": [
+    "--model",
+    "{model}"
+  ],
+  "start": [
+    "run",
+    "--format",
+    "json",
+    "--title",
+    "agent-run",
+    "{access}",
+    "{model}"
+  ],
+  "resume": [
+    "run",
+    "--format",
+    "json",
+    "--session",
+    "{session}",
+    "{access}",
+    "{model}"
+  ],
+  "session": {
+    "source": "event",
+    "match": {},
+    "field": "sessionID"
+  },
+  "output": {
+    "format": "jsonl",
+    "final": {
+      "match": {
+        "type": "text"
+      },
+      "field": "part.text"
+    },
+    "error": [
+      {
+        "match": {
+          "type": "error"
+        },
+        "field": [
+          "error.data.message",
+          "error.name",
+          "error"
+        ]
+      }
+    ]
+  },
+  "interactive": [
+    "--session",
+    "{session}"
+  ],
+  "notes": "Disabled by the runner, including recovery of old snapshots. https://opencode.ai/docs/config/#precedence-order documents managed settings overriding OPENCODE_CONFIG_CONTENT. The inline policy denies tools except reading and searching and disables sharing, but effective permissions must be established before enabling this declaration. Arguments and output rules from https://opencode.ai/docs/cli/ are retained for inspection, not live acceptance. --title avoids an extra model call to name the session. Not run here."
+}

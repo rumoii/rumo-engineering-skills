@@ -1,0 +1,4 @@
+{"type":"system","subtype":"init","session_id":"1e50de39-cd81-4d83-85a7-9d57083bc749"}
+{"type":"assistant","session_id":"1e50de39-cd81-4d83-85a7-9d57083bc749","message":{"role":"assistant","content":[]}}
+{"type":"assistant","session_id":"1e50de39-cd81-4d83-85a7-9d57083bc749","message":{"role":"assistant","content":[{"type":"text","text":"OK"}]}}
+{"type":"result","subtype":"success","session_id":"1e50de39-cd81-4d83-85a7-9d57083bc749","is_error":false,"result":"OK"}

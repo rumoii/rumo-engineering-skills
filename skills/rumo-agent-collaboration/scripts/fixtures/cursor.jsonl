@@ -1,0 +1,4 @@
+{"type":"system","subtype":"init","session_id":"chat-1","model":"display label"}
+{"type":"assistant","session_id":"chat-1","message":{"role":"assistant","content":[{"type":"text","text":"I'll read the file."}]}}
+{"type":"assistant","session_id":"chat-1","message":{"role":"assistant","content":[{"type":"text","text":"final answer"}]}}
+{"type":"result","subtype":"success","is_error":false,"result":"I'll read the file.final answer","session_id":"chat-1"}

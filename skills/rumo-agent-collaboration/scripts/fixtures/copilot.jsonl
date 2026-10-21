@@ -1,0 +1,3 @@
+{"type": "session.start", "data": {"sessionId": "00000000-0000-4000-8000-000000000001"}}
+{"type": "assistant.message", "data": {"content": "final answer"}}
+{"type": "session.idle", "data": {}}

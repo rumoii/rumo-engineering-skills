@@ -1,0 +1,89 @@
+{
+  "name": "grok",
+  "executable": "grok",
+  "verified": {
+    "version": "grok 1.0.41",
+    "on": "2026-10-21",
+    "live_run": false
+  },
+  "help": [
+    {
+      "args": [
+        "--help"
+      ],
+      "flags": [
+        "--prompt-file",
+        "--output-format",
+        "--permission-mode",
+        "--session-id",
+        "--resume",
+        "--no-subagents",
+        "--model"
+      ]
+    }
+  ],
+  "prompt": "file",
+  "access": {
+    "read-only": [
+      "--permission-mode",
+      "plan"
+    ]
+  },
+  "model": [
+    "--model",
+    "{model}"
+  ],
+  "start": [
+    "--prompt-file",
+    "{prompt_file}",
+    "--output-format",
+    "streaming-messages-json",
+    "--no-subagents",
+    "{access}",
+    "-s",
+    "{session}",
+    "{model}"
+  ],
+  "resume": [
+    "--prompt-file",
+    "{prompt_file}",
+    "--output-format",
+    "streaming-messages-json",
+    "--no-subagents",
+    "{access}",
+    "--resume",
+    "{session}",
+    "{model}"
+  ],
+  "session": {
+    "source": "preassign"
+  },
+  "output": {
+    "format": "jsonl",
+    "final": {
+      "match": {
+        "type": "result",
+        "is_error": false
+      },
+      "field": "result"
+    },
+    "error": [
+      {
+        "match": {
+          "type": "result",
+          "is_error": true
+        },
+        "field": [
+          "errors",
+          "result",
+          "subtype"
+        ]
+      }
+    ]
+  },
+  "interactive": [
+    "--resume",
+    "{session}"
+  ],
+  "notes": "Read-only only: the write level would need grok's --sandbox profile, which is not confirmed on every platform. The live run on 1.0.41 stopped at 'Not signed in'; the error event shape is real, and success is read from the same result event."
+}

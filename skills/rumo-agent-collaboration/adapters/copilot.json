@@ -1,0 +1,89 @@
+{
+  "name": "copilot",
+  "executable": "copilot",
+  "verified": null,
+  "help": [
+    {
+      "args": [
+        "--help"
+      ],
+      "flags": [
+        "--output-format",
+        "--available-tools",
+        "--deny-tool",
+        "--allow-tool",
+        "--session-id",
+        "--model",
+        "--no-auto-update"
+      ]
+    }
+  ],
+  "prompt": "stdin",
+  "access": {
+    "read-only": [
+      "--available-tools",
+      "view,grep,glob",
+      "--deny-tool",
+      "write,shell,memory"
+    ],
+    "native-write": [
+      "--available-tools",
+      "view,grep,glob,edit,create,apply_patch",
+      "--allow-tool",
+      "read,write",
+      "--deny-tool",
+      "shell,memory"
+    ]
+  },
+  "model": [
+    "--model",
+    "{model}"
+  ],
+  "start": [
+    "--output-format",
+    "json",
+    "--no-auto-update",
+    "{access}",
+    "--session-id",
+    "{session}",
+    "{model}"
+  ],
+  "session": {
+    "source": "preassign"
+  },
+  "output": {
+    "format": "jsonl",
+    "final": {
+      "match": {
+        "type": "assistant.message"
+      },
+      "field": "data.content"
+    },
+    "error": {
+      "match": {
+        "type": "session.error"
+      },
+      "field": [
+        "data.message",
+        "data.errorType"
+      ]
+    }
+  },
+  "resume": [
+    "--output-format",
+    "json",
+    "--no-auto-update",
+    "{access}",
+    "--session-id",
+    "{session}",
+    "{model}"
+  ],
+  "interactive": [
+    "--session-id",
+    "{session}"
+  ],
+  "env": {
+    "COPILOT_ALLOW_ALL": "false"
+  },
+  "notes": "Document-constructed adapter; not installed or run here. https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference and https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/run-cli-programmatically . Piped input is the prompt, without -p. native-write allows file editing only, with CLI path checks; it is not a directory sandbox. Shell, memory writes, and unlisted tools are unavailable, so the caller runs requested tests. No allow-all option is used. Event fields are constructed from https://github.com/github/copilot-sdk/blob/main/nodejs/src/generated/session-events.ts ; CLI JSONL integration is untested."
+}

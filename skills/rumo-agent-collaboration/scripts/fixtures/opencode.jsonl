@@ -1,0 +1,3 @@
+{"type":"step_start","sessionID":"ses_1","part":{"type":"step-start"}}
+{"type":"text","sessionID":"ses_1","part":{"type":"text","text":"final answer"}}
+{"type":"step_finish","sessionID":"ses_1","part":{"type":"step-finish","reason":"stop"}}

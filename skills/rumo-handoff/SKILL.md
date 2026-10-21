@@ -55,6 +55,7 @@ The exact commands or reads to get back to a known-good state.
 - Never include passwords, tokens, keys, or private certificate material; name where credentials live instead.
 - Keep authorizations explicit: say what the user approved and what still needs approval. A handoff does not transfer approval for actions the user has not granted.
 - Prefer facts over narrative and keep it short enough to read in two minutes.
+- This skill writes the document only. To start the receiving agent and confirm it took over, use `rumo-agent-collaboration` after the user authorizes that route. If the skill or route is unavailable, give the user the document and stop.
 
 ## Report
 
