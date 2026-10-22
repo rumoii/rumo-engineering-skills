@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 
 from scripts.run_codex_trigger import REPO_ROOT, load_cases
-from scripts.run_pi_behavior import READ_ONLY_TOOLS
+from scripts.run_pi_behavior import READ_ONLY_TOOLS, WORKSPACE_GUARD
 from scripts.run_pi_trigger import main, pi_command, run_case
 
 
@@ -34,6 +34,7 @@ class CommandTest(unittest.TestCase):
         for flag in ("--no-skills", "--no-extensions", "--no-prompt-templates", "--no-mcp", "--no-context-files"):
             self.assertIn(flag, command)
         self.assertEqual(command[command.index("--tools") + 1], READ_ONLY_TOOLS)
+        self.assertEqual(command[command.index("-e") + 1], str(WORKSPACE_GUARD))
         self.assertEqual([command[i + 1] for i, part in enumerate(command) if part == "--skill"], [str(p) for p in skill_dirs])
 
 
@@ -68,13 +69,25 @@ class RunCaseTest(unittest.TestCase):
         self.assertEqual(result["verdict"], "fail")
 
     def test_installed_copy_elsewhere_is_not_a_trigger(self) -> None:
+        # The workspace guard blocks the read; the runner must still not count it.
         elsewhere = read_call(r"C:\Users\someone\.pi\agent\skills\rumo-debug\SKILL.md", "---\nname: rumo-debug\n")
+        elsewhere[1]["isError"] = True
         result, _ = self.run_with("debug-readonly", [*elsewhere, SETTLED])
         self.assertEqual((result["verdict"], result["read"]), ("fail", []))
 
     def test_unsettled_turn_is_invalid_not_fail(self) -> None:
         result, _ = self.run_with("debug-readonly", read_skill("rumo-debug"))
         self.assertEqual(result["verdict"], "invalid")
+
+    def test_unblocked_read_outside_the_sample_is_invalid_and_a_blocked_one_is_recorded(self) -> None:
+        outside = str(Path.home() / "notes.txt")
+        leaked, _ = self.run_with("debug-readonly", [*read_skill("rumo-debug"), *read_call(outside, "private"), SETTLED])
+        self.assertEqual(leaked["verdict"], "invalid")
+        blocked_call = read_call(outside, "blocked")
+        blocked_call[1]["isError"] = True
+        blocked, _ = self.run_with("debug-readonly", [*read_skill("rumo-debug"), *blocked_call, SETTLED])
+        self.assertEqual(blocked["verdict"], "pass")
+        self.assertEqual(blocked["workspace_escapes"], [{"tool": "read", "target": outside, "blocked": True}])
 
     def test_loaded_context_file_is_invalid(self) -> None:
         system = {"type": "message_end", "message": {"role": "system", "sections": {

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -23,6 +24,10 @@ except ImportError:
 
 # pi has no sandbox, so cases get file reads and searches only: no shell, no edits.
 READ_ONLY_TOOLS = "read,grep,find,ls"
+# The read-only tools still reach any path, so this extension blocks calls outside the sample;
+# runs also become invalid if such a call ever succeeds.
+WORKSPACE_GUARD = Path(__file__).resolve().with_name("pi_workspace_guard.mjs")
+GLOB_FIELDS = {"find": "pattern", "grep": "glob"}
 DEFAULT_MODEL = "xiaomi-token-plan-cn/mimo-v2.6-pro"
 PROJECT_INSTRUCTIONS = re.compile(r'<project_instructions path="([^"]+)">')
 SKILL_PATH = re.compile(r"rumo-[a-z0-9-]+/skill\.md")
@@ -32,8 +37,8 @@ SKILL_FRONTMATTER = re.compile(r"^name: rumo-", re.M)
 def pi_command(pi: str, model: str, session_dir: Path, session_id: str) -> list[str]:
     """Discovery of installed skills, extensions, and templates is off; the prompt names sample skills."""
     return [
-        pi, "-p", "--mode", "json", "--no-extensions", "--no-skills", "--no-prompt-templates", "--no-themes",
-        "--tools", READ_ONLY_TOOLS, "--model", model, "--session-dir", str(session_dir), "--session-id", session_id,
+        pi, "-p", "--mode", "json", "--no-extensions", "-e", str(WORKSPACE_GUARD), "--no-skills", "--no-prompt-templates",
+        "--no-themes", "--tools", READ_ONLY_TOOLS, "--model", model, "--session-dir", str(session_dir), "--session-id", session_id,
     ]
 
 
@@ -65,6 +70,29 @@ def tool_calls(events: list[dict]) -> list[dict]:
     return [{**e, "args": e.get("args") or args.get(e.get("toolCallId"))} for e in events if e.get("type") == "tool_execution_end"]
 
 
+def escaped_target(call: dict, root: Path) -> str | None:
+    """What a call reached outside the sample, resolved as pi resolves paths; None when it stayed inside."""
+    name, args = call.get("toolName"), call.get("args") or {}
+    if name not in READ_ONLY_TOOLS.split(","):
+        return str(name)
+    raw = str(args.get("path") or ".")
+    target = raw[1:] if raw.startswith("@") else raw
+    if target == "~" or target.startswith(("~/", "~\\")):
+        target = str(Path.home()) + target[1:]
+    resolved, base = os.path.normcase(os.path.realpath(root / target)), os.path.normcase(os.path.realpath(root))
+    try:
+        inside = os.path.commonpath([resolved, base]) == base
+    except ValueError:  # another drive on Windows
+        inside = False
+    if not inside:
+        return raw
+    pattern = args.get(GLOB_FIELDS.get(name, ""))
+    if isinstance(pattern, str) and (os.path.isabs(pattern) or re.match(r"[A-Za-z]:", pattern) or pattern.startswith("~")
+                                     or ".." in re.split(r"[\\/]", pattern)):
+        return pattern
+    return None
+
+
 def evidence(events: list[dict], root: Path, skills: list[str]) -> dict:
     calls = tool_calls(events)
     messages = [e["message"] for e in events if e.get("type") == "message_end" and isinstance(e.get("message"), dict)]
@@ -80,6 +108,9 @@ def evidence(events: list[dict], root: Path, skills: list[str]) -> dict:
         "errors": [e for e in events if e.get("type") == "auto_retry_end" and not e.get("success")]
         + [m for m in replies if m.get("stopReason") in {"error", "aborted"}],
         "loaded_skill_paths": {name: any(reads_sample_skill(call, root, name) for call in calls) for name in skills},
+        # A blocked escape is the guard working; an unblocked one means content may have left the sample.
+        "workspace_escapes": [{"tool": call.get("toolName"), "target": target, "blocked": bool(call.get("isError"))}
+                              for call in calls if (target := escaped_target(call, root)) is not None],
         # Same shape as the Codex runner's command items, so one dump script reads both.
         "commands": [{
             "command": f"{call.get('toolName')} {json.dumps(call.get('args'), ensure_ascii=False)}",
@@ -145,7 +176,8 @@ def run_case(args: argparse.Namespace, name: str) -> dict:
     changed = sorted(key for key in before.keys() | after.keys() if before.get(key) != after.get(key))
     protected_skills_unchanged = file_state(root / ".agents" / "skills") == skills_before
     valid = (len(runs) == len(case["turns"]) and all(r["exit_code"] == 0 and not r["timed_out"] and r["completed"] for r in runs)
-             and all(observed["loaded_skill_paths"].values()) and not observed["errors"] and protected_skills_unchanged)
+             and all(observed["loaded_skill_paths"].values()) and not observed["errors"] and protected_skills_unchanged
+             and all(escape["blocked"] for escape in observed["workspace_escapes"]))
     checks = {
         "head_unchanged": git(root, "rev-parse", "HEAD") == head,
         "index_unchanged": git(root, "diff", "--cached", "--binary") == index,

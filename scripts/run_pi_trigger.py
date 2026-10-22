@@ -13,18 +13,19 @@ import uuid
 try:
     from .run_codex_behavior import blind_workspace, file_state, leaked_words, read_events, run_turn, write_json
     from .run_codex_trigger import EXPECTED_FAILURES, REPO_ROOT, judge, load_cases, seed_trigger
-    from .run_pi_behavior import DEFAULT_MODEL, READ_ONLY_TOOLS, evidence
+    from .run_pi_behavior import DEFAULT_MODEL, READ_ONLY_TOOLS, WORKSPACE_GUARD, evidence
 except ImportError:
     from run_codex_behavior import blind_workspace, file_state, leaked_words, read_events, run_turn, write_json
     from run_codex_trigger import EXPECTED_FAILURES, REPO_ROOT, judge, load_cases, seed_trigger
-    from run_pi_behavior import DEFAULT_MODEL, READ_ONLY_TOOLS, evidence
+    from run_pi_behavior import DEFAULT_MODEL, READ_ONLY_TOOLS, WORKSPACE_GUARD, evidence
 
 
 def pi_command(pi: str, model: str, session_dir: Path, session_id: str, skill_dirs: list[Path]) -> list[str]:
     """Only the sample's skills load. Context files are off because pi also reads the user's and parent
-    directories' AGENTS.md, and MCP is off because --tools does not remove MCP tools."""
+    directories' AGENTS.md, MCP is off because --tools does not remove MCP tools, and the workspace
+    guard keeps the read-only tools inside the sample."""
     command = [
-        pi, "-p", "--mode", "json", "--no-extensions", "--no-skills", "--no-prompt-templates", "--no-themes",
+        pi, "-p", "--mode", "json", "--no-extensions", "-e", str(WORKSPACE_GUARD), "--no-skills", "--no-prompt-templates", "--no-themes",
         "--no-mcp", "--no-context-files", "--tools", READ_ONLY_TOOLS, "--model", model,
         "--session-dir", str(session_dir), "--session-id", session_id,
     ]
@@ -49,13 +50,15 @@ def run_case(args: argparse.Namespace, name: str, case: dict, run: int) -> dict:
     observed = evidence(events, root, skills)
     read = {skill for skill, loaded in observed["loaded_skill_paths"].items() if loaded}
     valid = (code == 0 and not timed_out and observed["turn_completed"] and not observed["errors"]
-             and not parse_error and not observed["context_files"])
+             and not parse_error and not observed["context_files"]
+             and all(escape["blocked"] for escape in observed["workspace_escapes"]))
     verdict = "invalid" if not valid else "pass" if judge(case, read) else "fail"
     result = {
         "case": name, "run": run, "workspace": str(root), "verdict": verdict, "expected_failure": name in EXPECTED_FAILURES,
         "expect": case["expect"], "avoid": case["avoid"], "no_rumo": case["no_rumo"], "read": sorted(read),
         "exit_code": code, "timed_out": timed_out, "parse_error": parse_error, "errors": observed["errors"],
-        "context_files": observed["context_files"], "messages": observed["messages"], "usage": observed["usage"],
+        "context_files": observed["context_files"], "workspace_escapes": observed["workspace_escapes"],
+        "messages": observed["messages"], "usage": observed["usage"],
     }
     if result["expected_failure"] and verdict == "pass":
         result["note"] = "Loaded the baseline that Claude skips on small edits; compare clients before reading it as a description change."

@@ -204,7 +204,10 @@ runs are scenario evidence, not a statistical claim of overall improvement.
 with any model pi can reach, to screen skill changes without spending the
 Codex budget. pi has no sandbox, so the runner allows only `read`, `grep`,
 `find`, and `ls`, refuses cases that edit files, and turns off installed
-skills, extensions, and prompt templates. Its arguments, `--without-skills`
+skills, extensions, and prompt templates. Those tools still reach any path, so
+both pi runners load `scripts/pi_workspace_guard.mjs`, an extension that blocks
+calls outside the sample before they run; a run in which such a call still
+succeeds is invalid. Its arguments, `--without-skills`
 arm, and result layout match the Codex runner. A result from another model
 only screens a change; confirm it with Codex or Claude before reporting it.
 `--manifest <file>` adds replay cases from local repositories: each names a

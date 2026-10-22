@@ -10,13 +10,13 @@ import unittest
 from unittest.mock import patch
 
 from scripts.codex_behavior_cases import CASES
-from scripts.run_pi_behavior import READ_ONLY_TOOLS, evidence, pi_command, run_case
+from scripts.run_pi_behavior import READ_ONLY_TOOLS, WORKSPACE_GUARD, evidence, pi_command, run_case
 
 
 def read_call(path: str, output: str, error: bool = False) -> list[dict]:
     """pi puts args on the start event only."""
-    return [{"type": "tool_execution_start", "toolCallId": "c", "toolName": "read", "args": {"path": path}},
-            {"type": "tool_execution_end", "toolCallId": "c", "toolName": "read",
+    return [{"type": "tool_execution_start", "toolCallId": path, "toolName": "read", "args": {"path": path}},
+            {"type": "tool_execution_end", "toolCallId": path, "toolName": "read",
              "result": {"content": [{"type": "text", "text": output}]}, "isError": error}]
 
 
@@ -59,6 +59,28 @@ class EvidenceTest(unittest.TestCase):
             self.assertIn(flag, command)
         self.assertEqual(command[command.index("--tools") + 1], READ_ONLY_TOOLS)
         self.assertNotIn("bash", READ_ONLY_TOOLS.split(","))
+        self.assertEqual(command[command.index("-e") + 1], str(WORKSPACE_GUARD))
+        self.assertTrue(WORKSPACE_GUARD.is_file())
+
+    def test_calls_outside_the_sample_are_recorded_with_whether_they_were_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "project"
+            (root / "src").mkdir(parents=True)
+            calls = [
+                *read_call("src/a.py", "inside"),
+                *read_call(str(root / "src" / "a.py"), "inside"),
+                *read_call("../secret.txt", "blocked", error=True),
+                *read_call("~/.ssh/id_rsa", "leaked"),
+            ]
+            for name, args in (("ls", {"path": str(Path.home())}), ("find", {"pattern": "C:/Users/**"}),
+                               ("grep", {"pattern": "x", "glob": "../*.md"}), ("write", {"path": "a.txt"})):
+                calls += [{"type": "tool_execution_start", "toolCallId": name, "toolName": name, "args": args},
+                          {"type": "tool_execution_end", "toolCallId": name, "toolName": name, "result": {}, "isError": True}]
+            escapes = evidence([*calls, SETTLED], root, [])["workspace_escapes"]
+        self.assertEqual([(e["tool"], e["target"], e["blocked"]) for e in escapes], [
+            ("read", "../secret.txt", True), ("read", "~/.ssh/id_rsa", False), ("ls", str(Path.home()), True),
+            ("find", "C:/Users/**", True), ("grep", "../*.md", True), ("write", "write", True),
+        ])
 
 
 class RunCaseTest(unittest.TestCase):
@@ -88,6 +110,14 @@ class RunCaseTest(unittest.TestCase):
         self.assertEqual(result["evidence_status"], "valid")
         self.assertIn("rumo-review", prompts[0])
         self.assertEqual(self.run_with([reply("report"), SETTLED], without_skills=False)[0]["evidence_status"], "invalid")
+
+    def test_unblocked_read_outside_the_sample_invalidates_the_run(self) -> None:
+        loaded = read_call(".agents/skills/rumo-review/SKILL.md", "name: rumo-review")
+        outside = str(Path.home() / "notes.txt")
+        leaked = [*loaded, *read_call(outside, "private"), reply("report"), SETTLED]
+        self.assertEqual(self.run_with(leaked, without_skills=False)[0]["evidence_status"], "invalid")
+        blocked = [*loaded, *read_call(outside, "blocked", error=True), reply("report"), SETTLED]
+        self.assertEqual(self.run_with(blocked, without_skills=False)[0]["evidence_status"], "valid")
 
     def test_baseline_prompt_has_no_skills_and_flags_any_skill_read(self) -> None:
         result, prompts = self.run_with([reply("report"), SETTLED], without_skills=True)
