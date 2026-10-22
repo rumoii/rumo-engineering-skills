@@ -63,6 +63,7 @@ MODE_TRIGGERS = {
     "rumo-interface": (r"HTTP", r"event|queue message", r"configuration field"),
     "rumo-remote-ops": (r"remote Linux host", r"systemd|Docker Compose", r"backups? and restores?", r"deployment of selected application artifacts"),
     "rumo-debug": (r"stay read-only unless the request also asks for the fix",),
+    "rumo-agent-collaboration": (r"external CLI review, also load rumo-review",),
 }
 
 # Rules that keep rumo-clarify light; each must stay in the description or body.

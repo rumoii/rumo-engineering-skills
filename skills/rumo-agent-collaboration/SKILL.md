@@ -1,6 +1,6 @@
 ---
 name: rumo-agent-collaboration
-description: Use when the user asks to delegate or transfer work to another agent CLI or model, such as Codex, Claude Code, pi, qwen, grok, Cursor, Gemini, OpenCode, GitHub Copilot CLI, Aider, Cline CLI, or Goose ("give this part to pi", "交给 pi 执行", "用 mimo 的 pi 跑", "let Codex do it"); to relay development, review, and fixes between agents; to use Orca for collaboration; or to resume a recorded run. Supports read-only and development tasks with explicit access and one owner per task. For a named external CLI review, pair with rumo-review. Use rumo-review alone for reviews without an external route, rumo-handoff for a handoff document, and rumo-plan to split an agreed plan. Do not use for this client's own subagents, such as "start several subagents", which the client handles itself.
+description: Use when the user asks to delegate, transfer, or relay work to another agent CLI or model, such as Codex, Claude Code, pi, Aider, or Gemini ("give this part to pi", "交给 pi 执行"), to use Orca for collaboration, or to resume a recorded run. For a named external CLI review, also load rumo-review; use rumo-review alone when no external route is named. Use rumo-handoff for a handoff document and rumo-plan to split an agreed plan. Do not use for this client's own subagents, such as "start several subagents".
 ---
 
 # Rumo Agent Collaboration
@@ -11,7 +11,7 @@ Start a different agent, give it a bounded piece of work, and keep it clear at e
 
 This skill governs only the agents it starts. The client's own subagents, whether it uses them by itself or because the user asked for several, follow the client's rules and need nothing from this skill. When a relay or transfer in this skill runs one step through a native subagent, the single-owner rules here still apply to that step.
 
-For a named external CLI review, use rumo-review for review standards and this skill for execution and records. Read [references/trigger-examples.md](references/trigger-examples.md) when checking selection boundaries with neighboring skills.
+For a named external CLI review, use rumo-review for review standards and this skill for execution and records. Read rumo-review before writing the review brief; when it is not installed, follow [references/external-cli.md](references/external-cli.md) alone. Read [references/trigger-examples.md](references/trigger-examples.md) when checking selection boundaries with neighboring skills.
 
 ## Modes
 

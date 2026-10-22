@@ -148,6 +148,7 @@ RULES = {
         "run `agent_run.py show` and show the user the full command and known limits",
         "Unverified status alone does not require repeated approval.",
         "For a named external CLI review, use rumo-review for review standards and this skill for execution and records.",
+        "Read rumo-review before writing the review brief",
         "A CLI without a confirmed read-only mode cannot have an adapter.",
         "Do not launch a disabled adapter, including the bundled Gemini and OpenCode declarations.",
         "Never give the receiver more access than you have, and never pass a flag that bypasses its sandbox, approvals, or tool limits.",
