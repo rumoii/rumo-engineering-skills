@@ -68,6 +68,14 @@ Other tasks have their own default route, chosen by `rumo-coding-guidelines`:
 | Investigation | Read-only; answer with evidence |
 | Resume | Read the handoff document and the decisions and dead ends → check the repository's actual state → continue |
 | Refactor | Confirm test coverage → change the structure → rerun the same tests unchanged |
+| Performance problem | Baseline under fixed conditions → find the hot path → fix → measure the same way; report both numbers |
+| Metric improvement | Fix the measurement → log each attempt with before and after values → keep or revert; never loosen the target |
+| Runtime diagnosis | Capture the live signal or trace → narrow to one mechanism → confirm → map to source; diagnosis only |
+| Prototype | Name the decision → throwaway build outside the product → switchable variants → recommend |
+| Visual parity | Baseline screenshots of every state → one component at a time → image comparison |
+| Skill or prompt change | Write by the prose rules → run the validators → run eval cases when behavior changes |
+| Pull request follow-up | On request: conflicts → review comments → checks; never merge |
+| Pause | Stop at a safe boundary, nothing irreversible, resume note; commit only when you ask |
 
 To pick a skill yourself, call it by name:
 

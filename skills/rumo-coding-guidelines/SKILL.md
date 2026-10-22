@@ -52,14 +52,24 @@ Treat review, explanation, and monitoring requests as read-only until the user a
 
 ### Task Flows
 
-Match the task to one of these routes. A flow is a default route, not a checklist to copy; when you skip a step, say why in the final report. Tasks that fit none keep the rules above.
+Match the task to one of these routes, and read [references/task-flows.md](references/task-flows.md) for its steps and stop points before following it. A flow is a default route, not a checklist to copy; when you skip a step, say why in the final report. Tasks that fit none keep the rules above.
 
-- **Small edit.** Read the code, edit, run the most relevant check, then `rumo-verify`. No plan and no review.
-- **Defect fix.** `rumo-debug` reproduces the defect and proves the cause, a failing test captures it (`rumo-test`), the fix turns it green, the project's verification recipe drives the real feature when one exists, then `rumo-verify`.
-- **Feature.** `rumo-clarify` when the goal is unclear, `rumo-plan` when the work spans several steps, the `rumo-test` risk gate, thin end-to-end slices, the verification recipe when one exists, then `rumo-verify`; `rumo-review` only on request.
-- **Investigation.** Stay read-only and answer with evidence.
-- **Resume.** Read the handoff document, the plan's decisions and dead ends, or the run record, check the repository's actual state against them, then continue.
-- **Refactor.** Confirm that existing tests cover the behavior being moved, adding them first when they do not, change the structure, and rerun the same tests unchanged.
+| Task | Route |
+| --- | --- |
+| Small edit | Read, edit, most relevant check, `rumo-verify`; no plan, no review |
+| Defect fix | `rumo-debug` proves the cause, failing test, fix, verification recipe, `rumo-verify` |
+| Feature | `rumo-clarify` if unclear, `rumo-plan` if multi-step, `rumo-test` risk gate, thin slices, recipe, `rumo-verify` |
+| Investigation | Read-only answer with evidence |
+| Resume | Read the handoff or decision record, check the actual repository state, continue |
+| Refactor | Cover the behavior with tests, move in green steps, rerun the same tests |
+| Performance problem | Baseline measurement, profile, fix, same measurement again; report both numbers |
+| Metric improvement | Fixed measurement, one logged attempt at a time, keep or revert, never loosen the target |
+| Runtime diagnosis | Capture the signal, narrow to one mechanism, confirm, map to source; diagnosis only |
+| Prototype | Name the decision, throwaway build outside the product, switchable variants, recommend |
+| Visual parity | Baseline screenshots, one component at a time, image comparison |
+| Skill or prompt change | `rumo-prose`, repository validators, evaluation cases when behavior changes |
+| Pull request follow-up | On request: conflicts, review comments, then checks (`rumo-git-commit`); never merge |
+| Pause | Stop at a safe boundary, nothing irreversible, resume note; commit only on request |
 
 ## Close With Evidence
 
