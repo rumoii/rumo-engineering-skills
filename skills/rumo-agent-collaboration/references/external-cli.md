@@ -20,6 +20,10 @@ A CLI that is installed but not signed in fails on the first turn; never sign in
 
 Use `py -3` instead of `python` on Windows when that is the configured launcher.
 
+### Subagent Availability In This Invocation
+
+When the task needs the receiving client's own subagents, apply [native.md](native.md) to its actual invocation before claiming they are available. The bundled pi adapter intentionally disables MCP and extension discovery with `--no-mcp` and `--no-extensions`. An installed subagent package does not make its tools available in that invocation. This is a launch restriction, not evidence that pi lacks subagents. Keep the adapter's restrictions; do not remove them or add shell access to recover subagents. If the required child capability or its read-only policy cannot be confirmed, use an already authorized verified route or report the blocker.
+
 ## Resolve The Model
 
 Pass the model with `--model`; the record keeps the exact value sent.

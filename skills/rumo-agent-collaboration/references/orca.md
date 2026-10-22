@@ -14,6 +14,8 @@ orca skills get orchestration
 | Transfer | Handoff owner | Start the other agent in its own terminal or worktree through `orca-cli`; create no supervised run and do not monitor it afterward. |
 | Delegate, Relay | Coordinator | Use the supervised loop in the orchestration guide: dispatch, wait for completion or questions, and validate each result before accepting it. |
 
+For a delegation the user will watch, you may instead start the worker in its own terminal without a supervised run and end your turn as Workflow step 4 in SKILL.md allows. You remain the owner; read and validate the result when the user reports completion.
+
 When a prompt you receive carries Orca's injected task and dispatch IDs, you are a dispatched worker: follow that preamble, not this skill's workflow.
 
 ## Rules That Still Apply
