@@ -95,6 +95,15 @@ RULES = {
         "append one line for each fork, failure, or change of direction",
         "never edit or delete an earlier line",
     ),
+    "rumo-reflect": (
+        "Then stop and wait.",
+        "Apply only items the user explicitly accepts",
+        "never open issues, tickets, or notes on your own",
+        "Do not invent lessons to fill the table.",
+        "Remove the cause with structure",
+        "say why each higher level cannot hold it",
+        "run it against the real mistake from this session and confirm that it fails",
+    ),
     "rumo-project-profile": (
         "It never prints credential values.",
         "Never guess when multiple profiles match.",
@@ -301,17 +310,7 @@ REFERENCE_RULES = {
 }
 
 # Optional skills under extras/ whose rules guard the user's authority.
-EXTRA_RULES = {
-    "rumo-reflect": (
-        "Then stop and wait.",
-        "Apply only items the user explicitly accepts",
-        "never open issues, tickets, or notes on your own",
-        "Do not invent lessons to fill the table.",
-        "Remove the cause with structure",
-        "say why each higher level cannot hold it",
-        "run it against the real mistake from this session and confirm that it fails",
-    ),
-}
+EXTRA_RULES: dict[str, tuple[str, ...]] = {}
 
 # Each always-on snippet bullet must restate a rule a skill already owns, so the
 # pasted copy cannot grow rules of its own. Keys match the bullet; values are

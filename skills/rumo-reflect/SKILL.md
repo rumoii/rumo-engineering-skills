@@ -1,6 +1,6 @@
 ---
 name: rumo-reflect
-description: Use only when the user explicitly asks to reflect on, review, or learn from the current session, such as "reflect", "复盘一下", or "what should the skills learn from this", or accepts an offer to review the session. Find recurring mistakes, user corrections, and skipped rules in the conversation, propose the strongest place to fix each one (a check, a pinned test, skill text, or project instructions), and discuss every item with the user, who decides; nothing changes without approval. Do not use for progress updates, end-of-task summaries, handoff documents (use rumo-handoff), or daily reports.
+description: Use only when the user explicitly asks to reflect on, review, or learn from the current session, such as "reflect", "复盘一下", or "what should the skills learn from this", or accepts an offer to review the session. Find recurring mistakes, user corrections, and skipped rules in the conversation, propose the strongest place to fix each one (a structural change, a check, a pinned test, skill text, or project instructions), and discuss every item with the user, who decides; nothing changes without approval. Do not use for progress updates, end-of-task summaries, handoff documents (use rumo-handoff), or daily reports.
 ---
 
 # Rumo Reflect
