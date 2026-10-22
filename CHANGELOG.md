@@ -4,6 +4,8 @@
 
 ## 未发布
 
+## 0.6.1 - 2026-10-23
+
 - `rumo-coding-guidelines`：任务流程从 6 条扩充到 14 条，新增性能问题、指标优化、运行时诊断、原型、视觉对齐、改技能或提示词、跟进 PR、暂停。正文保留一张速查表，每条的步骤和必须停下的情况放进 `references/task-flows.md`；常驻基线的 Flow 行同步更新，已安装基线的项目重跑安装器后生效。
 - `rumo-reflect` 由可选扩展改为默认技能，Claude Code 插件用户也能使用了。description 中的修正位置补上“改结构”。之前用 `-Extras rumo-reflect` / `--extras rumo-reflect` 装过的，直接重跑安装器即可，链接会改指新位置；不要再带这个参数，否则会报 Unknown optional skill。新增触发用例 `reflect-request`，以及不该触发的 `reflect-skip-summary`。
 
