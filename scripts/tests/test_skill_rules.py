@@ -296,6 +296,9 @@ EXTRA_RULES = {
         "Apply only items the user explicitly accepts",
         "never open issues, tickets, or notes on your own",
         "Do not invent lessons to fill the table.",
+        "Remove the cause with structure",
+        "say why each higher level cannot hold it",
+        "run it against the real mistake from this session and confirm that it fails",
     ),
 }
 

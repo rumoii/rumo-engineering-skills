@@ -24,12 +24,13 @@ Record for each candidate: what happened with its place in the conversation, the
 
 Propose the first location that can hold the fix:
 
-1. An automatic check the repository already runs: a validator, lint rule, script, test, or hook.
-2. A pinned rule test, when the repository keeps one for skill text.
-3. Skill text: the `description` when triggering failed, the body when a step was skipped or unclear.
-4. Project instructions (`AGENTS.md`, `CLAUDE.md`) or the client's memory, for facts about one project or user.
+1. Remove the cause with structure, so the mistake can no longer be made: delete the outdated pattern an agent would copy, merge lists that must be kept in sync by hand into one source, or make the parser or validator reject the wrong form outright.
+2. An automatic check the repository already runs: a validator, lint rule, script, test, or hook. Its error names the fix.
+3. A pinned rule test, when the repository keeps one for skill text.
+4. Skill text: the `description` when triggering failed, the body when a step was skipped or unclear.
+5. Project instructions (`AGENTS.md`, `CLAUDE.md`) or the client's memory, for facts about one project or user.
 
-Prefer tightening an existing rule over adding a new one, and a new skill only when no skill owns the situation. Keep private project facts out of shared skills; put them in a project profile (`rumo-project-profile`) or the project's own files.
+For each candidate, say why each higher level cannot hold it. Prefer tightening an existing rule over adding a new one, and a new skill only when no skill owns the situation. Keep private project facts out of shared skills; put them in a project profile (`rumo-project-profile`) or the project's own files.
 
 ## Discuss, Then Decide
 
@@ -41,6 +42,7 @@ The user decides every item. Apply only items the user explicitly accepts; a gen
 
 - Edit only the accepted items, at the agreed location. Follow `rumo-prose` for skill and instruction text when it is installed.
 - Edit the source of a skill, not an installed copy that an update overwrites, such as a plugin cache. When the source is outside the current workspace or belongs to someone else, give the user the exact proposed edit instead of writing it.
+- For a new check or pinned test, run it against the real mistake from this session and confirm that it fails, using the pre-fix version when the mistake was already corrected; a check that never caught the mistake proves nothing. Record the command and result.
 - Run the checks the edited repository requires for those files.
 - Do not commit or push unless the user asks; then follow `rumo-git-commit`.
 
