@@ -405,5 +405,29 @@ class ReadmeInstallRulesTest(unittest.TestCase):
                     self.assertTrue(rule in text, f"{name}: agent install rule missing")
 
 
+# A skill change that alters triggering or behavior is accepted in a real client
+# before push; validators only prove the files are well formed.
+ACCEPTANCE_RULES = {
+    "CONTRIBUTING.md": (
+        "### Acceptance before push",
+        "alters a skill's `description` or a rule that decides what the agent does",
+        "record the candidate commit, client and version, model, cases, results, and evidence directory",
+        "Never report such a change ready to push without this run",
+    ),
+    "AGENTS.md": (
+        "run the acceptance in `CONTRIBUTING.md`",
+    ),
+}
+
+
+class AcceptanceRulesTest(unittest.TestCase):
+    def test_skill_changes_need_real_client_acceptance(self) -> None:
+        for name, rules in ACCEPTANCE_RULES.items():
+            text = " ".join((REPO_ROOT / name).read_text(encoding="utf-8").split())
+            for rule in rules:
+                with self.subTest(file=name, rule=rule):
+                    self.assertTrue(rule in text, f"{name}: acceptance rule missing")
+
+
 if __name__ == "__main__":
     unittest.main()
