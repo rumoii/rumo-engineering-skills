@@ -66,6 +66,8 @@ RULES = {
         "Verify each fact now; do not copy it from memory.",
         "Never include passwords, tokens, keys, or private certificate material",
         "A handoff does not transfer approval for actions the user has not granted.",
+        "## Tried And Dropped",
+        "Copy the plan's decisions and dead ends",
     ),
     "rumo-interface": (
         "A search is discovery, not proof of absence.",
@@ -88,6 +90,8 @@ RULES = {
         "never start the next task on top of a failing one",
         "never run two tasks in parallel when they touch the same files",
         "A decision record never authorizes database writes, deployments, or other controlled actions.",
+        "append one line for each fork, failure, or change of direction",
+        "never edit or delete an earlier line",
     ),
     "rumo-project-profile": (
         "It never prints credential values.",

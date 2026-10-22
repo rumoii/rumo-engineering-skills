@@ -19,6 +19,7 @@ Use the location the user names. Otherwise follow the workspace's convention for
 - Commits made in this task, and anything staged, unstaged, or untracked that belongs to it.
 - Checks actually run, with commands and results.
 - Running processes, terminals, servers, or remote sessions the next agent must know about.
+- Approaches tried and abandoned. Copy the plan's decisions and dead ends when the task has a plan file, then add any the conversation shows that it does not.
 
 Verify each fact now; do not copy it from memory.
 
@@ -41,6 +42,9 @@ What was checked and how; what remains unproven and why.
 
 ## Next Steps
 Ordered, concrete actions. Mark steps that need user approval.
+
+## Tried And Dropped
+Approaches tried and abandoned, each with why and where the evidence is.
 
 ## Pitfalls
 Traps already hit and how they were resolved.
