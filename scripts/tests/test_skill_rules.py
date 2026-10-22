@@ -130,6 +130,8 @@ RULES = {
         "never mark it passed",
         "those are separate authorizations",
         "Controlled actions you did not take, such as commits, pushes, or publication, are not verification gaps",
+        "look for the project's verification recipe",
+        "report the drift instead of following stale steps",
     ),
     "rumo-agent-collaboration": (
         "This skill governs only the agents it starts.",
@@ -204,6 +206,15 @@ REFERENCE_RULES = {
     ),
     "rumo-plan/references/parallel-execution.md": (
         "Stop on a conflict and ask; do not resolve it silently.",
+    ),
+    "rumo-verify/references/recipe.md": (
+        "Ask the user when you cannot tell whether the repository accepts committed agent files.",
+        "Do not share a recipe between clients through a symbolic link",
+        "Write every command relative to the repository root",
+        "Until the recipe has run end to end, it is a draft.",
+        "Stop only processes this run started; never stop a process by name.",
+        "Cleanup never deletes the evidence.",
+        "A product defect found during maintenance is reported, never written around in the recipe.",
     ),
     "rumo-review/references/codex-app-server.md": (
         "Do not let the script apply fixes.",

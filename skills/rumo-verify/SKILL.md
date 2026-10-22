@@ -1,6 +1,6 @@
 ---
 name: rumo-verify
-description: Use before claiming work is done, marking it ready, committing for handoff, or pushing, and when asked to verify a change; establish the exact committed and dirty change scope, run the smallest sufficient checks, and report only commands actually run. Also use when adding, changing, reviewing, or diagnosing a repository-owned CI check, static verifier, generated-file check, pre-commit rule, or aggregate test entry point. Never commits, pushes, deploys, or changes remote systems; do not use for test planning before implementation, or for a semantic code review (use rumo-review instead). For failing checks on an open pull request, use rumo-git-commit instead.
+description: Use before claiming work is done, marking it ready, committing for handoff, or pushing, and when asked to verify a change; establish the exact change scope, run the smallest sufficient checks, and report only commands actually run. Also use to add, review, or diagnose a repository CI check, static verifier, pre-commit rule, or aggregate test entry point, and to create or maintain a project's verification recipe for launching, driving, and proving its real features. Never commits, pushes, or deploys; not for test planning (rumo-test) or semantic review (rumo-review). For failing checks on an open pull request, use rumo-git-commit instead.
 ---
 
 # Rumo Verify
@@ -13,6 +13,7 @@ No claim of "done", "fixed", or "passing" without fresh evidence from this state
 | --- | --- |
 | Verify a change (default) | Before handoff, commit, push, or when asked to check work |
 | Build or review a gate | Adding, changing, or reviewing a CI job, verifier, threshold, hook, or aggregate check; read [references/gates.md](references/gates.md) first. A review stays read-only. |
+| Project verification recipe | Creating, checking, or repairing a project's recipe for launching the application, driving its features as a user would, and keeping the proof; read [references/recipe.md](references/recipe.md) first. |
 
 ## Verify A Change
 
@@ -24,6 +25,7 @@ No claim of "done", "fixed", or "passing" without fresh evidence from this state
 4. Decide which paths belong to this task. Never stage, stash, reset, clean, or rewrite unrelated work to make verification easier.
 5. When a file mixes task and unrelated edits, verify the intended staged content; if tools cannot read the index, check it out into a temporary worktree without touching the user's index or files.
 6. Handle each repository in a multi-repository change separately.
+7. When the change touches user-visible behavior, look for the project's verification recipe: a `verify-<app>` skill in the client's project or user skill directory, or a recipe path named in `AGENTS.md`. Use its launch, health check, and drive steps for the affected features, under the stop conditions below. When the recipe no longer matches the application, report the drift instead of following stale steps.
 
 ### 2. Choose Checks
 

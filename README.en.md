@@ -128,7 +128,7 @@ Installed by default.
 | `rumo-coding-guidelines` | Baseline discipline: real code paths, only requested and necessary work, verified results |
 | `rumo-test` | Evidence planning, test-first implementation, and high-assurance spec-and-evidence work |
 | `rumo-debug` | Reproduce, localize, and prove a root cause; read-only unless the fix is requested |
-| `rumo-verify` | Exact change scope and the smallest sufficient checks before claiming done; building repository gates |
+| `rumo-verify` | Exact change scope and the smallest sufficient checks before claiming done; building repository gates; project verification recipes |
 | `rumo-review` | Read-only diff review or named-scope audit, an explicit review-fix loop, a simplification audit, addressing review feedback, or, with your consent, a cross-model review through another installed CLI |
 | `rumo-git-commit` | Commits, branch landing, history cleanup, releases, pushes, pull requests, and following an open pull request's CI checks, per repository conventions |
 | `rumo-interface` | Compatible evolution of APIs, messages, configuration, and stored formats, with HTTP contract checks |
