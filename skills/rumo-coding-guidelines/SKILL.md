@@ -50,6 +50,17 @@ Treat review, explanation, and monitoring requests as read-only until the user a
 - Reuse a check result while the code, configuration, and target version it ran against are unchanged; after any of them changes, rerun the checks it affects.
 - A high-assurance final run is always a fresh run after the last edit; earlier passes never replace it.
 
+### Task Flows
+
+Match the task to one of these routes. A flow is a default route, not a checklist to copy; when you skip a step, say why in the final report. Tasks that fit none keep the rules above.
+
+- **Small edit.** Read the code, edit, run the most relevant check, then `rumo-verify`. No plan and no review.
+- **Defect fix.** `rumo-debug` reproduces the defect and proves the cause, a failing test captures it (`rumo-test`), the fix turns it green, the project's verification recipe drives the real feature when one exists, then `rumo-verify`.
+- **Feature.** `rumo-clarify` when the goal is unclear, `rumo-plan` when the work spans several steps, the `rumo-test` risk gate, thin end-to-end slices, the verification recipe when one exists, then `rumo-verify`; `rumo-review` only on request.
+- **Investigation.** Stay read-only and answer with evidence.
+- **Resume.** Read the handoff document, the plan's decisions and dead ends, or the run record, check the repository's actual state against them, then continue.
+- **Refactor.** Confirm that existing tests cover the behavior being moved, adding them first when they do not, change the structure, and rerun the same tests unchanged.
+
 ## Close With Evidence
 
 - Turn the task into a checkable goal, for example: reproduce, fix, run the focused test.

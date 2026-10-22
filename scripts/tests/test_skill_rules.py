@@ -20,6 +20,13 @@ RULES = {
         "A high-assurance final run is always a fresh run after the last edit",
         "Only after the user agrees, add it to their `AGENTS.md` or `CLAUDE.md`",
         "Do not start the review or edit any skill or instruction file unless the user accepts.",
+        "A flow is a default route, not a checklist to copy",
+        "**Small edit.**",
+        "**Defect fix.**",
+        "**Feature.**",
+        "**Investigation.**",
+        "**Resume.**",
+        "**Refactor.**",
     ),
     "rumo-database-change-safety": (
         "Start read-only.",
