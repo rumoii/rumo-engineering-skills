@@ -113,6 +113,22 @@ Results describe only the recorded Codex CLI version and model settings.
 Other clients remain untested, and neither client's result stands in for the
 other's.
 
+`scripts/run_pi_trigger.py` runs the same cases through pi with any model it
+can reach, to screen a description change cheaply. It turns off pi's own
+skill discovery and loads each sample skill with `--skill`, so pi lists them
+the way it lists installed skills. It also turns off context files, because
+pi reads the user's and parent directories' `AGENTS.md`, and MCP, because the
+tool allowlist does not remove MCP tools. Pass `--workspace-root` when the
+evidence directory's path would hint at the task:
+
+```powershell
+python scripts/run_pi_trigger.py --snapshot <snapshot-root> --output-dir <task-evidence-dir> --workspace-root <neutral-dir> --model <provider/id> [--case debug-readonly] [--runs 3]
+```
+
+It shares the Codex runner's grading and invalid-run rules. A result from
+another model only screens a change; confirm it with Codex or Claude before
+reporting it.
+
 ## Behavior evals
 
 Cases tagged `behavior` check what an agent does once a skill fires, such as
