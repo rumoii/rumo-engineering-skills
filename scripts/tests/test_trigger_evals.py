@@ -72,6 +72,22 @@ class TriggerEvalsTest(unittest.TestCase):
                 if grader.name.startswith(("skips-", "uses-no-")):
                     self.assertEqual((fields.get("min"), fields.get("max")), ("0", "0"))
 
+    def test_every_model_invoked_default_skill_has_a_trigger_case(self) -> None:
+        covered = set()
+        for case in self.cases():
+            if "trigger" not in tags(case):
+                continue
+            for grader in (case / "graders").glob("uses-*.md"):
+                match = SKILL_IN_PATTERN.search(frontmatter(grader).get("input_match", ""))
+                if match:
+                    covered.add(match.group(1))
+        skills = {
+            path.parent.name
+            for path in (REPO_ROOT / "skills").glob("*/SKILL.md")
+            if frontmatter(path).get("disable-model-invocation") != "true"
+        }
+        self.assertEqual(sorted(skills - covered), [], "add a trigger case whose uses-* grader names each skill")
+
     def test_behavior_cases_scaffold_a_workspace_and_use_free_graders(self) -> None:
         self.assertTrue(self.behavior_cases())
         for case in self.behavior_cases():

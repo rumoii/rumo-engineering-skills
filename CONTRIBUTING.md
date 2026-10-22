@@ -26,7 +26,10 @@ Follow [skills/rumo-prose/references/agent-docs.md](skills/rumo-prose/references
 In short:
 
 - The `description` names the triggering situations, the look-alikes that must
-  not trigger, and the skill to use instead.
+  not trigger, and the skill to use instead, in at most 100 words: clients keep
+  every description in context for the whole session.
+- Backticked `scripts/...` paths resolve from the skill's own directory, since
+  that is where installed skills find their bundled scripts.
 - The body runs: purpose, modes (if any), workflow with checkpoints, stop
   conditions, evidence and output. Red flags and shortcut rebuttals are
   optional and belong only where agents tend to skip steps.
@@ -81,7 +84,8 @@ claude plugin eval . --runs 1 --ablation none --no-publish
 
 Use `--case <name>` for one case and `--runs 3` before trusting a borderline
 result. Results land in the ignored `evals/results/`. Add a case when a
-request picks the wrong skill. `coding-baseline` is expected to fail: on a
+request picks the wrong skill. Every default skill that the model may select
+on its own needs at least one trigger case whose `uses-*` grader names it. `coding-baseline` is expected to fail: on a
 small edit the client does not load `rumo-coding-guidelines`, which is why the
 always-on snippet in its `references/` exists. A pass there means a
 description change altered how the baseline loads.

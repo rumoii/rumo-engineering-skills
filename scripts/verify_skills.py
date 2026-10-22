@@ -28,6 +28,10 @@ EXTRAS_HEADINGS = {"extras", "optional extras", "可选扩展"}
 H2_RE = re.compile(r"^## +(.+?)\s*$", re.MULTILINE)
 MAX_NAME_LENGTH = 64
 MAX_DESCRIPTION_LENGTH = 1024
+# Every description stays in the client's context for the whole session.
+MAX_DESCRIPTION_WORDS = 100
+BACKTICK_SPAN_RE = re.compile(r"`([^`\n]+)`")
+SCRIPT_PATH_RE = re.compile(r"(?<![\w./-])scripts/[\w./-]*\w")
 MAX_DEFAULT_SKILL_LINES = 150
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$")
 FORBIDDEN_TERMS_ENV = "RUMO_FORBIDDEN_TERMS_FILE"
@@ -229,6 +233,24 @@ def validate_markdown_links(repo_root: Path, markdown_files: list[Path], errors:
                 )
 
 
+def validate_script_references(skill_dir: Path, errors: list[str]) -> None:
+    """Check that `scripts/...` paths in a skill's Markdown exist in that skill.
+
+    Installed skills resolve bundled scripts from their own directory, so a
+    path that exists only elsewhere in this repository breaks after install.
+    """
+    for path in iter_skill_markdown(skill_dir):
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except (OSError, UnicodeError):
+            continue
+        for number, line in enumerate(lines, 1):
+            for span in BACKTICK_SPAN_RE.findall(line):
+                for script in SCRIPT_PATH_RE.findall(span):
+                    if not (skill_dir / script).exists():
+                        errors.append(f"{path}:{number}: script not found in this skill: {script}")
+
+
 def _is_within(path: Path, root: Path) -> bool:
     try:
         path.resolve().relative_to(root.resolve())
@@ -357,6 +379,11 @@ def validate_repository(
             errors.append(
                 f"{skill_path}: description must contain at most {MAX_DESCRIPTION_LENGTH} characters"
             )
+        if len(description.split()) > MAX_DESCRIPTION_WORDS:
+            errors.append(
+                f"{skill_path}: description must contain at most {MAX_DESCRIPTION_WORDS} words"
+            )
+        validate_script_references(skill_dir, errors)
 
         manual_in_frontmatter = frontmatter.get("disable-model-invocation", "").lower() == "true"
         manual_in_metadata = False

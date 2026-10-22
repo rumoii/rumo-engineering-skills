@@ -232,6 +232,28 @@ class VerifySkillsTest(unittest.TestCase):
         )
         self.assert_error_contains("description must contain at most 1024 characters")
 
+    def test_rejects_description_over_word_budget(self) -> None:
+        self.replace_description("Use when" + " checking" * 99)
+        self.assert_error_contains("description must contain at most 100 words")
+
+    def test_accepts_description_at_word_budget(self) -> None:
+        self.replace_description("Use when" + " checking" * 98)
+        self.assertEqual(validate_repository(self.repo_root), [])
+
+    def test_rejects_missing_script_path_in_backticks(self) -> None:
+        with (self.repo_root / "skills" / "rumo-example" / "reference.md").open("a", encoding="utf-8") as handle:
+            handle.write("\nRun `python scripts/missing.py --check`.\n")
+        self.assert_error_contains("reference.md:3: script not found in this skill: scripts/missing.py")
+
+    def test_resolves_script_paths_from_the_skill_directory(self) -> None:
+        skill_dir = self.repo_root / "skills" / "rumo-example"
+        (skill_dir / "scripts").mkdir()
+        (skill_dir / "scripts" / "tool.py").write_text("print('ok')\n", encoding="utf-8")
+        (skill_dir / "reference.md").write_text(
+            "# Reference\n\nRun `python scripts/tool.py --check` or `scripts/tool.py`.\n", encoding="utf-8"
+        )
+        self.assertEqual(validate_repository(self.repo_root), [])
+
     def set_manual_only(self, *, frontmatter: bool, metadata: bool) -> None:
         skill_dir = self.repo_root / "skills" / "rumo-example"
         if frontmatter:

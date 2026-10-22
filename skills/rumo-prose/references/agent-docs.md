@@ -45,8 +45,8 @@ Add two optional parts only where agents tend to skip steps:
 
 A rule earns its place only if an agent breaks it without the rule and keeps it with the rule. Apply checks in three tiers:
 
-- **Always:** when a skill gains a rule whose loss would let an agent overstep its authority or overclaim a result, pin its wording in `scripts/tests/test_skill_rules.py`. This is free and runs in CI, so a merge that drops the rule fails at once.
-- **When merging, rewriting, or substantially trimming a skill:** run the behavior cases in `evals/` (tagged `behavior`) before and after, and keep the change only if none regresses.
+- **Always:** when a skill gains a rule whose loss would let an agent overstep its authority or overclaim a result, pin its wording in a repository test that fails when the sentence is removed. This is free and runs in CI, so a merge that drops the rule fails at once.
+- **When merging, rewriting, or substantially trimming a skill:** run the repository's behavior evals before and after, and keep the change only if none regresses.
 - **Recommended for a single new rule:** first write a scenario where the agent goes wrong without the rule, then add the rule and confirm the plugin arm passes and the delta against the no-plugin arm is positive. When an agent finds a way around the rule, add that excuse to the skill's shortcuts table and a case for it.
 
 `claude plugin eval` is client-specific to Claude Code. Elsewhere, run the same prompts by hand in fresh sessions with and without the skill installed and compare what the agent does.
