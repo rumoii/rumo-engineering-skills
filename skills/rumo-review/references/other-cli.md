@@ -26,7 +26,7 @@ A request naming the CLI, review target, and scope already supplies that agreeme
 - Pass only the target (the exact `git diff` range or files), the review standard from SKILL.md, and the repository guidance. Withhold the fix history, earlier findings, and your own conclusions.
 - When the read-only sandbox blocks the CLI from running Git, include the diff text in the prompt instead.
 - Capture the output to a file outside the repository.
-- Wait without polling: in a client that runs background commands and notifies when they finish, run the command in the background; otherwise run it once in the foreground with a timeout long enough for a large review.
+- Wait as step 4 of `rumo-agent-collaboration` describes: in a client that runs background commands and notifies when they finish, run the command in the background; otherwise launch it with `--detach`, end your turn, and give the user the `watch` command and what to tell you when the review finishes. Do not read the CLI's live output while it runs. Only when you run the CLI directly because the collaboration skill is unavailable, run it once in the foreground with a timeout long enough for a large review.
 
 ## Stop Conditions
 
