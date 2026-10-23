@@ -48,16 +48,20 @@ usage() {
     '                       block from each detected client; keep the repository and profiles.'
 }
 
+need_value() {
+  [ "$#" -ge 2 ] || { printf 'Missing value for %s; nothing was changed.\n' "$1" >&2; usage >&2; exit 1; }
+}
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --repo) REPO_PATH="$2"; shift 2 ;;
-    --profiles-repo) PROFILES_REPO="$2"; PROFILES_REPO_EXPLICIT=1; shift 2 ;;
-    --codex-home) CODEX_HOME_DIR="$2"; CODEX_HOME_EXPLICIT=1; shift 2 ;;
-    --claude-home) CLAUDE_HOME_DIR="$2"; CLAUDE_HOME_EXPLICIT=1; shift 2 ;;
-    --agents-home) AGENTS_HOME_DIR="$2"; AGENTS_HOME_EXPLICIT=1; shift 2 ;;
-    --remote) REMOTE_URL="$2"; shift 2 ;;
-    --extras) EXTRAS_REQUEST="$EXTRAS_REQUEST,$2"; shift 2 ;;
-    --remove-extras) REMOVE_EXTRAS_REQUEST="$REMOVE_EXTRAS_REQUEST,$2"; shift 2 ;;
+    --repo) need_value "$@"; REPO_PATH="$2"; shift 2 ;;
+    --profiles-repo) need_value "$@"; PROFILES_REPO="$2"; PROFILES_REPO_EXPLICIT=1; shift 2 ;;
+    --codex-home) need_value "$@"; CODEX_HOME_DIR="$2"; CODEX_HOME_EXPLICIT=1; shift 2 ;;
+    --claude-home) need_value "$@"; CLAUDE_HOME_DIR="$2"; CLAUDE_HOME_EXPLICIT=1; shift 2 ;;
+    --agents-home) need_value "$@"; AGENTS_HOME_DIR="$2"; AGENTS_HOME_EXPLICIT=1; shift 2 ;;
+    --remote) need_value "$@"; REMOTE_URL="$2"; shift 2 ;;
+    --extras) need_value "$@"; EXTRAS_REQUEST="$EXTRAS_REQUEST,$2"; shift 2 ;;
+    --remove-extras) need_value "$@"; REMOVE_EXTRAS_REQUEST="$REMOVE_EXTRAS_REQUEST,$2"; shift 2 ;;
     --list-extras) LIST_EXTRAS=1; shift ;;
     --no-pull) RUN_PULL=0; shift ;;
     --dry-run) DRY_RUN=1; shift ;;

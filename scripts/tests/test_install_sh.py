@@ -545,6 +545,15 @@ class InstallShellExtrasTests(unittest.TestCase):
         for home in self.homes.values():
             self.assertFalse(home.exists())
 
+    def test_option_without_value_fails_before_any_change(self) -> None:
+        for option in ("--repo", "--extras", "--remove-extras"):
+            result = self.run_installer(option)
+
+            self.assertEqual(result.returncode, 1, option)
+            self.assertIn(f"Missing value for {option}", result.stderr)
+            for home in self.homes.values():
+                self.assertFalse(home.exists())
+
     def test_unknown_extra_fails_before_pull(self) -> None:
         (self.repo / ".git").mkdir()
         result = self.run_installer("--extras", "rumo-missing", "--dry-run", pull=True)
