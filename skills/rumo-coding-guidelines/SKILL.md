@@ -38,6 +38,7 @@ If the first two answers are no, leave it out and mention it only when the user 
 - Do not accept a stopgap whose stated purpose is to be replaced later. Record material architectural choices with `rumo-plan`.
 - Keep internal risk notes out of deliverables. Add a disclaimer or warning only when the user asked, a decision depends on it, or leaving it out would make the result false or unsafe.
 - Report unrelated problems you notice instead of fixing them.
+- At these moments read the matching entry in [references/principles.md](references/principles.md): before adding to or restructuring code, after two failed fixes for one symptom, when a requirement only fits through special cases, before writing stateful or heavily branching logic, when writing validation or adapters, when a behavior spans more than three files, before a repetitive edit, and before reporting a measured number.
 
 ## Authorization
 
