@@ -4,6 +4,7 @@
 
 ## 未发布
 
+- 插件清单：description 改为概括说明，不再逐个列技能名；原列表漏了 `rumo-agent-collaboration` 和 `rumo-reflect`。
 - 安装器：`install.sh` 中需要带值的参数缺值时，明确提示缺哪个参数的值，并且不做任何改动。
 - 评测：Codex 触发运行器的样本 `AGENTS.md` 不再禁止使用其他 agent，避免压低协作类用例的通过率。
 
