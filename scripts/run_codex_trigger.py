@@ -26,7 +26,7 @@ SKILL_IN_PATTERN = re.compile(r"\)\?(rumo-[a-z0-9-]+)\"'?$")
 EXPECTED_FAILURES = {"coding-baseline"}
 # Neutral instructions: no skill names and no hints about tests or commands.
 SAMPLE_AGENTS = (
-    "# Local sample\nWork only inside this directory. Do not use network tools, other agents, "
+    "# Local sample\nWork only inside this directory. Do not use network tools, "
     "credentials, or other projects. Do not install dependencies.\n"
 )
 
