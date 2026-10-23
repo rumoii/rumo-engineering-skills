@@ -4,6 +4,8 @@ Read before assessing native subagent availability for a collaboration route, ru
 
 ## Establish Current Capabilities
 
+Do not infer availability from the CLI name, version, or an installed package alone. Check child permissions separately; parent read-only access does not prove child read-only access.
+
 Inspect the current tool list first, then extension loading and registration, then invocation flags and permissions; consult local help or implementation only for remaining gaps. A missing exposed tool does not by itself prove the client lacks an implementation. Report one of: available, installed but not loaded, disabled for this invocation, confirmed absent, or unconfirmed. State the evidence and its limits; do not read credentials to discover capabilities.
 
 Check starting, background execution, result collection, completion notification, steering, and lifetime separately. Starting a subagent does not prove background survival or completion notification. An installed package or a CLI version is not proof that its tools are loaded or allowed in this session.

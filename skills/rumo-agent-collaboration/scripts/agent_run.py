@@ -1416,7 +1416,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--timeout", type=float, default=1800)
     p.add_argument("--executable")
     p.add_argument("--detach", action="store_true", help="Return once the turn launches; a detached recorder finishes it.")
-    p.add_argument("--window", action="store_true", help="Also open a terminal window that watches the turn.")
+    p.add_argument("--window", action=argparse.BooleanOptionalAction, default=True,
+                   help="Open a terminal window that watches the turn (default); --no-window skips it.")
     p.add_argument("--runs-dir")
 
     p = sub.add_parser("open", help="Start the CLI interactively in a terminal window the user can see and type into.")
@@ -1433,7 +1434,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--prompt-file", required=True)
     p.add_argument("--timeout", type=float, default=1800)
     p.add_argument("--detach", action="store_true", help="Return once the turn launches; a detached recorder finishes it.")
-    p.add_argument("--window", action="store_true", help="Also open a terminal window that watches the turn.")
+    p.add_argument("--window", action=argparse.BooleanOptionalAction, default=True,
+                   help="Open a terminal window that watches the turn (default); --no-window skips it.")
     p.add_argument("--runs-dir")
 
     p = sub.add_parser("watch", help="Follow a turn's progress until it ends; exits with the turn's code.")

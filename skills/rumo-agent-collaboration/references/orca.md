@@ -1,6 +1,6 @@
 # Orca
 
-Read only when Orca is installed and the user chose it, or when it is the only route that can keep a transferred task running. Orca ships guides that match its CLI version; read them instead of relying on commands remembered from another version:
+Read when Orca is installed and the work edits files or runs commands, when the user chose Orca, or when it is the only route that can keep a transferred task running. Orca ships guides that match its CLI version; read them instead of relying on commands remembered from another version:
 
 ```text
 orca skills get orca-cli

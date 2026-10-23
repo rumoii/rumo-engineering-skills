@@ -186,6 +186,8 @@ class Harness(unittest.TestCase):
         return env
 
     def run_script(self, *args: str, dialect: str = "codex", mode: str = "ok", env: dict | None = None, cwd: Path | None = None) -> subprocess.CompletedProcess:
+        if args and args[0] in ("start", "resume") and "--window" not in args:
+            args = (*args, "--no-window")
         return subprocess.run(
             [sys.executable, str(SCRIPT), *args], env=env or self.env(dialect, mode), cwd=cwd, capture_output=True, timeout=120,
         )
@@ -569,7 +571,7 @@ class RunTest(Harness):
     def test_cancel_stops_only_a_running_owned_turn_and_resume_waits(self) -> None:
         proc = subprocess.Popen(
             [sys.executable, str(SCRIPT), "start", "claude", "--cwd", str(self.cwd), "--prompt-file", str(self.prompt),
-             "--access", "read-only", "--executable", str(self.fake), "--runs-dir", str(self.runs)],
+             "--access", "read-only", "--executable", str(self.fake), "--runs-dir", str(self.runs), "--no-window"],
             env=self.env("claude", "hang"), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         )
         try:
@@ -810,6 +812,16 @@ class WindowTest(Harness):
             result = agent_run.open_window(["watch"], "/tmp", "t")
         self.assertFalse(result["opened"])
         self.assertIn("DISPLAY", result["reason"])
+
+    def test_start_and_resume_open_a_window_unless_told_not_to(self) -> None:
+        seen = []
+        with patch.object(agent_run, "cmd_start", side_effect=lambda a: seen.append(a.window) or 0), \
+                patch.object(agent_run, "cmd_resume", side_effect=lambda a: seen.append(a.window) or 0):
+            agent_run.main(["start", "pi", "--cwd", ".", "--prompt-file", "p.md", "--access", "read-only"])
+            agent_run.main(["start", "pi", "--cwd", ".", "--prompt-file", "p.md", "--access", "read-only", "--no-window"])
+            agent_run.main(["resume", "run-1", "--prompt-file", "p.md"])
+            agent_run.main(["resume", "run-1", "--prompt-file", "p.md", "--no-window"])
+        self.assertEqual(seen, [True, False, True, False])
 
     def test_start_window_opens_a_held_watch_of_the_new_turn(self) -> None:
         args = argparse.Namespace(cli="claude", cwd=str(self.cwd), prompt_file=str(self.prompt), access="read-only", model=None,
