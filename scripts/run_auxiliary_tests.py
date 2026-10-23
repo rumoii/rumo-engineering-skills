@@ -24,6 +24,7 @@ def main() -> int:
         (node, "scripts/tests/pi_workspace_guard.test.mjs"),
         (sys.executable, "extras/rumo-daily-report/scripts/test_daily_report.py"),
         (sys.executable, "skills/rumo-agent-collaboration/scripts/test_agent_run.py"),
+        (sys.executable, "skills/rumo-agent-collaboration/scripts/test_agent_config.py"),
         (sys.executable, "skills/rumo-review/scripts/test_app_server_review.py"),
         (sys.executable, "extras/rumo-linux-inspect/scripts/remote_memory_inspection.py", "--dry-run", "--host", "<host>"),
     )

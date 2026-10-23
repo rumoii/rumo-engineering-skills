@@ -154,8 +154,10 @@ RULES = {
         "This skill governs only the agents it starts;",
         "Before declaring native subagents available or unavailable, read [references/native.md](references/native.md).",
         "Never start an agent through this skill unless the user asked for it.",
-        "state in one line before launching which CLI and model will run and what content you will send",
-        "Ask first when the user did not name a route, when you would send content the user did not mention, or when the work needs more access than the request implies.",
+        "state in one line before launching which CLI, model, and effort will run and what content you will send",
+        "A configured `delegate` lane counts as a named CLI.",
+        "Ask first when the user named no route and none is configured, when you would send content the user did not mention, or when the work needs more access than the request implies.",
+        "Exit 3 means nothing is configured: ask, and mention that `rumo-setup` saves the choice.",
         "the request approves shell access for that work",
         "Shell access the work does not need, such as shell for a review, needs its own approval; ask at most once per launch.",
         "A worktree is not a sandbox.",
@@ -190,6 +192,15 @@ RULES = {
         "When the user reports that the receiver finished, read its result and check the working tree before accepting it.",
         "then stop changing that task.",
         "Cancel only runs this task started; never stop a process the record cannot prove is yours.",
+    ),
+    "rumo-setup": (
+        "change only the items the user names. Never offer a reset to the defaults.",
+        "Probe the new or changed lanes before writing",
+        "write nothing for the roles that use it.",
+        "Do not sign in to a CLI, change its configuration, or switch to another model or provider to make a probe pass",
+        "Never put an API key, token, or password in the configuration",
+        "do not edit the JSON by hand to get around it.",
+        "Do not write defaults the user has not seen",
     ),
 }
 PINNED_ELSEWHERE = {"rumo-clarify"}

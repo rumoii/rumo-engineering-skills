@@ -433,7 +433,7 @@ Write-Host "Repository: $Repo"
 if (-not [string]::Equals($Repo, [IO.Path]::GetFullPath($ScriptRoot), [StringComparison]::OrdinalIgnoreCase)) {
   Write-Host "Recommended: set RUMO_SKILLS_REPO=$Repo so later runs from another copy of this script use the same checkout."
 }
-Write-Host 'Next: start a new agent session, then try /rumo-verify (Claude Code) or $rumo-verify (Codex).'
+Write-Host 'Next: start a new agent session, then run /rumo-setup (Claude Code) or $rumo-setup (Codex) to choose agents, models, and reasoning effort.'
 if ($ProfilesRepo) { Write-Host "Project profiles: $ProfilesRepo" }
 else { Write-Host "Optional: set RUMO_SKILL_PROFILES_REPO to a private profiles checkout." }
 if ($BaselineMissing.Count -gt 0) {

@@ -120,6 +120,7 @@ Install the skills from https://github.com/rumoii/rumo-engineering-skills by fol
 2. Run the installer without --baseline and report which clients were linked.
 3. Ask me before writing to my user-level CLAUDE.md or AGENTS.md. Only if I agree, rerun it with --baseline (-Baseline) and show me the block it added.
 4. List the files that changed and remind me to start a new session.
+5. Remind me to run rumo-setup in the new session to choose the agents, models, and reasoning effort for multi-model review and delegation.
 ```
 
 An agent installing from this README without that prompt follows the same rule: it never adds `--baseline` or `-Baseline` without the user's explicit agreement, because that edits the user's own instruction files.
@@ -141,6 +142,14 @@ cd rumo-engineering-skills
 ```
 
 The installer validates the repository, then links the default skills into every detected client (Codex, Claude Code, and the shared `~/.agents` directory). It manages only `rumo-*` links and leaves other skills alone. On success it prints one `<count> skills linked in <directory>` line per client and ends with a line starting `Next:`. Start a new session afterwards so the client reloads its skill list.
+
+### Configure Agents The First Time (Optional)
+
+Multi-model review, multi-design comparison, and handing work to another agent use another CLI on this machine. After installing, open a new session and run `/rumo-setup` (`/rumo-engineering-skills:rumo-setup` with the Claude Code plugin, `$rumo-setup` in Codex). Choose a CLI with a bundled adapter (Codex, Claude Code, qwen, grok, pi, and others), a model, and a reasoning effort for each use. Before saving, each lane gets one tiny read-only probe that sends a fixed sentence and no repository content.
+
+- Rerun `/rumo-setup` at any time, or say "make review use grok at high"; only the items you name change.
+- The configuration lives in `~/.rumo-engineering-skills/agents.json`. Only scripts read it, so it costs no session context. Until it exists, features that need another agent tell you to run `rumo-setup`.
+- By default only the current agent works. A multi-model panel opens when you ask, when a change is rated high risk, or when the agent judges it worthwhile; `auto_panel` in the configuration decides whether the last two ask you first.
 
 ### Troubleshooting
 
@@ -182,6 +191,7 @@ Installed by default.
 | `rumo-handoff` | A self-contained handoff document for another session or client (manual only) |
 | `rumo-project-profile` | Resolve and validate private project profiles for other skills |
 | `rumo-reflect` | Session retrospective: recurring mistakes and corrections, each fix discussed and applied only with your approval |
+| `rumo-setup` | Choose, once or at any time, the CLI, model, and reasoning effort for multi-model review, multi-design comparison, and default delegation; probes each lane read-only before saving |
 | `rumo-agent-collaboration` | Delegate, transfer, or relay work to another agent CLI or model (Codex, Claude Code, pi, qwen, grok, Cursor, GitHub Copilot CLI, Aider, Cline CLI, Goose, any CLI you add an adapter for, or Orca), leaving native subagents alone. A named route and bounded task supply authorization; one owner handles read-only or development work. Native-write promises no directory isolation; documented adapters stay unverified. Supports Windows and Linux/WSL. Gemini CLI and OpenCode declarations remain inspectable, but the runner blocks new turns and recovery of old records |
 
 ## Optional Extras

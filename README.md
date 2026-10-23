@@ -120,6 +120,7 @@ claude plugin install rumo-engineering-skills@rumo-engineering-skills
 2. 不带 --baseline 正式运行安装器，告诉我链接了哪些客户端。
 3. 写入我的用户级 CLAUDE.md 或 AGENTS.md 之前先问我；我同意了，才带 --baseline(-Baseline)重跑，并把加进去的内容给我看。
 4. 列出改动过的文件，并提醒我开新会话。
+5. 提醒我在新会话里运行 rumo-setup，选择多模型评审和委派用的 agent、模型和思考强度。
 ```
 
 AI 没收到这段提示词、只按 README 安装时，也遵守同一条规则：没有用户明确同意，绝不加 `--baseline` 或 `-Baseline`，因为它会改用户自己的说明文件。
@@ -141,6 +142,14 @@ cd rumo-engineering-skills
 ```
 
 安装器先校验仓库，再把默认技能链接到检测到的每个客户端（Codex、Claude Code 和共享的 `~/.agents` 目录）。它只管理 `rumo-*` 链接，不动其他技能。成功时每个客户端会输出一行 `<数量> skills linked in <目录>`，最后一行以 `Next:` 开头。装完开一个新会话，让客户端重新加载技能列表。
+
+### 第一次配置 agent（可选）
+
+多模型评审、多方案设计和“交给别的 agent 做”会用到本机另一个 CLI。装好后开新会话，运行 `/rumo-setup`（Claude Code 插件里是 `/rumo-engineering-skills:rumo-setup`，Codex 里是 `$rumo-setup`），按提示为每个用途选 CLI（Codex、Claude Code、qwen、grok、pi 等已有适配器的）、模型和思考强度。保存前会对每条线跑一次极小的只读探测，只发一句固定的话，不发仓库内容。
+
+- 以后随时重跑 `/rumo-setup`，或直接说“把评审换成 grok，思考强度 high”；只改你点名的项。
+- 配置在 `~/.rumo-engineering-skills/agents.json`，只有脚本读它，不占会话上下文。没配置时，用到多模型功能的地方会提示你先运行 `rumo-setup`。
+- 默认只用当前 agent 一条线；多模型只在你点名、改动被评为高风险，或 agent 判断值得时才开，后两种是否先问你由配置里的 `auto_panel` 决定。
 
 ### 遇到问题
 
@@ -182,6 +191,7 @@ cd rumo-engineering-skills
 | `rumo-handoff` | 生成自包含的交接文档，便于其他会话或客户端接力（仅手动调用） |
 | `rumo-project-profile` | 为其他技能解析和校验私有项目 Profile |
 | `rumo-reflect` | 复盘当前会话的反复错误与纠正，逐条讨论该固化到哪里，你批准后才改 |
+| `rumo-setup` | 首次或随时配置多模型评审、多方案设计和默认委派用的 CLI、模型与思考强度，保存前逐条只读探测 |
 | `rumo-agent-collaboration` | 把任务交给另一个 CLI 或模型（Codex、Claude Code、pi、qwen、grok、Cursor、GitHub Copilot CLI、Aider、Cline CLI、Goose，或自己加适配器接入的 CLI，以及 Orca）委派、整体转交或接力；客户端自带的子 agent 不归它管。点名且范围明确即构成授权，每个任务一个负责人；支持只读和开发，native-write 不承诺目录隔离，文档适配器仍标未核实。支持 Windows、Linux/WSL；Gemini CLI、OpenCode 声明保留供查看，启动和旧记录恢复均被脚本拒绝 |
 
 ## 可选扩展

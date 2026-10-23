@@ -5,10 +5,12 @@ Read when the route is another installed agent CLI. `scripts/agent_run.py` runs 
 ## Quick Start
 
 ```text
+# The user's configured lanes for a role (review, design, delegate); exit 3 means not configured
+python <skill-dir>/scripts/agent_config.py lanes delegate
 # Read-only work: runs in the background and opens a watch window for the user
-python <skill-dir>/scripts/agent_run.py start <cli> --cwd <dir> --prompt-file <brief.md> --access read-only [--model <id>] [--detach]
+python <skill-dir>/scripts/agent_run.py start <cli> --cwd <dir> --prompt-file <brief.md> --access read-only [--model <id>] [--effort <level>] [--detach]
 # Work that edits files or runs commands: a visible CLI window
-python <skill-dir>/scripts/agent_run.py open <cli> --cwd <dir> --prompt-file <brief.md> --access <level> [--model <id>]
+python <skill-dir>/scripts/agent_run.py open <cli> --cwd <dir> --prompt-file <brief.md> --access <level> [--model <id>] [--effort <level>]
 # After the user says it finished
 python <skill-dir>/scripts/agent_run.py status <run-id>
 python <skill-dir>/scripts/agent_run.py record <run-id> --outcome accepted|rejected|note --note "<text>"

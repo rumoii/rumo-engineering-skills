@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Setup"
+  short_description: "首次或随时配置多模型评审、多方案设计和默认委派所用的 agent、模型与思考强度"
+  default_prompt: "Use $rumo-setup to choose which agent CLIs, models, and reasoning efforts the Rumo skills may use."

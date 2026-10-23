@@ -414,7 +414,7 @@ printf '%s' "$LINK_SUMMARY"
 if [ "$REPO_PATH" != "$SCRIPT_DIR" ]; then
   echo "Recommended: set RUMO_SKILLS_REPO=$REPO_PATH so later runs from another copy of this script use the same checkout."
 fi
-echo 'Next: start a new agent session, then try /rumo-verify (Claude Code) or $rumo-verify (Codex).'
+echo 'Next: start a new agent session, then run /rumo-setup (Claude Code) or $rumo-setup (Codex) to choose agents, models, and reasoning effort.'
 if [ -n "$PROFILES_REPO" ]; then echo "Project profiles: $PROFILES_REPO"
 else echo 'Optionally set RUMO_SKILL_PROFILES_REPO to a private profiles checkout.'
 fi
