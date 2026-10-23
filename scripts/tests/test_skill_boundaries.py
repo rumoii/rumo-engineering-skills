@@ -56,7 +56,7 @@ BOUNDARIES = (
 # Each merged skill keeps one trigger phrase per mode in its description,
 # because clients pick skills from the description alone.
 MODE_TRIGGERS = {
-    "rumo-plan": (r"task breakdown", r"decision record|ADR", r"executing an agreed plan"),
+    "rumo-plan": (r"task breakdown", r"decision record|ADR", r"executing an agreed plan", r"competing designs"),
     "rumo-test": (r"existing tests are enough", r"test-driven", r"high-assurance"),
     "rumo-verify": (r"before claiming work is done", r"CI check|static verifier"),
     "rumo-review": (r"read-only code review", r"review-fix", r"simplification audit", r"review feedback from someone else"),

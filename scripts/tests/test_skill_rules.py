@@ -275,6 +275,13 @@ REFERENCE_RULES = {
     "rumo-review/references/codex-app-server.md": (
         "Do not let the script apply fixes.",
     ),
+    "rumo-plan/references/design-panel.md": (
+        "The panel produces designs only, never code, and the plan is not broken into tasks until the user picks one.",
+        "save it before reading any lane's draft.",
+        "Withhold your own leaning and any option you already prefer.",
+        "Do not propose one for a choice with one obvious shape or a local change.",
+        "break the work down only after the user picks.",
+    ),
     "rumo-review/references/panel.md": (
         "Never start another CLI on your own.",
         "Otherwise run only after the user agrees to those lanes and that content.",

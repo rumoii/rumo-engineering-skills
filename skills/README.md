@@ -9,7 +9,7 @@ Every skill uses the `rumo-` namespace and stays independent of any company, pro
 | Skill | Purpose |
 | --- | --- |
 | `rumo-clarify` | Group answerable questions with recommendations and follow up only on newly exposed key decisions |
-| `rumo-plan` | Short spec and verifiable task breakdown, task-by-task execution, or a durable engineering decision record |
+| `rumo-plan` | Short spec and verifiable task breakdown, task-by-task execution, competing designs from configured models, or a durable engineering decision record |
 | `rumo-coding-guidelines` | Baseline discipline for grounded, minimal, verified code changes |
 | `rumo-test` | Evidence planning, test-first implementation, and high-assurance spec and evidence |
 | `rumo-debug` | Reproduce, localize, and prove a root cause; read-only by default |

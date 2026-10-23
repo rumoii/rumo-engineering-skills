@@ -174,7 +174,7 @@ Installed by default.
 | Skill | Purpose |
 | --- | --- |
 | `rumo-clarify` | Group answerable questions with recommendations; follow up on newly exposed key decisions and never default critical ones |
-| `rumo-plan` | Short spec and verifiable task breakdown, task-by-task execution of an agreed plan, or a durable engineering decision record |
+| `rumo-plan` | Short spec and verifiable task breakdown, task-by-task execution of an agreed plan, competing designs from the models you configured with a recommendation, or a durable engineering decision record |
 | `rumo-coding-guidelines` | Baseline discipline: real code paths, only requested and necessary work, verified results |
 | `rumo-test` | Evidence planning, test-first implementation, and high-assurance spec-and-evidence work |
 | `rumo-debug` | Reproduce, localize, and prove a root cause; read-only unless the fix is requested |
