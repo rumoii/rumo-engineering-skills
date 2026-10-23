@@ -7,10 +7,13 @@ context until a skill asks for a role's lanes. Roles:
 
   review    extra reviewers in a multi-model review; the current agent also reviews
   design    extra designers in a multi-design comparison; the current agent also designs
-  delegate  the one lane used when the user hands work off without naming a CLI
+  delegate  the lanes used when the user hands work off without naming a CLI
 
 A lane is written cli[:model][@effort], for example codex:gpt-6.1-sol@high or
-claude@max; a lane with no model or effort uses the CLI's own default.
+claude@max; a lane with no model or effort uses the CLI's own default. A
+delegate lane may start with a use label, such as tests=pi:deepseek/v4@high;
+several delegate lanes need distinct labels, and work that matches none goes
+to the first.
 auto_panel says what the agent may do when it judges, on its own, that a
 multi-model review or design is worth it: ask (default), allow, or off.
 
@@ -37,12 +40,12 @@ from pathlib import Path
 
 CONFIG_ENV = "RUMO_AGENTS_CONFIG"
 ROLES = ("review", "design", "delegate")
-SINGLE_LANE_ROLES = ("delegate",)
+USE_ROLES = ("delegate",)
 AUTO_PANEL = ("ask", "allow", "off")
 VERSION = 1
 NOT_CONFIGURED = 3
 RUNNER = Path(__file__).resolve().parent / "agent_run.py"
-LANE_KEYS = {"cli", "model", "effort", "executable"}
+LANE_KEYS = {"use", "cli", "model", "effort", "executable"}
 
 _spec = importlib.util.spec_from_file_location("agent_run", RUNNER)
 assert _spec and _spec.loader
@@ -61,12 +64,16 @@ def config_path() -> Path:
 
 
 def parse_lane(text: str) -> dict:
-    """cli[:model][@effort] -> lane; the model may contain '/' or ':' but not '@'."""
-    match = re.fullmatch(r"([a-z0-9][a-z0-9-]*)(?::([^@\s]+))?(?:@([a-z0-9][a-z0-9-]*))?", text.strip())
-    if not match:
-        raise Refused(f"lane {text!r} must look like cli[:model][@effort], for example codex:gpt-6.1-sol@high")
+    """[use=]cli[:model][@effort] -> lane; the model may contain '/' or ':' but not '@'."""
+    use, sep, rest = text.strip().partition("=")
+    if not sep:
+        use, rest = "", use
+    match = re.fullmatch(r"([a-z0-9][a-z0-9-]*)(?::([^@\s]+))?(?:@([a-z0-9][a-z0-9-]*))?", rest.strip())
+    if not match or (sep and not use.strip()):
+        raise Refused(f"lane {text!r} must look like [use=]cli[:model][@effort], for example tests=codex:gpt-6.1-sol@high")
     cli, model, effort = match.groups()
-    return {"cli": cli, **({"model": model} if model else {}), **({"effort": effort} if effort else {})}
+    return {**({"use": use.strip()} if use.strip() else {}), "cli": cli,
+            **({"model": model} if model else {}), **({"effort": effort} if effort else {})}
 
 
 def with_executables(lanes: list[dict], pairs: list[str] | None) -> list[dict]:
@@ -84,7 +91,7 @@ def with_executables(lanes: list[dict], pairs: list[str] | None) -> list[dict]:
 
 
 def lane_label(lane: dict) -> str:
-    return lane["cli"] + (f":{lane['model']}" if lane.get("model") else "") + (f"@{lane['effort']}" if lane.get("effort") else "")
+    return (f"{lane['use']}=" if lane.get("use") else "") + lane["cli"] + (f":{lane['model']}" if lane.get("model") else "") + (f"@{lane['effort']}" if lane.get("effort") else "")
 
 
 def lane_problems(lane: object, runs_dir: str | None = None) -> list[str]:
@@ -92,7 +99,7 @@ def lane_problems(lane: object, runs_dir: str | None = None) -> list[str]:
     if not isinstance(lane, dict) or not isinstance(lane.get("cli"), str):
         return ["each lane must be an object with a cli"]
     problems = [f"unknown lane key {key!r}" for key in sorted(set(lane) - LANE_KEYS)]
-    for key in ("model", "effort", "executable"):
+    for key in ("use", "model", "effort", "executable"):
         if key in lane and (not isinstance(lane[key], str) or not lane[key].strip()):
             problems.append(f"{key} must be a nonempty string")
     entry = agent_run.load_adapters(runs_dir).get(lane["cli"])
@@ -128,8 +135,11 @@ def validate(config: object, runs_dir: str | None = None) -> list[str]:
         if not isinstance(lanes, list):
             problems.append(f"{role} must be a list of lanes")
             continue
-        if role in SINGLE_LANE_ROLES and len(lanes) > 1:
-            problems.append(f"{role} takes one lane")
+        uses = [lane.get("use") for lane in lanes if isinstance(lane, dict)]
+        if role not in USE_ROLES and any(uses):
+            problems.append(f"{role} lanes take no use label; only {', '.join(USE_ROLES)} lanes do")
+        if role in USE_ROLES and len(lanes) > 1 and (not all(uses) or len(set(uses)) != len(uses)):
+            problems.append(f"several {role} lanes each need a distinct use label")
         problems += [f"{role}: {p}" for lane in lanes for p in lane_problems(lane, runs_dir)]
     return problems
 
@@ -362,7 +372,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("set-role", help="Replace one role's lanes; other roles and settings are kept.")
     p.add_argument("role", choices=ROLES)
-    p.add_argument("--lane", action="append", required=True, help="cli[:model][@effort]; repeatable, in order.")
+    p.add_argument("--lane", action="append", required=True, help="[use=]cli[:model][@effort]; repeatable, in order.")
     p.add_argument("--executable", action="append", help="cli=path for a CLI that is not on PATH; repeatable.")
 
     p = sub.add_parser("set-auto-panel", help="Set what the agent may do when it judges a multi-model panel worth it.")

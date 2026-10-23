@@ -13,7 +13,7 @@ Record once per machine which other agents the Rumo skills may call, with which 
 | --- | --- | --- |
 | `review` lanes | `rumo-review` panel | Extra reviewers of the same diff |
 | `design` lanes | `rumo-plan` design panel | Extra designers drafting independent options |
-| `delegate` lane | `rumo-agent-collaboration` | The one agent used when the user hands work off without naming a CLI |
+| `delegate` lanes | `rumo-agent-collaboration` | The agents used when the user hands work off without naming a CLI. Several lanes each start with a distinct use label, such as `测试=` or `实现=`; work that fits no label goes to the first |
 | `auto_panel` | review and design panels | What the agent may do when it judges, on its own, that a panel is worth it: `ask` (default), `allow` (state the lanes, then launch), or `off` (panels only when the user asks) |
 
 A lane is `cli[:model][@effort]`, such as `codex:gpt-6.1-sol@high` or `claude@max`; leaving out the model or effort uses the CLI's own default. One CLI may fill several lanes with different models, such as two providers configured inside pi. The current agent always counts as one lane of a panel and keeps the model chosen in its own client, so one extra lane already gives two independent views. Every extra lane spends that provider's quota each time a panel runs.
@@ -23,7 +23,7 @@ A lane is `cli[:model][@effort]`, such as `codex:gpt-6.1-sol@high` or `claude@ma
 1. Resolve `../rumo-agent-collaboration/scripts/agent_config.py` and `../rumo-agent-collaboration/scripts/agent_run.py` from this skill's directory. If they are missing, stop and say that `rumo-agent-collaboration` must be installed beside this skill.
 2. Read the current state: `agent_config.py show` (exit 3 means a first run) and `agent_run.py list`. For each installed, usable adapter, run `agent_config.py models <cli>` to get the models it offers, with per-model efforts and default effort when the CLI reports them. Mark adapters whose `verified.live_run` is false as untested.
 3. Ask everything in one round, each question with a recommendation:
-   - First run: recommend, for `review` and `design`, one lane from a provider other than the current client's, at `high`; for `delegate`, that provider at `medium`; and `auto_panel: ask`. Offer the listed models as choices, each with the efforts it accepts, plus "CLI default"; never invent an ID the listing does not show. When a CLI cannot list its models, ask for the ID or keep the default.
+   - First run: recommend, for `review` and `design`, one lane from a provider other than the current client's, at `high`; for `delegate`, that provider at `medium`, then ask whether different kinds of work, such as tests and implementation, should go to different lanes; and `auto_panel: ask`. Offer the listed models as choices, each with the efforts it accepts, plus "CLI default"; never invent an ID the listing does not show. When a CLI cannot list its models, ask for the ID or keep the default.
    - Rerun: show the current values and change only the items the user names. Never offer a reset to the defaults.
    - State that the probe in step 4 sends one fixed sentence and no repository content, and spends a little quota per lane.
 4. Probe the new or changed lanes before writing: `agent_config.py check --probe --lane <lane> ...`, adding `--executable <cli>=<path>` for a CLI that is not on PATH. When a lane fails, report its error, such as not signed in, unknown model, or an effort the CLI rejects, and write nothing for the roles that use it.

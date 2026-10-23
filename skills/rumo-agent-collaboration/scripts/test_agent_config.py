@@ -83,6 +83,20 @@ class AgentConfigTest(unittest.TestCase):
         self.assertEqual(self.run_config("set-role", "review", "--lane", "codex", "--executable", "claude=/x").returncode, 2)
         self.assertFalse(self.config.exists())
 
+    def test_delegate_lanes_are_told_apart_by_use(self) -> None:
+        result = self.run_config("set-role", "delegate", "--lane", "测试=claude:sonnet@medium", "--lane", "实现=codex@high")
+        self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace"))
+        lanes = json.loads(self.run_config("lanes", "delegate").stdout)["lanes"]
+        self.assertEqual([(lane["use"], lane["label"]) for lane in lanes],
+                         [("测试", "测试=claude:sonnet@medium"), ("实现", "实现=codex@high")])
+        for args in (("delegate", "--lane", "测试=claude", "--lane", "测试=codex"),
+                     ("delegate", "--lane", "测试=claude", "--lane", "codex"),
+                     ("review", "--lane", "测试=claude"),
+                     ("delegate", "--lane", "=claude")):
+            with self.subTest(args=args):
+                self.assertEqual(self.run_config("set-role", *args).returncode, 2)
+        self.assertEqual(json.loads(self.run_config("lanes", "delegate").stdout)["lanes"], lanes)
+
     def test_a_corrupt_or_unknown_configuration_fails_closed(self) -> None:
         for content in ("{", json.dumps({"version": 2, "roles": {}}),
                         json.dumps({"version": 1, "roles": {"swarm": []}}),
