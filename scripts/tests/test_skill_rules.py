@@ -196,6 +196,7 @@ RULES = {
     "rumo-setup": (
         "change only the items the user names. Never offer a reset to the defaults.",
         "Probe the new or changed lanes before writing",
+        "do not look IDs up in the CLI's model catalog or configuration files",
         "write nothing for the roles that use it.",
         "Do not sign in to a CLI, change its configuration, or switch to another model or provider to make a probe pass",
         "Never put an API key, token, or password in the configuration",
