@@ -117,7 +117,8 @@ def lane_problems(lane: object, runs_dir: str | None = None) -> list[str]:
     return problems
 
 
-def validate(config: object, runs_dir: str | None = None) -> list[str]:
+def validate(config: object, runs_dir: str | None = None, roles_to_check: tuple[str, ...] | None = None) -> list[str]:
+    """Check the file's shape, and the lanes of roles_to_check (every role when None)."""
     if not isinstance(config, dict):
         return ["configuration must be a JSON object"]
     problems = [f"unknown key {key!r}" for key in sorted(set(config) - {"version", "auto_panel", "roles"})]
@@ -135,7 +136,9 @@ def validate(config: object, runs_dir: str | None = None) -> list[str]:
         if not isinstance(lanes, list):
             problems.append(f"{role} must be a list of lanes")
             continue
-        uses = [lane.get("use") for lane in lanes if isinstance(lane, dict)]
+        if roles_to_check is not None and role not in roles_to_check:
+            continue
+        uses = [lane.get("use") for lane in lanes if isinstance(lane, dict) and isinstance(lane.get("use"), (str, type(None)))]
         if role not in USE_ROLES and any(uses):
             problems.append(f"{role} lanes take no use label; only {', '.join(USE_ROLES)} lanes do")
         if role in USE_ROLES and len(lanes) > 1 and (not all(uses) or len(set(uses)) != len(uses)):
@@ -144,7 +147,7 @@ def validate(config: object, runs_dir: str | None = None) -> list[str]:
     return problems
 
 
-def load(runs_dir: str | None = None) -> dict:
+def load(runs_dir: str | None = None, roles_to_check: tuple[str, ...] | None = None) -> dict:
     path = config_path()
     if not path.is_file():
         raise NotConfigured(f"agents are not configured ({path} does not exist); run the rumo-setup skill")
@@ -152,14 +155,18 @@ def load(runs_dir: str | None = None) -> dict:
         config = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise Refused(f"cannot read {path}: {exc}") from exc
-    if problems := validate(config, runs_dir):
+    if problems := validate(config, runs_dir, roles_to_check):
         raise Refused(f"{path} is invalid: " + "; ".join(problems))
     return config
 
 
-def write(config: dict, runs_dir: str | None = None) -> Path:
-    """Validate, then replace the file atomically; unrelated keys keep their order and values."""
-    if problems := validate(config, runs_dir):
+def write(config: dict, runs_dir: str | None = None, roles_to_check: tuple[str, ...] | None = None) -> Path:
+    """Validate, then replace the file atomically; unrelated keys keep their order and values.
+
+    A set command checks only the role it changes, so a lane that went stale in
+    another role (an adapter dropped an effort, say) never blocks the repair.
+    """
+    if problems := validate(config, runs_dir, roles_to_check):
         raise Refused("refusing to write an invalid configuration: " + "; ".join(problems))
     target = config_path()
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -180,7 +187,7 @@ def write(config: dict, runs_dir: str | None = None) -> Path:
 
 def load_or_new(runs_dir: str | None) -> dict:
     try:
-        return load(runs_dir)
+        return load(runs_dir, roles_to_check=())
     except NotConfigured:
         return {"version": VERSION, "auto_panel": "ask", "roles": {}}
 
@@ -261,7 +268,7 @@ def probe_result(proc: subprocess.Popen) -> dict:
     except json.JSONDecodeError:
         return {"ok": False, "error": err.decode("utf-8", errors="replace").strip()[-2000:] or f"exit {proc.returncode}"}
     final = summary.get("final_file")
-    text = Path(final).read_text(encoding="utf-8") if final and Path(final).is_file() else ""
+    text = Path(final).read_text(encoding="utf-8", errors="replace") if final and Path(final).is_file() else ""
     ok = proc.returncode == 0 and proc.marker in text  # type: ignore[attr-defined]
     result = {"ok": ok, "run_id": summary.get("run_id"), "state": summary.get("state")}
     if not ok:
@@ -291,11 +298,17 @@ def cmd_check(args: argparse.Namespace) -> int:
     if args.lane:
         targets = [("candidate", lane) for lane in with_executables([parse_lane(t) for t in args.lane], args.executable)]
     else:
-        config = load(args.runs_dir)
-        targets = [(role, lane) for role, lanes in config.get("roles", {}).items() for lane in lanes]
+        # Stale lanes are reported per row below instead of refusing the whole check.
+        config = load(args.runs_dir, roles_to_check=())
+        stored = [(role, lane) for role, lanes in config.get("roles", {}).items() for lane in lanes]
+        if not stored:
+            raise NotConfigured("no lanes are configured; run the rumo-setup skill to choose them")
+        lanes = with_executables([lane for _, lane in stored], args.executable)
+        targets = [(role, lane) for (role, _), lane in zip(stored, lanes)]
     report, seen = [], {}
     for role, lane in targets:
-        key = json.dumps(lane, sort_keys=True)
+        # The use label only routes work; the same CLI, model, and effort need one probe.
+        key = json.dumps({k: v for k, v in lane.items() if k != "use"}, sort_keys=True)
         if key in seen:
             seen[key]["roles"].append(role)
             continue
@@ -307,7 +320,9 @@ def cmd_check(args: argparse.Namespace) -> int:
                 row["version"] = preflight["version"]
                 row["live_run_verified"] = bool((entry["adapter"].get("verified") or {}).get("live_run"))
                 if not preflight["ok"]:
-                    row["problems"].append(f"preflight failed: missing flags {preflight['missing_flags']}")
+                    row["problems"].append(
+                        f"preflight failed: version {preflight['version']!r}, missing flags {preflight['missing_flags']}, "
+                        f"failed help {preflight['failed_help']}")
             except Refused as exc:
                 row["problems"].append(str(exc))
         seen[key] = row
@@ -337,7 +352,7 @@ def cmd_set_role(args: argparse.Namespace) -> int:
     lanes = with_executables([parse_lane(text) for text in args.lane], args.executable)
     config = load_or_new(args.runs_dir)
     config.setdefault("roles", {})[args.role] = lanes
-    path = write(config, args.runs_dir)
+    path = write(config, args.runs_dir, roles_to_check=(args.role,))
     print(json.dumps({"path": str(path), "role": args.role, "lanes": [lane_label(lane) for lane in lanes]}, ensure_ascii=False))
     return 0
 
@@ -345,7 +360,7 @@ def cmd_set_role(args: argparse.Namespace) -> int:
 def cmd_set_auto_panel(args: argparse.Namespace) -> int:
     config = load_or_new(args.runs_dir)
     config["auto_panel"] = args.value
-    path = write(config, args.runs_dir)
+    path = write(config, args.runs_dir, roles_to_check=())
     print(json.dumps({"path": str(path), "auto_panel": args.value}, ensure_ascii=False))
     return 0
 
@@ -390,7 +405,7 @@ def main(argv: list[str] | None = None) -> int:
     except NotConfigured as exc:
         print(f"not configured: {exc}", file=sys.stderr)
         return NOT_CONFIGURED
-    except Refused as exc:
+    except (Refused, OSError, subprocess.TimeoutExpired) as exc:
         print(f"refused: {exc}", file=sys.stderr)
         return 2
 

@@ -97,6 +97,34 @@ class AgentConfigTest(unittest.TestCase):
                 self.assertEqual(self.run_config("set-role", *args).returncode, 2)
         self.assertEqual(json.loads(self.run_config("lanes", "delegate").stdout)["lanes"], lanes)
 
+    def test_a_stale_lane_never_blocks_repairing_the_configuration(self) -> None:
+        # An adapter update can drop an effort that a saved lane still names.
+        stale = {"version": 1, "auto_panel": "ask", "roles": {"review": [{"cli": "claude", "effort": "gone"}],
+                                                              "design": [{"cli": "codex"}]}}
+        self.config.write_text(json.dumps(stale), encoding="utf-8")
+        self.assertEqual(self.run_config("set-auto-panel", "off").returncode, 0)
+        self.assertEqual(self.run_config("set-role", "delegate", "--lane", "claude@high").returncode, 0)
+        check = self.run_config("check")
+        self.assertEqual(check.returncode, 2)
+        rows = {row["lane"]: row["problems"] for row in json.loads(check.stdout)["lanes"]}
+        self.assertTrue(rows["claude@gone"])
+        self.assertEqual(self.run_config("set-role", "review", "--lane", "claude@high").returncode, 0)
+        self.assertEqual(self.run_config("show").returncode, 0)
+        saved = json.loads(self.config.read_text(encoding="utf-8"))
+        self.assertEqual(saved["auto_panel"], "off")
+        self.assertEqual(saved["roles"]["design"], [{"cli": "codex"}])
+
+    def test_check_without_lanes_reports_not_configured(self) -> None:
+        self.assertEqual(self.run_config("set-auto-panel", "allow").returncode, 0)
+        self.assertEqual(self.run_config("check").returncode, 3)
+
+    def test_non_string_use_labels_are_refused_not_crashed(self) -> None:
+        bad = {"version": 1, "roles": {"delegate": [{"cli": "codex", "use": {"x": 1}}, {"cli": "codex", "use": {"y": 2}}]}}
+        self.config.write_text(json.dumps(bad), encoding="utf-8")
+        result = self.run_config("show")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("use must be a nonempty string", result.stderr.decode("utf-8", "replace"))
+
     def test_a_corrupt_or_unknown_configuration_fails_closed(self) -> None:
         for content in ("{", json.dumps({"version": 2, "roles": {}}),
                         json.dumps({"version": 1, "roles": {"swarm": []}}),
