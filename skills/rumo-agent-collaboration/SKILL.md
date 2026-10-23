@@ -1,6 +1,6 @@
 ---
 name: rumo-agent-collaboration
-description: Use when the user asks to delegate, transfer, or relay work to another agent CLI or model, such as Codex, Claude Code, pi, Aider, or Gemini ("give this part to pi", "交给 pi 执行"), to use Orca for collaboration, or to resume a recorded run. For a named external CLI review, also load rumo-review; use rumo-review alone when no external route is named. Use rumo-handoff for a handoff document and rumo-plan to split an agreed plan. Do not use for this client's own subagents, such as "start several subagents".
+description: Use when the user asks to delegate, transfer, or relay work to another agent CLI or model, such as Codex, Claude Code, pi, Aider, or Gemini ("give this part to pi", "交给 pi 执行"), to use Orca for collaboration, or to resume a run this skill recorded. Not for taking over another agent's session yourself. For a named external CLI review, also load rumo-review; use rumo-review alone when no external route is named. Use rumo-handoff for a handoff document and rumo-plan to split an agreed plan. Do not use for this client's own subagents, such as "start several subagents".
 ---
 
 # Rumo Agent Collaboration
