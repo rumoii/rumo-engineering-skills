@@ -9,7 +9,8 @@ Read when continuing delegated or transferred work in a new conversation, or whe
 ```text
 <run-id>/
   .lock              OS-owned metadata lock; leave it in place after a crash
-  meta.json          CLI, a copy of the adapter used, executable, version, cwd, access, model, session_id, turns, outcomes
+  recorder.log       output of a detached recorder (`--detach` only)
+  meta.json          CLI, a copy of the adapter used, executable, version, cwd, access, model, mode, session_id, turns, outcomes
   turns/<n>/
     prompt.md        the brief, sent on stdin or as the prompt file
     events.jsonl     the CLI's JSON event stream (stdout.txt for a text-output adapter)
@@ -26,7 +27,9 @@ Read when continuing delegated or transferred work in a new conversation, or whe
 | `created` | written, not yet launched |
 | `launched` | process started; the session is not yet confirmed |
 | `session-known` | the CLI reported or accepted the session ID |
+| `interactive` | a visible CLI window from `open` is running; its host process is the recorded PID |
 | `exited` | exit code 0 and a final reply found |
+| `closed` | the interactive CLI exited or its window was closed; `closed_by` says which |
 | `failed` | non-zero exit, an error event, or no final reply |
 | `timed-out` | stopped at `--timeout`; the session may hold partial work |
 | `cancelling` | cancellation reserved; completion cannot overwrite it |

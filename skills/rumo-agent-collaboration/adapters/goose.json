@@ -55,6 +55,17 @@
       "field": "error"
     }
   },
+  "progress": [
+    {
+      "label": "reply",
+      "match": {
+        "type": "message",
+        "message.role": "assistant"
+      },
+      "field": "message.content",
+      "transform": "text_parts"
+    }
+  ],
   "access_env": {
     "read-only": {
       "GOOSE_MODE": "chat"

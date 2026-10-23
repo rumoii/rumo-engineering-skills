@@ -69,6 +69,15 @@
       ]
     }
   },
+  "progress": [
+    {
+      "label": "reply",
+      "match": {
+        "type": "assistant.message"
+      },
+      "field": "data.content"
+    }
+  ],
   "resume": [
     "--output-format",
     "json",

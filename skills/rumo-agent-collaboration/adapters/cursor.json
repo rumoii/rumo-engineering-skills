@@ -76,6 +76,16 @@
       }
     ]
   },
+  "progress": [
+    {
+      "label": "reply",
+      "match": {
+        "type": "assistant"
+      },
+      "field": "message.content",
+      "transform": "text_parts"
+    }
+  ],
   "interactive": [
     "--resume",
     "{session}"

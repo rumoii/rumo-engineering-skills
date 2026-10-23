@@ -55,6 +55,14 @@
     "{session}",
     "{model}"
   ],
+  "interactive_start": [
+    "--no-subagents",
+    "{access}",
+    "-s",
+    "{session}",
+    "{model}",
+    "{opening}"
+  ],
   "session": {
     "source": "preassign"
   },

@@ -1,4 +1,6 @@
 {"type":"session","id":"00000000-0000-4000-8000-000000000001"}
+{"type":"tool_execution_start","toolCallId":"call_1","toolName":"read","args":{"path":"README.md"}}
+{"type":"tool_execution_end","toolCallId":"call_2","toolName":"powershell","isError":true}
 {"type":"message_end","message":{"role":"user","content":[{"type":"text","text":"question"}]}}
 {"type":"message_end","message":{"role":"assistant","content":[{"type":"thinking","thinking":"x"},{"type":"text","text":"final "},{"type":"text","text":"answer"}]}}
 {"type":"message_end","message":{"role":"assistant","content":[{"type":"toolCall","name":"read"}]}}

@@ -18,7 +18,8 @@
         "--session-id",
         "--model",
         "--no-mcp",
-        "--no-extensions"
+        "--no-extensions",
+        "--name"
       ]
     }
   ],
@@ -59,6 +60,17 @@
     "{session}",
     "{model}"
   ],
+  "interactive_start": [
+    "--no-mcp",
+    "--no-extensions",
+    "{access}",
+    "--session-id",
+    "{session}",
+    "--name",
+    "{run_name}",
+    "{model}",
+    "{opening}"
+  ],
   "session": {
     "source": "preassign"
   },
@@ -73,6 +85,38 @@
       "transform": "text_parts"
     }
   },
+  "progress": [
+    {
+      "label": "tool",
+      "label_field": "toolName",
+      "match": {
+        "type": "tool_execution_start"
+      },
+      "field": [
+        "args.command",
+        "args.path",
+        "args.pattern",
+        "args"
+      ]
+    },
+    {
+      "label": "tool failed",
+      "match": {
+        "type": "tool_execution_end",
+        "isError": true
+      },
+      "field": "toolName"
+    },
+    {
+      "label": "reply",
+      "match": {
+        "type": "message_end",
+        "message.role": "assistant"
+      },
+      "field": "message.content",
+      "transform": "text_parts"
+    }
+  ],
   "interactive": [
     "--session",
     "{session}"

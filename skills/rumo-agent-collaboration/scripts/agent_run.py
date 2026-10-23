@@ -4,7 +4,8 @@
 Each CLI is described by an adapter file (JSON): the bundled ones live in
 ../adapters/, and user adapters in $RUMO_AGENT_ADAPTERS_DIR, else
 <runs-dir>/adapters/, where a user adapter replaces a bundled one of the same
-name. Subcommands: list, show, check, start, resume, status, cancel, record.
+name. Subcommands: list, show, check, start, resume, status, cancel, record,
+watch, wait, runs, and open (an interactive CLI in a window the user can see).
 
 Each run lives in <runs-dir>/<run-id>/ with meta.json and one folder per turn.
 The prompt travels on stdin or in a file the adapter names, never on the
@@ -14,7 +15,9 @@ that contain sandbox- or approval-bypassing flags are refused.
 
 Exit codes: 0 turn finished with a final reply; 1 the turn failed or produced
 no reply; 2 refused (usage, missing CLI, adapter, level or flag, run busy or
-unreconciled); 3 the turn hit the timeout and was stopped.
+unreconciled); 3 the turn hit the timeout and was stopped. With --detach,
+start and resume return once the turn is launched (exit 0) and a detached
+recorder finishes it; `watch` follows the turn and exits with the turn's code.
 """
 
 from __future__ import annotations
@@ -38,12 +41,20 @@ from typing import Any
 
 
 ACCESS_LEVELS = ("read-only", "workspace-write", "native-write")
-RUNNING = ("launched", "session-known", "cancelling")
-TERMINAL = ("exited", "failed", "launch-failed", "timed-out", "cancelled", "abandoned", "interrupted")
+RUNNING = ("launched", "session-known", "cancelling", "interactive")
+TERMINAL = ("exited", "failed", "launch-failed", "timed-out", "cancelled", "abandoned", "interrupted", "closed")
 RUNS_DIR_ENV = "RUMO_AGENT_RUNS_DIR"
 ADAPTERS_DIR_ENV = "RUMO_AGENT_ADAPTERS_DIR"
 BUNDLED_ADAPTERS = Path(__file__).resolve().parent.parent / "adapters"
 PLACEHOLDERS = {"{access}", "{session}", "{model}", "{prompt_file}", "{cwd}"}
+# Only interactive_start may use these: {opening} is the script's one-line pointer to the brief file.
+INTERACTIVE_PLACEHOLDERS = {"{opening}", "{run_name}"}
+WINDOW_GROUP = "rumo-agents"
+# How long a detached start waits for the turn to launch, and how long watch tolerates a running
+# record whose process is gone before reporting it unreconciled.
+DETACH_WAIT = 60
+WATCH_GRACE = 60
+PROGRESS_WIDTH = 300
 # Substrings that mark a flag or setting which bypasses a CLI's sandbox, approvals, or tool limits.
 FORBIDDEN = ("dangerous", "bypass", "yolo", "danger-full", "skip-permission", "skip_permissions", "--force", "auto-approve", "always-approve", "approve-mcps", "--allow-all", "--no-sandbox")
 
@@ -151,6 +162,13 @@ def validate_adapter(adapter: object) -> list[str]:
     errors = errors if isinstance(errors, list) else [errors]
     if not all(valid_rule(rule) for rule in errors):
         problems.append("output.error rules are invalid")
+    progress = adapter.get("progress", [])
+    if not isinstance(progress, list) or not all(
+        valid_rule(rule) and isinstance(rule.get("label"), str) and rule["label"].strip()
+        and (rule.get("label_field") is None or isinstance(rule["label_field"], str) and all(rule["label_field"].split(".")))
+        for rule in progress
+    ):
+        problems.append("progress must be a list of extraction rules, each with a label")
     verified = adapter.get("verified")
     if verified is not None and (not isinstance(verified, dict) or not all(
         isinstance(verified.get(k), str) and verified[k] for k in ("version", "on")
@@ -214,7 +232,24 @@ def validate_adapter(adapter: object) -> list[str]:
         if not args or args[-1] != "--help" or any(not re.fullmatch(r"[a-z0-9][a-z0-9-]*", t) for t in args[:-1]):
             problems.append("help args must be literal subcommands followed by --help")
         argv_parts.append(args)
-    for word in sorted(set(forbidden_values([argv_parts, envs]))):
+    interactive_start = adapter.get("interactive_start")
+    if interactive_start is not None:
+        if not string_list(interactive_start):
+            problems.append("interactive_start must be a list of strings")
+            interactive_start = []
+        for token in interactive_start:
+            unknown = set(re.findall(r"\{[^{}]*\}", token)) - PLACEHOLDERS - INTERACTIVE_PLACEHOLDERS
+            if unknown:
+                problems.append(f"unknown placeholder {sorted(unknown)} in {token!r}")
+            for placeholder in ("{access}", "{model}", *INTERACTIVE_PLACEHOLDERS):
+                if placeholder in token and token != placeholder:
+                    problems.append(f"{placeholder} must occupy a whole argv token in interactive_start")
+        if interactive_start and not {"{access}", "{opening}", "{session}"} <= set(interactive_start):
+            problems.append("interactive_start must include {access}, {session}, and {opening}")
+        if interactive_start and source != "preassign":
+            # The report is read back by resuming the same session headlessly after the window closes.
+            problems.append("interactive_start requires a preassigned session")
+    for word in sorted(set(forbidden_values([argv_parts, envs, interactive_start or []]))):
         problems.append(f"contains a sandbox or approval bypass ({word!r})")
     if adapter["prompt"] == "file":
         for name in ("start", "resume"):
@@ -271,7 +306,8 @@ def get_adapter(name: str, runs_dir: str | None, *, allow_disabled: bool = False
     return entry
 
 
-def render(adapter: dict, kind: str, access: str, cwd: str, model: str | None, session: str | None, prompt_file: str | None) -> list[str]:
+def render(adapter: dict, kind: str, access: str, cwd: str, model: str | None, session: str | None, prompt_file: str | None,
+           opening: str | None = None, run_name: str | None = None) -> list[str]:
     """Expand an argv template; {access} and {model} expand to whole token lists."""
     if access not in adapter["access"]:
         offered = ", ".join(adapter["access"])
@@ -283,15 +319,17 @@ def render(adapter: dict, kind: str, access: str, cwd: str, model: str | None, s
     for name, value in (("model", model), ("session", session)):
         if value is not None and (not isinstance(value, str) or not value.strip() or value.startswith("-") or any(c in value for c in '\0\r\n"&|^%!')):
             raise Refused(f"{name} must be a nonempty identifier, not an option")
-    values = {"{session}": session or "", "{cwd}": cwd, "{prompt_file}": prompt_file or "", "{model}": model or ""}
+    values = {"{session}": session or "", "{cwd}": cwd, "{prompt_file}": prompt_file or "", "{model}": model or "", "{run_name}": run_name or ""}
     argv: list[str] = []
     for token in adapter[kind]:
         if token == "{access}":
             argv += access_tokens
         elif token == "{model}":
             argv += [t.replace("{model}", model) for t in adapter.get("model", [])] if model else []
+        elif token == "{opening}":
+            argv.append(opening or "")
         else:
-            argv.append(re.sub(r"\{(?:session|cwd|prompt_file|model)\}", lambda m: values[m[0]], token))
+            argv.append(re.sub(r"\{(?:session|cwd|prompt_file|model|run_name)\}", lambda m: values[m[0]], token))
     # Paths and model IDs are data: do not reject innocent words inside them as bypass flags.
     if any("\0" in t for t in argv):
         raise Refused("argv contains a NUL character")
@@ -329,21 +367,24 @@ def text_of(value: object) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
+def matches(event: dict, rule: dict) -> bool:
+    return all(dig(event, path) == expected for path, expected in rule.get("match", {}).items())
+
+
+def field_text(event: dict, rule: dict) -> str | None:
+    """Text of the first candidate `field` that is present and nonblank."""
+    for field in rule["field"] if isinstance(rule["field"], list) else [rule["field"]]:
+        value = dig(event, field)
+        if value not in (None, "", []):
+            text = text_of(value)
+            if text.strip():
+                return text
+    return None
+
+
 def extract(events: list[dict], rule: dict) -> str | None:
     """Values of `field` (first present candidate) from events matching every `match` path."""
-    fields = rule["field"] if isinstance(rule["field"], list) else [rule["field"]]
-    values = []
-    for event in events:
-        if not all(dig(event, path) == expected for path, expected in rule.get("match", {}).items()):
-            continue
-        for field in fields:
-            value = dig(event, field)
-            if value not in (None, "", []):
-                text = text_of(value)
-                if text.strip():
-                    values.append(text)
-                    break
-    values = [v for v in values if v.strip()]
+    values = [v for v in (field_text(e, rule) for e in events if matches(e, rule)) if v]
     if not values:
         return None
     return "".join(values) if rule.get("pick") == "join" else values[-1]
@@ -360,6 +401,21 @@ def parse_output(adapter: dict, events: list[dict], stdout_text: str, preassigne
     rules = output.get("error") or []
     errors = [e for e in (extract(events, r) for r in (rules if isinstance(rules, list) else [rules])) if e]
     return {"session": session, "final": extract(events, output["final"]), "error": errors[-1] if errors else None}
+
+
+def progress_lines(rules: list[dict], event: dict) -> list[str]:
+    """One `[label] text` line per matching progress rule, collapsed to a single line."""
+    lines = []
+    for rule in rules:
+        text = field_text(event, rule) if matches(event, rule) else None
+        if text is None:
+            continue
+        label, name = rule["label"], dig(event, rule["label_field"]) if rule.get("label_field") else None
+        if isinstance(name, str) and name.strip():
+            label += " " + name.strip()
+        text = " ".join(text.split())
+        lines.append(f"[{label}] {text if len(text) <= PROGRESS_WIDTH else text[:PROGRESS_WIDTH - 1] + '…'}")
+    return lines
 
 
 # --- Records ----------------------------------------------------------------
@@ -590,6 +646,14 @@ def stop_tree(pid: int, marker: str | None) -> None:
         pass
 
 
+def refuse_batch_shell_syntax(executable: list[str], argv: list[str]) -> None:
+    # Windows executes batch launchers through cmd even with shell=False.
+    if Path(executable[0]).suffix.lower() in (".cmd", ".bat") and any(
+        re.search(r'[&|<>^%!"\r\n]', token) for token in argv
+    ):
+        raise Refused("batch launcher arguments contain shell syntax; use a direct executable instead")
+
+
 def run_turn(run_dir: Path, meta: dict, kind: str, prompt: str, timeout: float) -> int:
     if not math.isfinite(timeout) or timeout <= 0:
         raise Refused("timeout must be finite and greater than zero")
@@ -606,11 +670,7 @@ def run_turn(run_dir: Path, meta: dict, kind: str, prompt: str, timeout: float) 
     argv = [*meta["executable"], *render(
         adapter, kind, meta["access"], meta["cwd"], meta.get("model"), meta.get("session_id"), str(prompt_path),
     )]
-    # Windows executes batch launchers through cmd even with shell=False.
-    if Path(meta["executable"][0]).suffix.lower() in (".cmd", ".bat") and any(
-        re.search(r'[&|<>^%!"\r\n]', token) for token in argv
-    ):
-        raise Refused("batch launcher arguments contain shell syntax; use a direct executable instead")
+    refuse_batch_shell_syntax(meta["executable"], argv)
 
     kwargs: dict[str, Any] = {"creationflags": subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
     kwargs["env"] = child_environment(adapter, meta["access"])
@@ -714,7 +774,7 @@ def summary(run_dir: Path) -> dict:
     reason = run_disabled_reason(meta, run_dir)
     info = {
         "run_id": meta["run_id"], "run_dir": str(run_dir), "cli": meta["cli"], "verified": meta["adapter"].get("verified"),
-        "cwd": meta["cwd"], "access": meta["access"], "model": meta.get("model"), "session_id": session,
+        "mode": meta.get("mode", "headless"), "created_at": meta.get("created_at"), "cwd": meta["cwd"], "access": meta["access"], "model": meta.get("model"), "session_id": session,
         "turn": turn.get("number"), "state": turn.get("state"), "exit_code": turn.get("exit_code"),
         "error": turn.get("error"), "final_file": str(final) if final.is_file() else None,
     }
@@ -839,8 +899,11 @@ def cmd_start(args: argparse.Namespace) -> int:
         "created_at": now(), "turns": [], "outcomes": [],
     }
     write_json(run_dir / "meta.json", meta)
+    extra = {"window": open_watch_window(run_dir, 1)} if args.window else {}
+    if args.detach:
+        return run_detached(run_dir, "start", args.prompt_file, args.timeout, extra)
     code = run_turn(run_dir, meta, "start", prompt, args.timeout)
-    print(json.dumps(summary(run_dir), ensure_ascii=False, indent=2))
+    print(json.dumps({**summary(run_dir), **extra}, ensure_ascii=False, indent=2))
     return code
 
 
@@ -867,8 +930,399 @@ def cmd_resume(args: argparse.Namespace) -> int:
     if not meta.get("session_id"):
         raise Refused("no session ID was recorded, so there is nothing to resume; start a new run")
     prompt = read_prompt(args.prompt_file)
+    if not math.isfinite(args.timeout) or args.timeout <= 0:
+        raise Refused("timeout must be finite and greater than zero")
+    extra = {"window": open_watch_window(run_dir, len(meta["turns"]) + 1)} if args.window else {}
+    if args.detach:
+        return run_detached(run_dir, "resume", args.prompt_file, args.timeout, extra)
     code = run_turn(run_dir, meta, "resume", prompt, args.timeout)
+    print(json.dumps({**summary(run_dir), **extra}, ensure_ascii=False, indent=2))
+    return code
+
+
+def run_detached(run_dir: Path, kind: str, prompt_file: str, timeout: float, extra: dict) -> int:
+    """Hand the turn to a recorder outside the caller's process group, and return once the turn launches."""
+    with record_lock(run_dir):
+        number = len(load_meta(run_dir)["turns"]) + 1
+    script = str(Path(__file__).resolve())
+    argv = [
+        sys.executable, script, "_turn", run_dir.name, "--kind", kind,
+        "--prompt-file", str(Path(prompt_file).resolve()), "--timeout", repr(timeout), "--runs-dir", str(run_dir.parent),
+    ]
+    survives: bool | None = None
+    with (run_dir / "recorder.log").open("ab") as log:
+        options: dict[str, Any] = {"cwd": str(run_dir), "stdin": subprocess.DEVNULL, "stdout": log, "stderr": log}
+        if os.name == "nt":
+            flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+            try:
+                recorder = subprocess.Popen(argv, creationflags=flags | subprocess.CREATE_BREAKAWAY_FROM_JOB, **options)
+                survives = True
+            except OSError:
+                # The caller's job forbids breakaway, so closing that job may also end the recorder.
+                recorder = subprocess.Popen(argv, creationflags=flags, **options)
+                survives = False
+        else:
+            # A new session outlives the caller's process group and terminal, not a cgroup or container teardown.
+            recorder = subprocess.Popen(argv, start_new_session=True, **options)
+    recorder_started = start_marker(recorder.pid)
+    deadline = time.monotonic() + DETACH_WAIT
+    while True:
+        with record_lock(run_dir):
+            turns = load_meta(run_dir)["turns"]
+        state = turns[number - 1].get("state") if len(turns) >= number else None
+        if state not in (None, "created") or recorder.poll() is not None or time.monotonic() >= deadline:
+            break
+        time.sleep(0.1)
+    if state in (None, "created"):
+        tail = (run_dir / "recorder.log").read_bytes().decode("utf-8", errors="replace")[-2000:].strip()
+        raise Refused(f"the detached recorder did not launch turn {number}; see {run_dir / 'recorder.log'}: {tail}")
+    info = summary(run_dir)
+    info.update(
+        detached=True, recorder_pid=recorder.pid, recorder_pid_started=recorder_started, survives_caller=survives,
+        watch=watch_argv(run_dir), **extra,
+    )
+    print(json.dumps(info, ensure_ascii=False, indent=2))
+    return 0 if state in RUNNING else turn_code(state)
+
+
+def cmd_turn(args: argparse.Namespace) -> int:
+    run_dir = run_path(args)
+    with record_lock(run_dir):
+        meta = load_meta(run_dir)
+    code = run_turn(run_dir, meta, args.kind, read_prompt(args.prompt_file), args.timeout)
     print(json.dumps(summary(run_dir), ensure_ascii=False, indent=2))
+    return code
+
+
+def turn_code(state: str | None) -> int:
+    return 0 if state in ("exited", "closed") else 3 if state == "timed-out" else 1
+
+
+def select_turn(run_dir: Path, requested: int | None) -> int:
+    """The requested turn, else the latest; waits up to DETACH_WAIT for a turn not yet recorded."""
+    if requested is not None and requested < 1:
+        raise Refused("turn numbers start at 1")
+    deadline = time.monotonic() + DETACH_WAIT
+    while True:
+        with record_lock(run_dir):
+            turns = load_meta(run_dir)["turns"]
+        number = requested or len(turns) or 1
+        if number <= len(turns):
+            return number
+        if time.monotonic() >= deadline:
+            raise Refused(f"run has no turn {number}")
+        time.sleep(0.2)
+
+
+def follow_turn(run_dir: Path, number: int, stream: Path | None, consume=None) -> tuple[dict, str | None]:
+    """Poll the record until the turn ends or stalls, passing new output bytes to `consume`.
+
+    Returns the last turn record and, for a stall, the message explaining it.
+    """
+    offset, stalled_since = 0, None
+    while True:
+        with record_lock(run_dir):
+            turn = load_meta(run_dir)["turns"][number - 1]
+        # Read after the state so that a terminal state also covers every byte written before it.
+        if stream is not None and stream.is_file():
+            with stream.open("rb") as handle:
+                handle.seek(offset)
+                chunk = handle.read()
+            offset += len(chunk)
+            if chunk and consume:
+                consume(chunk)
+        state = turn.get("state")
+        if state in TERMINAL:
+            return turn, None
+        if state == "created" and "pid" not in turn:
+            problem = f"turn {number} was created but never launched; inspect status"
+        elif process_status(turn) in ("gone", "foreign"):
+            problem = f"turn {number} is still {state} but its process is gone; run status, then cancel to reconcile"
+        else:
+            problem = None
+        if problem is None:
+            stalled_since = None
+        else:
+            stalled_since = stalled_since or time.monotonic()
+            if time.monotonic() - stalled_since >= WATCH_GRACE:
+                return turn, problem
+        if consume:
+            consume(b"")
+        time.sleep(0.5)
+
+
+def cmd_watch(args: argparse.Namespace) -> int:
+    run_dir = run_path(args)
+    number = select_turn(run_dir, args.turn)
+    with record_lock(run_dir):
+        meta = load_meta(run_dir)
+    adapter = meta["adapter"]
+    rules = adapter.get("progress")
+    if rules is None:
+        # Progress rules only render output, so the current adapter may supply them for an older snapshot.
+        current = load_adapters(str(run_dir.parent)).get(meta["cli"])
+        rules = current["adapter"].get("progress") if current and not current["problems"] else None
+    rules = rules or []
+    text_output = adapter["output"]["format"] == "text"
+    turn_dir = run_dir / "turns" / str(number)
+    stream = turn_dir / ("stdout.txt" if text_output else "events.jsonl")
+    pending, seen, heartbeat = b"", 0, time.monotonic()
+
+    def show(line: bytes) -> None:
+        nonlocal seen
+        text = line.decode("utf-8", errors="replace").rstrip("\r")
+        if text_output:
+            print(text, flush=True)
+            return
+        try:
+            event = json.loads(text)
+        except ValueError:
+            return
+        if isinstance(event, dict):
+            seen += 1
+            for out in progress_lines(rules, event):
+                print(out, flush=True)
+
+    def consume(chunk: bytes) -> None:
+        nonlocal pending, heartbeat
+        *lines, pending = (pending + chunk).split(b"\n")
+        for line in lines:
+            show(line)
+        if not rules and not text_output and time.monotonic() - heartbeat >= 10:
+            print(f"... {seen} events so far", flush=True)
+            heartbeat = time.monotonic()
+
+    print(f"watching {meta['cli']} run {meta['run_id']} turn {number}; Ctrl+C stops watching, not the run", flush=True)
+    turn, problem = follow_turn(run_dir, number, stream, consume)
+    if problem:
+        print(problem, flush=True)
+        code = 2
+    else:
+        if pending.strip():
+            show(pending)
+        final = turn_dir / "final.md"
+        if not rules and not text_output and final.is_file():
+            for line in final.read_text(encoding="utf-8", errors="replace").splitlines()[:20]:
+                print(line, flush=True)
+        print(f"turn {number} {turn['state']}; final reply: {final if final.is_file() else 'none'}", flush=True)
+        code = turn_code(turn["state"])
+    if args.hold:
+        hold_window("press Enter to close")
+    return code
+
+
+def cmd_wait(args: argparse.Namespace) -> int:
+    run_dir = run_path(args)
+    number = select_turn(run_dir, args.turn)
+    turn, problem = follow_turn(run_dir, number, None)
+    info = summary(run_dir)
+    if problem:
+        info["problem"] = problem
+    print(json.dumps(info, ensure_ascii=False, indent=2))
+    return 2 if problem else turn_code(turn["state"])
+
+
+def open_window(argv: list[str], cwd: str, title: str) -> dict:
+    """Run argv in a terminal window the user can see, without building a shell command string."""
+    if os.name == "nt":
+        wt = shutil.which("wt")
+        # Windows Terminal splits its own command line on ';', so such argv falls back to a console window.
+        if wt and not any(";" in token for token in (title, cwd, *argv)):
+            try:
+                tab = subprocess.run(
+                    [wt, "-w", WINDOW_GROUP, "new-tab", "--title", title, "-d", cwd, *argv],
+                    stdin=subprocess.DEVNULL, capture_output=True, timeout=30,
+                )
+                if tab.returncode == 0:
+                    return {"opened": True, "via": "wt-tab", "reason": None}
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+        flags = subprocess.CREATE_NEW_CONSOLE | subprocess.CREATE_NEW_PROCESS_GROUP
+        for extra in (subprocess.CREATE_BREAKAWAY_FROM_JOB, 0):
+            try:
+                subprocess.Popen(argv, cwd=cwd, creationflags=flags | extra)
+                return {"opened": True, "via": "console", "reason": None}
+            except OSError as exc:
+                error = str(exc)
+        return {"opened": False, "via": None, "reason": f"could not open a console window: {error}"}
+    if sys.platform == "linux":
+        terminal = shutil.which("x-terminal-emulator")
+        if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")) or not terminal:
+            return {"opened": False, "via": None, "reason": "no graphical terminal: DISPLAY/WAYLAND_DISPLAY is unset or x-terminal-emulator is missing"}
+        try:
+            subprocess.Popen([terminal, "-e", *argv], cwd=cwd, start_new_session=True,
+                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except OSError as exc:
+            return {"opened": False, "via": None, "reason": f"could not start x-terminal-emulator: {exc}"}
+        return {"opened": True, "via": "x-terminal-emulator", "reason": None}
+    return {"opened": False, "via": None, "reason": "windows open only on Windows and Linux desktops"}
+
+
+def watch_argv(run_dir: Path, number: int | None = None, hold: bool = False) -> list[str]:
+    turn = ["--turn", str(number)] if number else []
+    return [sys.executable, str(Path(__file__).resolve()), "watch", run_dir.name, *turn,
+            *(["--hold"] if hold else []), "--runs-dir", str(run_dir.parent)]
+
+
+def open_watch_window(run_dir: Path, number: int) -> dict:
+    with record_lock(run_dir):
+        cli = load_meta(run_dir)["cli"]
+    return open_window(watch_argv(run_dir, number, hold=True), str(run_dir), f"{cli} {run_dir.name}")
+
+
+def cmd_runs(args: argparse.Namespace) -> int:
+    root = runs_root(args.runs_dir)
+    run_dirs = sorted((p for p in root.iterdir() if (p / "meta.json").is_file()), reverse=True) if root.is_dir() else []
+    rows = []
+    for run_dir in run_dirs:
+        if len(rows) >= args.limit:
+            break
+        try:
+            info = summary(run_dir)
+        except Refused as exc:
+            rows.append({"run_id": run_dir.name, "error": str(exc)})
+            continue
+        active = info["state"] in RUNNING or info["state"] == "created"
+        if args.active and not active:
+            continue
+        row = {key: info.get(key) for key in ("run_id", "cli", "model", "mode", "access", "created_at", "turn", "state", "process_status")}
+        if active and info["mode"] == "headless":
+            row["watch"] = watch_argv(run_dir)
+        elif not active and info.get("interactive_resume"):
+            row["interactive_resume"] = info["interactive_resume"]
+        rows.append(row)
+    print(json.dumps(rows, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_open(args: argparse.Namespace) -> int:
+    require_process_identity()
+    entry = get_adapter(args.cli, args.runs_dir)
+    adapter = entry["adapter"]
+    if not adapter.get("interactive_start"):
+        raise Refused(f"{args.cli} has no interactive_start template; run it headless with start instead")
+    if args.access not in adapter["access"]:
+        raise Refused(f"{args.cli} does not offer {args.access}; it offers {', '.join(adapter['access'])}")
+    exe = resolve_executable(adapter, args.executable)
+    report = check(entry, exe)
+    if not report["ok"]:
+        raise Refused(f"{args.cli} failed the preflight check: {json.dumps(report, ensure_ascii=False)}")
+    cwd = Path(args.cwd).resolve()
+    if not cwd.is_dir():
+        raise Refused(f"working directory not found: {cwd}")
+    if args.model and args.model.startswith("-"):
+        raise Refused("model must not start with '-'")
+    prompt = read_prompt(args.prompt_file)
+    run_id = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{args.cli}-{secrets.token_hex(3)}"
+    run_dir = runs_root(args.runs_dir) / run_id
+    prompt_path = run_dir / "turns" / "1" / "prompt.md"
+    session = str(uuid.uuid4())
+    # Only this pointer travels on the command line; the brief itself stays in the recorded file.
+    opening = f"Read the brief at {prompt_path} and follow it. When you finish, give your final report and stop."
+    argv = [*exe, *render(adapter, "interactive_start", args.access, str(cwd), args.model, session, None,
+                          opening=opening, run_name=run_id)]
+    refuse_batch_shell_syntax(exe, argv)
+    prompt_path.parent.mkdir(parents=True)
+    write_json(run_dir / "meta.json", {
+        "run_id": run_id, "cli": args.cli, "adapter_path": entry["path"], "adapter": adapter, "executable": exe,
+        "version": report["version"], "cwd": str(cwd), "access": args.access, "model": args.model, "mode": "interactive",
+        "session_id": session, "created_at": now(), "outcomes": [],
+        "turns": [{"number": 1, "kind": "interactive", "argv": argv, "state": "created", "created_at": now()}],
+    })
+    prompt_path.write_bytes(prompt.encode("utf-8"))
+    host = [sys.executable, str(Path(__file__).resolve()), "_host", run_id, "--runs-dir", str(run_dir.parent)]
+    window = open_window(host, str(cwd), f"{args.cli} {run_id}")
+    if not window["opened"]:
+        update_turn(run_dir, 1, state="launch-failed", error=window["reason"], ended_at=now())
+        print(json.dumps({**summary(run_dir), "window": window}, ensure_ascii=False, indent=2))
+        return 1
+    deadline = time.monotonic() + DETACH_WAIT
+    while True:
+        with record_lock(run_dir):
+            state = load_meta(run_dir)["turns"][0].get("state")
+        if state != "created" or time.monotonic() >= deadline:
+            break
+        time.sleep(0.2)
+    info = {**summary(run_dir), "window": window,
+            "wait": [sys.executable, str(Path(__file__).resolve()), "wait", run_id, "--runs-dir", str(run_dir.parent)]}
+    if state == "created":
+        info["problem"] = "the window opened but its host did not start; check the window"
+    print(json.dumps(info, ensure_ascii=False, indent=2))
+    return 0 if state in RUNNING else 2 if state == "created" else turn_code(state)
+
+
+def hold_window(message: str) -> None:
+    """Keep a window readable until the user presses Enter; do nothing without a terminal."""
+    if sys.stdin.isatty():
+        try:
+            input(message)
+        except EOFError:
+            pass
+
+
+_CLOSE_HANDLERS: list[Any] = []
+
+
+def on_window_close(callback) -> None:
+    """Best effort: record the turn before the terminal kills this process."""
+    if os.name == "nt":
+        import ctypes
+
+        @ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_uint)
+        def handler(event: int) -> bool:
+            if event in (2, 5, 6):  # CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT
+                callback("window")
+            return False
+
+        _CLOSE_HANDLERS.append(handler)  # ctypes callbacks must stay referenced
+        ctypes.WinDLL("kernel32").SetConsoleCtrlHandler(handler, True)
+    else:
+        def hangup(*_: object) -> None:
+            callback("window")
+            os._exit(129)
+
+        signal.signal(signal.SIGHUP, hangup)
+
+
+def cmd_host(args: argparse.Namespace) -> int:
+    run_dir = run_path(args)
+    with record_lock(run_dir):
+        meta = load_meta(run_dir)
+        turn = meta["turns"][-1]
+        if turn.get("state") != "created":
+            raise Refused(f"turn {turn.get('number')} is already {turn.get('state')}")
+        number = turn["number"]
+        turn.update(state="interactive", pid=os.getpid(), pid_started=start_marker(os.getpid()), started_at=now())
+        write_json(run_dir / "meta.json", meta)
+
+    def record_closed(by: str, **fields: object) -> None:
+        # The first ending wins: a window close recorded first is not overwritten by the CLI's exit.
+        try:
+            with record_lock(run_dir):
+                meta = load_meta(run_dir)
+                turn = meta["turns"][number - 1]
+                if turn.get("state") not in TERMINAL:
+                    turn.update(state="closed", ended_at=now(), closed_by=by, **fields)
+                    write_json(run_dir / "meta.json", meta)
+        except (Refused, OSError):
+            pass
+
+    on_window_close(record_closed)
+    # Ctrl+C belongs to the CLI in this console; a Python handler, unlike SIG_IGN, is not inherited.
+    signal.signal(signal.SIGINT, lambda *_: None)
+    try:
+        cli = subprocess.Popen(turn["argv"], cwd=meta["cwd"], env=child_environment(meta["adapter"], meta["access"]))
+    except OSError as exc:
+        update_turn(run_dir, number, state="launch-failed", error=str(exc), ended_at=now())
+        print(f"could not start {meta['cli']}: {exc}", flush=True)
+        code = 1
+    else:
+        update_turn(run_dir, number, cli_pid=cli.pid)
+        exit_code = cli.wait()
+        record_closed("cli-exit", exit_code=exit_code)
+        print(f"\n{meta['cli']} exited with code {exit_code}; run {meta['run_id']} is recorded as closed.", flush=True)
+        code = 0
+    hold_window("press Enter to close this window")
     return code
 
 
@@ -961,12 +1415,52 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--model")
     p.add_argument("--timeout", type=float, default=1800)
     p.add_argument("--executable")
+    p.add_argument("--detach", action="store_true", help="Return once the turn launches; a detached recorder finishes it.")
+    p.add_argument("--window", action="store_true", help="Also open a terminal window that watches the turn.")
+    p.add_argument("--runs-dir")
+
+    p = sub.add_parser("open", help="Start the CLI interactively in a terminal window the user can see and type into.")
+    p.add_argument("cli")
+    p.add_argument("--cwd", required=True)
+    p.add_argument("--prompt-file", required=True)
+    p.add_argument("--access", required=True, choices=ACCESS_LEVELS)
+    p.add_argument("--model")
+    p.add_argument("--executable")
     p.add_argument("--runs-dir")
 
     p = sub.add_parser("resume", help="Send another turn to the recorded session.")
     p.add_argument("run_id")
     p.add_argument("--prompt-file", required=True)
     p.add_argument("--timeout", type=float, default=1800)
+    p.add_argument("--detach", action="store_true", help="Return once the turn launches; a detached recorder finishes it.")
+    p.add_argument("--window", action="store_true", help="Also open a terminal window that watches the turn.")
+    p.add_argument("--runs-dir")
+
+    p = sub.add_parser("watch", help="Follow a turn's progress until it ends; exits with the turn's code.")
+    p.add_argument("run_id")
+    p.add_argument("--turn", type=int, help="Turn number; defaults to the latest.")
+    p.add_argument("--hold", action="store_true", help="Wait for Enter before exiting, so a window stays open.")
+    p.add_argument("--runs-dir")
+
+    p = sub.add_parser("wait", help="Wait silently for a turn to end, then print the summary; exits with the turn's code.")
+    p.add_argument("run_id")
+    p.add_argument("--turn", type=int, help="Turn number; defaults to the latest.")
+    p.add_argument("--runs-dir")
+
+    p = sub.add_parser("runs", help="List recorded runs, newest first.")
+    p.add_argument("--active", action="store_true", help="Only runs whose last turn is still running.")
+    p.add_argument("--limit", type=int, default=20)
+    p.add_argument("--runs-dir")
+
+    p = sub.add_parser("_host", help=argparse.SUPPRESS)
+    p.add_argument("run_id")
+    p.add_argument("--runs-dir")
+
+    p = sub.add_parser("_turn", help=argparse.SUPPRESS)
+    p.add_argument("run_id")
+    p.add_argument("--kind", required=True, choices=("start", "resume"))
+    p.add_argument("--prompt-file", required=True)
+    p.add_argument("--timeout", type=float, required=True)
     p.add_argument("--runs-dir")
 
     for name, text in (("status", "Print the run record summary."), ("cancel", "Stop the run's own process tree, or mark a dead turn abandoned.")):
@@ -987,13 +1481,19 @@ def main(argv: list[str] | None = None) -> int:
             stream.reconfigure(encoding="utf-8")
     commands = {
         "list": cmd_list, "show": cmd_show, "check": cmd_check, "start": cmd_start, "resume": cmd_resume,
-        "status": cmd_status, "cancel": cmd_cancel, "record": cmd_record,
+        "status": cmd_status, "cancel": cmd_cancel, "record": cmd_record, "watch": cmd_watch, "_turn": cmd_turn,
+        "wait": cmd_wait, "runs": cmd_runs, "open": cmd_open, "_host": cmd_host,
     }
     try:
         return commands[args.command](args)
     except (Refused, OSError, subprocess.TimeoutExpired) as exc:
         print(f"refused: {exc}", file=sys.stderr)
         return 2
+    except KeyboardInterrupt:
+        # Stopping a watch leaves the run alone; every other command keeps its interruption handling.
+        if args.command not in ("watch", "wait"):
+            raise
+        return 130
 
 
 if __name__ == "__main__":

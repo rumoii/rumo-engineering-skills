@@ -16,7 +16,8 @@
         "--approval-mode",
         "--session-id",
         "--resume",
-        "--model"
+        "--model",
+        "--prompt-interactive"
       ]
     }
   ],
@@ -51,6 +52,14 @@
     "{session}",
     "{model}"
   ],
+  "interactive_start": [
+    "{access}",
+    "--session-id",
+    "{session}",
+    "{model}",
+    "--prompt-interactive",
+    "{opening}"
+  ],
   "session": {
     "source": "preassign"
   },
@@ -76,6 +85,16 @@
       }
     ]
   },
+  "progress": [
+    {
+      "label": "reply",
+      "match": {
+        "type": "assistant"
+      },
+      "field": "message.content",
+      "transform": "text_parts"
+    }
+  ],
   "interactive": [
     "--resume",
     "{session}"

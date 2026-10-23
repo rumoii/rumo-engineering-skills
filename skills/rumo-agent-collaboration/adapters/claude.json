@@ -18,7 +18,8 @@
         "--permission-mode",
         "--session-id",
         "--resume",
-        "--model"
+        "--model",
+        "--name"
       ]
     }
   ],
@@ -57,6 +58,15 @@
     "{session}",
     "{model}"
   ],
+  "interactive_start": [
+    "{access}",
+    "--session-id",
+    "{session}",
+    "--name",
+    "{run_name}",
+    "{model}",
+    "{opening}"
+  ],
   "session": {
     "source": "preassign"
   },
@@ -82,6 +92,16 @@
       }
     ]
   },
+  "progress": [
+    {
+      "label": "reply",
+      "match": {
+        "type": "assistant"
+      },
+      "field": "message.content",
+      "transform": "text_parts"
+    }
+  ],
   "interactive": [
     "--resume",
     "{session}"

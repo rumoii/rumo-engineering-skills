@@ -58,10 +58,14 @@ These exclusions concern the adapter requirements, not whether each CLI can deve
 | `access_env` | optional mapping from an offered access level to environment variables; overrides `env` for that level, in the child only |
 | `session` | `{"source": "preassign"}` (the script passes a new UUID as `{session}`), `{"source": "event", "match", "field"}`, or `{"source": "none"}` (one turn only) |
 | `output` | `{"format": "text"}` (all of stdout is the reply) or `{"format": "jsonl", "final", "error"}` |
+| `progress` | optional list of rules that `watch` renders as `[label] text` lines; display only |
 | `interactive` | args a person uses to reopen the session, with `{session}` |
+| `interactive_start` | optional argv for `open`: starts the CLI interactively with `{access}`, `{session}`, optional `{model}` and `{run_name}`, and `{opening}`, the script's one-line pointer to the brief. Requires a preassigned session; `{opening}` and `{run_name}` are refused anywhere else |
 | `notes` | what was and was not exercised, and any known limit |
 
 A `final` or `error` rule is `{"match": {...}, "field": ..., "pick", "transform"}`. `match` maps dotted paths to required values; an empty `match` takes every event. `field` is a dotted path or a list of candidates; the first nonempty text result wins. `pick` is `last` (default) or `join` for replies streamed in pieces. `transform: "text_parts"` joins the `text` parts of a content array. `error` may be a list of rules.
+
+A `progress` rule uses the same `match` and `field`, plus a nonempty `label` and an optional `label_field` whose value is appended to the label, such as a tool name. Match only assistant output and tool events, never the user's messages, which carry the brief. `watch` uses the current adapter's rules for a run whose snapshot has none.
 
 ## Write One
 

@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import copy
+import io
 import importlib.util
 import json
 import os
@@ -45,9 +47,9 @@ FAKE = textwrap.dedent(
     cli = os.environ.get("FAKE_CLI", "claude" if dialect == "claude" else dialect)
     flags = {
         "codex": "-c --config --json --sandbox --cd --model",
-        "claude": "-p --print --output-format --verbose --permission-mode --session-id --resume --model",
-        "pi": "-p --print --mode --tools --session-id --session --model --no-mcp --no-extensions",
-        "qwen": "-o --output-format --approval-mode --session-id --resume --model",
+        "claude": "-p --print --output-format --verbose --permission-mode --session-id --resume --model --name",
+        "pi": "-p --print --mode --tools --session-id --session --model --no-mcp --no-extensions --name",
+        "qwen": "-o --output-format --approval-mode --session-id --resume --model --prompt-interactive",
         "grok": "-s --session-id --prompt-file --output-format --no-subagents --permission-mode --resume --model",
         "cursor": "-p --print --output-format --mode --sandbox --trust --resume --model",
         "gemini": "-o --output-format --approval-mode --resume --model",
@@ -68,6 +70,10 @@ FAKE = textwrap.dedent(
         if cli in ("opencode", "goose") and argv != ["run", "--help"]:
             sys.exit(2)
         print("" if mode == "nohelp" else FLAGS); sys.exit(9 if mode == "badhelp" else 0)
+    if "--fake-interactive" in argv:
+        with open(os.environ["FAKE_LOG"], "a", encoding="utf-8") as log:
+            log.write(json.dumps({"argv": argv, "cwd": os.getcwd(), "interactive": True}, ensure_ascii=False) + "\n")
+        sys.exit(0)
     for token in argv:
         if token.startswith("-") and token != "-" and token.split("=", 1)[0] not in FLAGS.split():
             sys.stderr.write("unknown option: " + token); sys.exit(2)
@@ -106,6 +112,8 @@ FAKE = textwrap.dedent(
     elif dialect == "pi":
         session = after("--session-id")
         emit({"type": "session", "id": session})
+        emit({"type": "message_end", "message": {"role": "user", "content": [{"type": "text", "text": prompt}]}})
+        emit({"type": "tool_execution_start", "toolName": "read", "args": {"path": "README.md"}})
     elif dialect == "gemini":
         session = after("--resume") or "gem-1"
         emit({"type": "init", "session_id": session})
@@ -120,6 +128,8 @@ FAKE = textwrap.dedent(
         open(os.environ["FAKE_CHILD_PID"], "w").write(str(child.pid))
     if mode in ("hang", "tree"):
         time.sleep(120)
+    if mode == "slow":
+        time.sleep(3)
     if mode == "malformed":
         print("not json {", flush=True); sys.exit(0)
     if mode == "fail":
@@ -633,6 +643,352 @@ class RunTest(Harness):
         )
         self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace"))
         self.assertTrue(self.only_run().is_dir())
+
+
+class DetachWatchTest(Harness):
+    def detached(self, *args: str, cli: str = "pi", mode: str = "ok") -> subprocess.CompletedProcess:
+        return self.run_script(*args, "--detach", "--runs-dir", str(self.runs), env={**self.env(DIALECT[cli], mode), "FAKE_CLI": cli})
+
+    def start_detached(self, cli: str = "pi", mode: str = "ok") -> dict:
+        result = self.detached("start", cli, "--cwd", str(self.cwd), "--prompt-file", str(self.prompt),
+                               "--access", "read-only", "--executable", str(self.fake), cli=cli, mode=mode)
+        self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace"))
+        return json.loads(result.stdout)
+
+    def wait_for_recorder(self, info: dict, number: int) -> dict:
+        run_dir = Path(info["run_dir"])
+        deadline = time.monotonic() + 60
+        while time.monotonic() < deadline:
+            with agent_run.record_lock(run_dir):
+                turns = self.meta(run_dir)["turns"]
+            recorder = {"pid": info["recorder_pid"], "pid_started": info["recorder_pid_started"]}
+            if turns[number - 1].get("state") in agent_run.TERMINAL and agent_run.process_status(recorder) in ("gone", "foreign"):
+                return turns[number - 1]
+            time.sleep(0.2)
+        self.fail("the detached recorder did not finish before the deadline")
+
+    def test_detached_start_returns_while_the_turn_runs_and_the_recorder_finishes_it(self) -> None:
+        info = self.start_detached(mode="slow")
+        self.assertTrue(info["detached"])
+        self.assertIn(info["state"], agent_run.RUNNING)
+        self.assertIn(info["survives_caller"], (True, False) if os.name == "nt" else (None,))
+        self.assertEqual(info["watch"][2:4], ["watch", info["run_id"]])
+        turn = self.wait_for_recorder(info, 1)
+        self.assertEqual(turn["state"], "exited")
+        final = Path(info["run_dir"]) / "turns" / "1" / "final.md"
+        self.assertEqual(final.read_text(encoding="utf-8"), "done: " + PROMPT.splitlines()[0])
+        self.assertEqual(self.calls()[0]["prompt"], PROMPT)
+
+    def test_watch_follows_progress_without_echoing_the_brief(self) -> None:
+        info = self.start_detached(mode="slow")
+        watched = self.run_script("watch", info["run_id"], "--runs-dir", str(self.runs), dialect="pi")
+        self.wait_for_recorder(info, 1)
+        out = watched.stdout.decode("utf-8")
+        self.assertEqual(watched.returncode, 0, out + watched.stderr.decode("utf-8", "replace"))
+        self.assertIn("[tool read] README.md", out)
+        self.assertIn("[reply] done: " + PROMPT.splitlines()[0], out)
+        self.assertNotIn(PROMPT.splitlines()[1], out)
+        self.assertIn("turn 1 exited", out)
+
+    def test_detached_resume_waits_for_the_running_turn_then_continues(self) -> None:
+        info = self.start_detached(mode="hang")
+        busy = self.detached("resume", info["run_id"], "--prompt-file", str(self.prompt))
+        self.assertEqual(busy.returncode, 2)
+        self.assertIn("still running", busy.stderr.decode("utf-8"))
+        cancel = self.run_script("cancel", info["run_id"], "--runs-dir", str(self.runs), dialect="pi")
+        self.assertEqual(cancel.returncode, 0, cancel.stderr.decode("utf-8", "replace"))
+        self.assertEqual(self.wait_for_recorder(info, 1)["state"], "cancelled")
+
+        resumed = self.detached("resume", info["run_id"], "--prompt-file", str(self.prompt))
+        self.assertEqual(resumed.returncode, 0, resumed.stderr.decode("utf-8", "replace"))
+        second = json.loads(resumed.stdout)
+        self.assertEqual(second["turn"], 2)
+        self.assertEqual(self.wait_for_recorder(second, 2)["state"], "exited")
+        self.assertEqual(self.calls()[1]["argv"][self.calls()[1]["argv"].index("--session-id") + 1], info["session_id"])
+
+    def test_watch_reports_a_running_record_whose_process_is_gone(self) -> None:
+        summary = json.loads(self.start("codex").stdout)
+        run_dir = self.runs / summary["run_id"]
+        meta = self.meta(run_dir)
+        marker = agent_run.start_marker(os.getpid())
+        self.assertIsNotNone(marker)
+        meta["turns"].append({"number": 2, "state": "launched", "pid": os.getpid(), "pid_started": marker + "1"})
+        agent_run.write_json(run_dir / "meta.json", meta)
+        out = io.StringIO()
+        with patch.object(agent_run, "WATCH_GRACE", 0), contextlib.redirect_stdout(out):
+            code = agent_run.cmd_watch(argparse.Namespace(run_id=summary["run_id"], turn=None, hold=False, runs_dir=str(self.runs)))
+        self.assertEqual(code, 2)
+        self.assertIn("process is gone", out.getvalue())
+
+    def test_watch_of_a_finished_turn_replays_it_and_returns_its_code(self) -> None:
+        failed = json.loads(self.start("claude", "fail").stdout)
+        watched = self.run_script("watch", failed["run_id"], "--runs-dir", str(self.runs), dialect="claude")
+        self.assertEqual(watched.returncode, 1)
+        self.assertIn("turn 1 failed", watched.stdout.decode("utf-8"))
+
+
+class TurnSelectionTest(Harness):
+    def watch(self, run_id: str, **overrides) -> tuple[int, str]:
+        out = io.StringIO()
+        args = argparse.Namespace(**{"run_id": run_id, "turn": None, "hold": False, "runs_dir": str(self.runs), **overrides})
+        with contextlib.redirect_stdout(out):
+            code = agent_run.cmd_watch(args)
+        return code, out.getvalue()
+
+    def test_turn_zero_and_a_turn_that_never_appears_are_refused(self) -> None:
+        summary = json.loads(self.start("codex").stdout)
+        zero = self.run_script("watch", summary["run_id"], "--turn", "0", "--runs-dir", str(self.runs))
+        self.assertEqual(zero.returncode, 2)
+        self.assertIn("turn numbers start at 1", zero.stderr.decode("utf-8"))
+        with patch.object(agent_run, "DETACH_WAIT", 0):
+            with self.assertRaisesRegex(agent_run.Refused, "run has no turn 2"):
+                agent_run.select_turn(self.runs / summary["run_id"], 2)
+
+    def test_watch_waits_for_a_turn_that_starts_later(self) -> None:
+        summary = json.loads(self.start("claude", "ok").stdout)
+        later = threading.Timer(1.0, lambda: self.resume(summary["run_id"], "claude"))
+        later.start()
+        try:
+            code, out = self.watch(summary["run_id"], turn=2)
+        finally:
+            later.join()
+        self.assertEqual(code, 0, out)
+        self.assertIn("turn 2 exited", out)
+
+    def test_a_turn_created_but_never_launched_is_reported(self) -> None:
+        summary = json.loads(self.start("codex").stdout)
+        run_dir = self.runs / summary["run_id"]
+        meta = self.meta(run_dir)
+        meta["turns"].append({"number": 2, "state": "created"})
+        agent_run.write_json(run_dir / "meta.json", meta)
+        with patch.object(agent_run, "WATCH_GRACE", 0):
+            code, out = self.watch(summary["run_id"])
+        self.assertEqual(code, 2)
+        self.assertIn("was created but never launched", out)
+
+    def test_detached_recorder_that_stops_at_created_is_refused_with_its_log(self) -> None:
+        summary = json.loads(self.start("codex").stdout)
+        run_dir = self.runs / summary["run_id"]
+
+        class Recorder:
+            pid = os.getpid()
+
+            def poll(self):
+                return 0
+
+        def fake_popen(argv, **kwargs):
+            kwargs["stdout"].write(b"recorder crashed here")
+            meta = json.loads((run_dir / "meta.json").read_text(encoding="utf-8"))
+            meta["turns"].append({"number": 2, "state": "created"})
+            agent_run.write_json(run_dir / "meta.json", meta)
+            return Recorder()
+
+        with patch.object(agent_run.subprocess, "Popen", side_effect=fake_popen):
+            with self.assertRaisesRegex(agent_run.Refused, "did not launch turn 2.*recorder crashed here"):
+                agent_run.run_detached(run_dir, "resume", str(self.prompt), 60, {})
+
+
+class WindowTest(Harness):
+    @unittest.skipUnless(os.name == "nt", "Windows window launcher")
+    def test_windows_terminal_tab_is_preferred_and_semicolons_fall_back_to_a_console(self) -> None:
+        argv = [sys.executable, "watch.py", "run-1"]
+        with patch.object(agent_run.shutil, "which", return_value="wt.exe"), \
+                patch.object(agent_run.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as run, \
+                patch.object(agent_run.subprocess, "Popen") as popen:
+            self.assertEqual(agent_run.open_window(argv, str(self.cwd), "pi run-1")["via"], "wt-tab")
+            self.assertEqual(run.call_args.args[0], ["wt.exe", "-w", "rumo-agents", "new-tab", "--title", "pi run-1", "-d", str(self.cwd), *argv])
+            popen.assert_not_called()
+            result = agent_run.open_window([*argv, "a;b"], str(self.cwd), "pi run-1")
+            self.assertEqual(result["via"], "console")
+            self.assertEqual(run.call_count, 1)
+            self.assertTrue(popen.call_args.kwargs["creationflags"] & subprocess.CREATE_NEW_CONSOLE)
+
+    def test_linux_without_a_display_reports_why_no_window_opened(self) -> None:
+        with patch.object(agent_run.os, "name", "posix"), patch.object(agent_run.sys, "platform", "linux"), \
+                patch.dict(os.environ, {"DISPLAY": "", "WAYLAND_DISPLAY": ""}), \
+                patch.object(agent_run.shutil, "which", return_value="/usr/bin/x-terminal-emulator"):
+            result = agent_run.open_window(["watch"], "/tmp", "t")
+        self.assertFalse(result["opened"])
+        self.assertIn("DISPLAY", result["reason"])
+
+    def test_start_window_opens_a_held_watch_of_the_new_turn(self) -> None:
+        args = argparse.Namespace(cli="claude", cwd=str(self.cwd), prompt_file=str(self.prompt), access="read-only", model=None,
+                                  timeout=60, executable=str(self.fake), runs_dir=str(self.runs), detach=False, window=True)
+        out = io.StringIO()
+        opened = {"opened": True, "via": "test", "reason": None}
+        with patch.dict(os.environ, {**self.env("claude"), "FAKE_CLI": "claude"}), \
+                patch.object(agent_run, "open_window", return_value=opened) as window, contextlib.redirect_stdout(out):
+            code = agent_run.cmd_start(args)
+        self.assertEqual(code, 0)
+        argv = window.call_args.args[0]
+        self.assertEqual(argv[2], "watch")
+        self.assertEqual(argv[argv.index("--turn") + 1], "1")
+        self.assertIn("--hold", argv)
+        self.assertEqual(json.loads(out.getvalue())["window"], opened)
+
+    def test_watch_hold_waits_for_enter_only_on_a_terminal(self) -> None:
+        summary = json.loads(self.start("codex").stdout)
+        args = argparse.Namespace(run_id=summary["run_id"], turn=None, hold=True, runs_dir=str(self.runs))
+        for tty in (True, False):
+            with self.subTest(tty=tty), patch.object(agent_run.sys.stdin, "isatty", return_value=tty), \
+                    patch("builtins.input") as prompt, contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(agent_run.cmd_watch(args), 0)
+            self.assertEqual(prompt.called, tty)
+
+    def test_wait_is_silent_and_returns_the_turn_code(self) -> None:
+        failed = json.loads(self.start("claude", "fail").stdout)
+        result = self.run_script("wait", failed["run_id"], "--runs-dir", str(self.runs), dialect="claude")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(json.loads(result.stdout)["state"], "failed")
+
+    def test_runs_lists_newest_first_filters_active_and_reports_broken_records(self) -> None:
+        first = json.loads(self.start("codex").stdout)
+        time.sleep(1.1)
+        second = json.loads(self.start("codex").stdout)
+        running_dir = self.runs / second["run_id"]
+        meta = self.meta(running_dir)
+        meta["turns"].append({"number": 2, "state": "launched", "pid": os.getpid(), "pid_started": agent_run.start_marker(os.getpid())})
+        agent_run.write_json(running_dir / "meta.json", meta)
+        broken = self.runs / "00000000-000000-codex-broken"
+        broken.mkdir()
+        (broken / "meta.json").write_text("{", encoding="utf-8")
+        rows = json.loads(self.run_script("runs", "--runs-dir", str(self.runs)).stdout)
+        self.assertEqual([row["run_id"] for row in rows], [second["run_id"], first["run_id"], broken.name])
+        self.assertIn("error", rows[2])
+        self.assertIn("watch", rows[0])
+        active = json.loads(self.run_script("runs", "--active", "--runs-dir", str(self.runs)).stdout)
+        self.assertEqual([row["run_id"] for row in active if "error" not in row], [second["run_id"]])
+
+
+class InteractiveTest(Harness):
+    def interactive_adapter(self) -> dict:
+        adapter = copy.deepcopy(BUNDLED["claude"])
+        adapter.update(name="inter", interactive_start=["--fake-interactive", *BUNDLED["claude"]["interactive_start"]])
+        return adapter
+
+    def open_args(self, cli: str = "inter") -> argparse.Namespace:
+        return argparse.Namespace(cli=cli, cwd=str(self.cwd), prompt_file=str(self.prompt), access="read-only",
+                                  model=None, executable=str(self.fake), runs_dir=str(self.runs))
+
+    def run_host(self, argv: list[str], cwd: str, title: str) -> dict:
+        # Stands in for the window: run the host to completion without a terminal.
+        host = subprocess.run(argv, cwd=cwd, env=self.environment, stdin=subprocess.DEVNULL, capture_output=True, timeout=60)
+        self.assertEqual(host.returncode, 0, host.stdout.decode("utf-8", "replace") + host.stderr.decode("utf-8", "replace"))
+        return {"opened": True, "via": "test", "reason": None}
+
+    def test_open_runs_the_cli_through_the_host_and_the_report_is_resumed_headless(self) -> None:
+        self.write_adapter(self.interactive_adapter())
+        self.environment = {**self.env("claude"), "FAKE_CLI": "claude"}
+        out = io.StringIO()
+        with patch.dict(os.environ, self.environment), patch.object(agent_run, "open_window", side_effect=self.run_host), \
+                contextlib.redirect_stdout(out):
+            code = agent_run.cmd_open(self.open_args())
+        info = json.loads(out.getvalue())
+        self.assertEqual(code, 0, info)
+        self.assertEqual((info["mode"], info["state"]), ("interactive", "closed"))
+        self.assertEqual(info["wait"][2], "wait")
+        call = self.calls()[0]
+        prompt_path = Path(info["run_dir"]) / "turns" / "1" / "prompt.md"
+        self.assertEqual(prompt_path.read_text(encoding="utf-8"), PROMPT)
+        self.assertIn(f"Read the brief at {prompt_path} and follow it.", call["argv"][-1])
+        self.assertNotIn(PROMPT.splitlines()[0], " ".join(call["argv"]))
+        self.assertEqual(call["argv"][call["argv"].index("--name") + 1], info["run_id"])
+        self.assertEqual(call["argv"][call["argv"].index("--session-id") + 1], info["session_id"])
+        self.assertIn("plan", call["argv"])
+        turn = self.meta(Path(info["run_dir"]))["turns"][0]
+        self.assertEqual((turn["closed_by"], turn["exit_code"]), ("cli-exit", 0))
+
+        report = self.run_script("resume", info["run_id"], "--prompt-file", str(self.prompt), "--runs-dir", str(self.runs),
+                                 env=self.environment)
+        self.assertEqual(report.returncode, 0, report.stderr.decode("utf-8", "replace"))
+        self.assertIn(info["session_id"], self.calls()[1]["argv"])
+
+    def test_window_close_is_recorded_before_the_cli_exit(self) -> None:
+        self.write_adapter(self.interactive_adapter())
+        environment = {**self.env("claude"), "FAKE_CLI": "claude"}
+        opened = {"opened": True, "via": "test", "reason": None}
+        with patch.dict(os.environ, environment), patch.object(agent_run, "open_window", return_value=opened), \
+                patch.object(agent_run, "DETACH_WAIT", 0), contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(agent_run.cmd_open(self.open_args()), 2)
+        run_dir = self.only_run()
+        callbacks = []
+
+        class Cli:
+            pid = 1
+
+            def wait(self):
+                callbacks[0]("window")
+                return 0
+
+        with patch.object(agent_run, "on_window_close", side_effect=callbacks.append), \
+                patch.object(agent_run.signal, "signal"), patch.object(agent_run.subprocess, "Popen", return_value=Cli()), \
+                patch.object(agent_run.sys.stdin, "isatty", return_value=False), contextlib.redirect_stdout(io.StringIO()):
+            agent_run.cmd_host(argparse.Namespace(run_id=run_dir.name, runs_dir=str(self.runs)))
+        turn = self.meta(run_dir)["turns"][0]
+        self.assertEqual((turn["state"], turn["closed_by"]), ("closed", "window"))
+
+    def test_a_cli_without_an_interactive_template_is_refused(self) -> None:
+        result = self.run_script("open", "codex", "--cwd", str(self.cwd), "--prompt-file", str(self.prompt), "--access",
+                                 "read-only", "--executable", str(self.fake), "--runs-dir", str(self.runs))
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("no interactive_start template", result.stderr.decode("utf-8"))
+        self.assertFalse(self.runs.exists())
+
+    def test_interactive_templates_are_validated(self) -> None:
+        base = copy.deepcopy(BUNDLED["claude"])
+        cases = {
+            "unknown placeholder ['{run_name}'] in '{run_name}'": {**base, "start": [*base["start"], "{run_name}"]},
+            "interactive_start must include {access}, {session}, and {opening}": {**base, "interactive_start": ["{access}", "--session-id", "{session}"]},
+            "{opening} must occupy a whole argv token in interactive_start": {**base, "interactive_start": ["{access}", "{session}", "{opening}", "x{opening}"]},
+            "interactive_start requires a preassigned session": {**copy.deepcopy(BUNDLED["codex"]), "interactive_start": ["{access}", "{session}", "{opening}"]},
+            "contains a sandbox or approval bypass ('yolo')": {**base, "interactive_start": [*base["interactive_start"], "--yolo"]},
+        }
+        for expected, adapter in cases.items():
+            with self.subTest(expected=expected):
+                self.assertIn(expected, agent_run.validate_adapter(adapter))
+
+    def test_bundled_interactive_templates_keep_the_access_flags(self) -> None:
+        for cli in ("claude", "qwen", "pi", "grok"):
+            with self.subTest(cli=cli):
+                argv = agent_run.render(BUNDLED[cli], "interactive_start", "read-only", ".", None, "sid", None,
+                                        opening="Read the brief at x.md and follow it.", run_name="run-1")
+                self.assertEqual(argv[-1], "Read the brief at x.md and follow it.")
+                for token in BUNDLED[cli]["access"]["read-only"]:
+                    self.assertIn(token, argv)
+                self.assertIn("sid", argv)
+
+
+class ProgressRuleTest(unittest.TestCase):
+    FIXTURES = {"pi": "pi.jsonl", "codex": "codex.jsonl", "claude": "claude.jsonl", "qwen": "qwen.jsonl",
+                "cursor": "cursor.jsonl", "copilot": "copilot.jsonl", "goose": "goose.jsonl"}
+
+    def lines(self, cli: str) -> list[str]:
+        events = [json.loads(line) for line in (FIXTURES / self.FIXTURES[cli]).read_text(encoding="utf-8").splitlines()]
+        return [line for event in events for line in agent_run.progress_lines(BUNDLED[cli]["progress"], event)]
+
+    def test_every_bundled_progress_rule_set_renders_its_fixture(self) -> None:
+        self.assertEqual({cli for cli, adapter in BUNDLED.items() if "progress" in adapter}, set(self.FIXTURES))
+        for cli in self.FIXTURES:
+            with self.subTest(cli=cli):
+                lines = self.lines(cli)
+                self.assertIn("[reply] final answer" if cli != "qwen" else "[reply] OK", lines)
+                self.assertFalse([line for line in lines if "question" in line], "a user message was rendered")
+        self.assertIn("[tool read] README.md", self.lines("pi"))
+        self.assertIn("[tool failed] powershell", self.lines("pi"))
+
+    def test_progress_lines_are_single_bounded_lines(self) -> None:
+        rule = {"label": "reply", "match": {"type": "m"}, "field": "text"}
+        [line] = agent_run.progress_lines([rule], {"type": "m", "text": "a\n  b" + "x" * 1000})
+        self.assertTrue(line.startswith("[reply] a b"))
+        self.assertEqual(len(line), len("[reply] ") + agent_run.PROGRESS_WIDTH)
+        self.assertEqual(agent_run.progress_lines([rule], {"type": "other", "text": "a"}), [])
+
+    def test_malformed_progress_rules_are_refused(self) -> None:
+        for progress in ({"label": "x"}, [{"field": "text"}], [{"label": " ", "field": "text"}],
+                         [{"label": "x", "field": "text", "label_field": 3}]):
+            with self.subTest(progress=progress):
+                adapter = {**copy.deepcopy(BUNDLED["pi"]), "progress": progress}
+                self.assertIn("progress must be a list of extraction rules, each with a label", agent_run.validate_adapter(adapter))
 
 
 class UserAdapterTest(Harness):

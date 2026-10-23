@@ -4,6 +4,7 @@ These samples contain no credentials. Except for the two historical observations
 
 | Samples | Basis |
 |---|---|
+| `pi.jsonl` | Constructed; the tool event fields follow a local pi 1.3.0 run |
 | `qwen.jsonl` | Historical read-only turn on Qwen 0.25.2; not rerun for this revision |
 | `grok-error.jsonl` | Historical 1.0.41 sign-in failure; no successful model turn |
 | `copilot.jsonl` | Constructed from the [official event types](https://github.com/github/copilot-sdk/blob/main/nodejs/src/generated/session-events.ts); CLI JSONL integration not run |

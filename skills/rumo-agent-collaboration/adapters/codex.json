@@ -114,6 +114,16 @@
       }
     ]
   },
+  "progress": [
+    {
+      "label": "reply",
+      "match": {
+        "type": "item.completed",
+        "item.type": "agent_message"
+      },
+      "field": "item.text"
+    }
+  ],
   "interactive": [
     "resume",
     "{session}"
