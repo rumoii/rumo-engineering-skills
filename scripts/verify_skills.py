@@ -512,7 +512,6 @@ def validate_json_files(candidate_files: list[Path], errors: list[str]) -> None:
             errors.append(f"{path}: invalid UTF-8 JSON: {exc}")
 
 
-
 def validate_plugin_version(repo_root: Path, errors: list[str]) -> None:
     """Plugin users update only when the version changes, so each version needs a changelog entry."""
     manifest = repo_root / ".claude-plugin" / "plugin.json"
