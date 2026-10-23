@@ -3,8 +3,8 @@
   "executable": "pi",
   "verified": {
     "version": "1.3.0",
-    "on": "2026-10-21",
-    "live_run": false
+    "on": "2026-10-23",
+    "live_run": true
   },
   "help": [
     {
@@ -19,7 +19,8 @@
         "--model",
         "--no-mcp",
         "--no-extensions",
-        "--name"
+        "--name",
+        "--thinking"
       ]
     }
   ],
@@ -38,6 +39,19 @@
     "--model",
     "{model}"
   ],
+  "effort": [
+    "--thinking",
+    "{effort}"
+  ],
+  "efforts": [
+    "off",
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max"
+  ],
   "start": [
     "-p",
     "--mode",
@@ -47,7 +61,8 @@
     "{access}",
     "--session-id",
     "{session}",
-    "{model}"
+    "{model}",
+    "{effort}"
   ],
   "resume": [
     "-p",
@@ -58,7 +73,8 @@
     "{access}",
     "--session-id",
     "{session}",
-    "{model}"
+    "{model}",
+    "{effort}"
   ],
   "interactive_start": [
     "--no-mcp",
@@ -69,6 +85,7 @@
     "--name",
     "{run_name}",
     "{model}",
+    "{effort}",
     "{opening}"
   ],
   "session": {

@@ -47,10 +47,10 @@ FAKE = textwrap.dedent(
     cli = os.environ.get("FAKE_CLI", "claude" if dialect == "claude" else dialect)
     flags = {
         "codex": "-c --config --json --sandbox --cd --model",
-        "claude": "-p --print --output-format --verbose --permission-mode --session-id --resume --model --name",
-        "pi": "-p --print --mode --tools --session-id --session --model --no-mcp --no-extensions --name",
+        "claude": "-p --print --output-format --verbose --permission-mode --session-id --resume --model --effort --name",
+        "pi": "-p --print --mode --tools --session-id --session --model --no-mcp --no-extensions --thinking --name",
         "qwen": "-o --output-format --approval-mode --session-id --resume --model --prompt-interactive",
-        "grok": "-s --session-id --prompt-file --output-format --no-subagents --permission-mode --resume --model",
+        "grok": "-s --session-id --prompt-file --output-format --no-subagents --permission-mode --resume --model --reasoning-effort",
         "cursor": "-p --print --output-format --mode --sandbox --trust --resume --model",
         "gemini": "-o --output-format --approval-mode --resume --model",
         "opencode": "--format --session --model --title",
@@ -279,6 +279,20 @@ class BundledAdapterTest(unittest.TestCase):
                 self.assertNotIn("provider/m-1", without)
                 self.assertIn("provider/m-1", named)
 
+    def test_effort_flag_appears_only_when_an_offered_effort_is_named(self) -> None:
+        for name, adapter in BUNDLED.items():
+            with self.subTest(cli=name):
+                without = agent_run.render(adapter, "start", "read-only", "/w", None, "sid", "/p.md")
+                if not adapter.get("efforts"):
+                    with self.assertRaises(agent_run.Refused):
+                        agent_run.render(adapter, "start", "read-only", "/w", None, "sid", "/p.md", effort="high")
+                    continue
+                named = agent_run.render(adapter, "start", "read-only", "/w", None, "sid", "/p.md", effort="high")
+                self.assertEqual(len(named) - len(without), len(adapter["effort"]))
+                self.assertTrue(any("high" in token for token in named))
+                with self.assertRaises(agent_run.Refused):
+                    agent_run.render(adapter, "start", "read-only", "/w", None, "sid", "/p.md", effort="turbo")
+
     def test_codex_resume_keeps_the_sandbox_level(self) -> None:
         argv = agent_run.render(BUNDLED["codex"], "resume", "read-only", "/w", None, "thread-1", None)
         self.assertIn('sandbox_mode="read-only"', argv)
@@ -472,6 +486,18 @@ class RunTest(Harness):
         )
         self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace"))
         self.assertEqual(self.calls()[0]["prompt"], PROMPT)
+
+    def test_effort_is_recorded_and_reused_on_resume(self) -> None:
+        first = self.start("codex", "ok", "read-only", "--effort", "high")
+        self.assertEqual(first.returncode, 0, first.stderr.decode("utf-8", "replace"))
+        summary = json.loads(first.stdout)
+        self.assertEqual(summary["effort"], "high")
+        self.assertEqual(self.resume(summary["run_id"]).returncode, 0)
+        for call in self.calls():
+            self.assertIn('model_reasoning_effort="high"', call["argv"])
+        refused = self.start("codex", "ok", "read-only", "--effort", "turbo")
+        self.assertEqual(refused.returncode, 2)
+        self.assertEqual(len(list(self.runs.iterdir())), 1)
 
     def test_each_bundled_adapter_runs_and_resumes_where_supported(self) -> None:
         for cli in sorted(BUNDLED):
@@ -836,7 +862,7 @@ class WindowTest(Harness):
         self.assertEqual(seen, [True, False, True, False])
 
     def test_start_window_opens_a_held_watch_of_the_new_turn(self) -> None:
-        args = argparse.Namespace(cli="claude", cwd=str(self.cwd), prompt_file=str(self.prompt), access="read-only", model=None,
+        args = argparse.Namespace(cli="claude", cwd=str(self.cwd), prompt_file=str(self.prompt), access="read-only", model=None, effort=None,
                                   timeout=60, executable=str(self.fake), runs_dir=str(self.runs), detach=False, window=True)
         out = io.StringIO()
         opened = {"opened": True, "via": "test", "reason": None}
@@ -892,7 +918,7 @@ class InteractiveTest(Harness):
 
     def open_args(self, cli: str = "inter") -> argparse.Namespace:
         return argparse.Namespace(cli=cli, cwd=str(self.cwd), prompt_file=str(self.prompt), access="read-only",
-                                  model=None, executable=str(self.fake), runs_dir=str(self.runs))
+                                  model=None, effort=None, executable=str(self.fake), runs_dir=str(self.runs))
 
     def run_host(self, argv: list[str], cwd: str, title: str) -> dict:
         # Stands in for the window: run the host to completion without a terminal.
@@ -1438,6 +1464,19 @@ class SafetyRegressionTest(unittest.TestCase):
         ):
             with self.subTest(fields=fields):
                 self.assertTrue(agent_run.validate_adapter(self.adapter(**fields)))
+
+    def test_effort_templates_must_be_whole_tokens_with_named_levels(self) -> None:
+        for fields in (
+            {"start": ["{access}", "--effort={effort}"], "effort": ["--effort", "{effort}"], "efforts": ["high"]},
+            {"start": ["{access}", "{effort}"], "effort": ["--effort", "{effort}"]},
+            {"start": ["{access}", "{effort}"], "effort": ["--effort", "{effort}"], "efforts": ["High!"]},
+            {"start": ["{access}", "{effort}"], "effort": ["--effort", "{model}"], "efforts": ["high"]},
+            {"efforts": ["high"]},
+        ):
+            with self.subTest(fields=fields):
+                self.assertTrue(agent_run.validate_adapter(self.adapter(**fields)))
+        valid = self.adapter(start=["{access}", "{effort}"], effort=["--effort", "{effort}"], efforts=["high"])
+        self.assertEqual(agent_run.validate_adapter(valid), [])
 
     def test_failed_help_is_not_a_successful_preflight(self) -> None:
         entry = {"adapter": self.adapter(), "path": "test", "source": "test", "overrides_bundled": False}

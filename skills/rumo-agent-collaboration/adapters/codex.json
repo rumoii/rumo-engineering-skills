@@ -3,8 +3,8 @@
   "executable": "codex",
   "verified": {
     "version": "codex-cli 0.162.0",
-    "on": "2026-10-21",
-    "live_run": false
+    "on": "2026-10-23",
+    "live_run": true
   },
   "help": [
     {
@@ -58,12 +58,25 @@
     "--model",
     "{model}"
   ],
+  "effort": [
+    "-c",
+    "model_reasoning_effort=\"{effort}\""
+  ],
+  "efforts": [
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+    "ultra"
+  ],
   "start": [
     "exec",
     "--json",
     "-c",
     "approval_policy=\"never\"",
     "{model}",
+    "{effort}",
     "{access}",
     "--cd",
     "{cwd}",
@@ -76,6 +89,7 @@
     "-c",
     "approval_policy=\"never\"",
     "{model}",
+    "{effort}",
     "{access}",
     "{session}",
     "-"

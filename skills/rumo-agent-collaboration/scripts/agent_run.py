@@ -46,7 +46,7 @@ TERMINAL = ("exited", "failed", "launch-failed", "timed-out", "cancelled", "aban
 RUNS_DIR_ENV = "RUMO_AGENT_RUNS_DIR"
 ADAPTERS_DIR_ENV = "RUMO_AGENT_ADAPTERS_DIR"
 BUNDLED_ADAPTERS = Path(__file__).resolve().parent.parent / "adapters"
-PLACEHOLDERS = {"{access}", "{session}", "{model}", "{prompt_file}", "{cwd}"}
+PLACEHOLDERS = {"{access}", "{session}", "{model}", "{effort}", "{prompt_file}", "{cwd}"}
 # Only interactive_start may use these: {opening} is the script's one-line pointer to the brief file.
 INTERACTIVE_PLACEHOLDERS = {"{opening}", "{run_name}"}
 WINDOW_GROUP = "rumo-agents"
@@ -175,7 +175,9 @@ def validate_adapter(adapter: object) -> list[str]:
     ) or not isinstance(verified.get("live_run"), bool)):
         problems.append("verified must be null or contain version, on, and boolean live_run")
 
-    argv_parts = [adapter["start"], adapter.get("resume", []), adapter.get("model", []), adapter.get("interactive", [])]
+    argv_parts = [
+        adapter["start"], adapter.get("resume", []), adapter.get("model", []), adapter.get("effort", []), adapter.get("interactive", []),
+    ]
     resume_access = adapter.get("resume_access", {})
     if not isinstance(resume_access, dict) or (resume_access and isinstance(access, dict) and set(resume_access) != set(access)):
         problems.append("resume_access must cover the same levels as access")
@@ -197,14 +199,26 @@ def validate_adapter(adapter: object) -> list[str]:
             continue
         if "{access}" not in adapter[kind]:
             problems.append(f"{kind} must include {{access}}")
-        if any("{model}" in t and t != "{model}" for t in adapter[kind]):
-            problems.append(f"{kind} must use {{model}} as a whole token for optional model flags")
+        for name in ("model", "effort"):
+            if any(f"{{{name}}}" in t and t != f"{{{name}}}" for t in adapter[kind]):
+                problems.append(f"{kind} must use {{{name}}} as a whole token for optional {name} flags")
         if (source == "preassign" or kind == "resume" and source == "event") and not any("{session}" in t for t in adapter[kind]):
             problems.append(f"{kind} must pass {{session}} for this session source")
     if string_list(adapter.get("model", [])) and any(
         placeholder != "{model}" for token in adapter.get("model", []) for placeholder in re.findall(r"\{[^{}]*\}", token)
     ):
         problems.append("model flags may substitute only {model}")
+    effort_flags, efforts = adapter.get("effort", []), adapter.get("efforts")
+    if string_list(effort_flags) and any(
+        placeholder != "{effort}" for token in effort_flags for placeholder in re.findall(r"\{[^{}]*\}", token)
+    ):
+        problems.append("effort flags may substitute only {effort}")
+    if effort_flags and not (isinstance(efforts, list) and efforts and all(
+        isinstance(e, str) and re.fullmatch(r"[a-z0-9][a-z0-9-]*", e) for e in efforts
+    )):
+        problems.append("effort flags need efforts: a nonempty list of lowercase level names")
+    if efforts is not None and not effort_flags:
+        problems.append("efforts requires effort flags")
     for table in (access, resume_access):
         if isinstance(table, dict) and any("{" in t or "}" in t for p in table.values() if string_list(p) for t in p):
             problems.append("access flags must be literal tokens")
@@ -241,7 +255,7 @@ def validate_adapter(adapter: object) -> list[str]:
             unknown = set(re.findall(r"\{[^{}]*\}", token)) - PLACEHOLDERS - INTERACTIVE_PLACEHOLDERS
             if unknown:
                 problems.append(f"unknown placeholder {sorted(unknown)} in {token!r}")
-            for placeholder in ("{access}", "{model}", *INTERACTIVE_PLACEHOLDERS):
+            for placeholder in ("{access}", "{model}", "{effort}", *INTERACTIVE_PLACEHOLDERS):
                 if placeholder in token and token != placeholder:
                     problems.append(f"{placeholder} must occupy a whole argv token in interactive_start")
         if interactive_start and not {"{access}", "{opening}", "{session}"} <= set(interactive_start):
@@ -307,8 +321,8 @@ def get_adapter(name: str, runs_dir: str | None, *, allow_disabled: bool = False
 
 
 def render(adapter: dict, kind: str, access: str, cwd: str, model: str | None, session: str | None, prompt_file: str | None,
-           opening: str | None = None, run_name: str | None = None) -> list[str]:
-    """Expand an argv template; {access} and {model} expand to whole token lists."""
+           opening: str | None = None, run_name: str | None = None, effort: str | None = None) -> list[str]:
+    """Expand an argv template; {access}, {model}, and {effort} expand to whole token lists."""
     if access not in adapter["access"]:
         offered = ", ".join(adapter["access"])
         raise Refused(f"{adapter['name']} does not offer {access}; it offers {offered}")
@@ -319,6 +333,9 @@ def render(adapter: dict, kind: str, access: str, cwd: str, model: str | None, s
     for name, value in (("model", model), ("session", session)):
         if value is not None and (not isinstance(value, str) or not value.strip() or value.startswith("-") or any(c in value for c in '\0\r\n"&|^%!')):
             raise Refused(f"{name} must be a nonempty identifier, not an option")
+    if effort is not None and effort not in (adapter.get("efforts") or []):
+        offered = ", ".join(adapter.get("efforts") or []) or "no effort setting"
+        raise Refused(f"{adapter['name']} does not offer effort {effort!r}; it offers {offered}")
     values = {"{session}": session or "", "{cwd}": cwd, "{prompt_file}": prompt_file or "", "{model}": model or "", "{run_name}": run_name or ""}
     argv: list[str] = []
     for token in adapter[kind]:
@@ -326,6 +343,8 @@ def render(adapter: dict, kind: str, access: str, cwd: str, model: str | None, s
             argv += access_tokens
         elif token == "{model}":
             argv += [t.replace("{model}", model) for t in adapter.get("model", [])] if model else []
+        elif token == "{effort}":
+            argv += [t.replace("{effort}", effort) for t in adapter.get("effort", [])] if effort else []
         elif token == "{opening}":
             argv.append(opening or "")
         else:
@@ -669,6 +688,7 @@ def run_turn(run_dir: Path, meta: dict, kind: str, prompt: str, timeout: float) 
     prompt_path = turn_dir / "prompt.md"
     argv = [*meta["executable"], *render(
         adapter, kind, meta["access"], meta["cwd"], meta.get("model"), meta.get("session_id"), str(prompt_path),
+        effort=meta.get("effort"),
     )]
     refuse_batch_shell_syntax(meta["executable"], argv)
 
@@ -774,7 +794,7 @@ def summary(run_dir: Path) -> dict:
     reason = run_disabled_reason(meta, run_dir)
     info = {
         "run_id": meta["run_id"], "run_dir": str(run_dir), "cli": meta["cli"], "verified": meta["adapter"].get("verified"),
-        "mode": meta.get("mode", "headless"), "created_at": meta.get("created_at"), "cwd": meta["cwd"], "access": meta["access"], "model": meta.get("model"), "session_id": session,
+        "mode": meta.get("mode", "headless"), "created_at": meta.get("created_at"), "cwd": meta["cwd"], "access": meta["access"], "model": meta.get("model"), "effort": meta.get("effort"), "session_id": session,
         "turn": turn.get("number"), "state": turn.get("state"), "exit_code": turn.get("exit_code"),
         "error": turn.get("error"), "final_file": str(final) if final.is_file() else None,
     }
@@ -854,10 +874,10 @@ def cmd_show(args: argparse.Namespace) -> int:
         "access": args.access,
         "write_boundary": "CLI native permissions; no directory isolation promised" if args.access == "native-write" else args.access,
         "env": sorted(set(adapter.get("env", {})) | set(adapter.get("access_env", {}).get(args.access, {}))) or None,
-        "start": [*exe, *render(adapter, "start", args.access, cwd, args.model, "<session-id>", "<prompt-file>")],
+        "start": [*exe, *render(adapter, "start", args.access, cwd, args.model, "<session-id>", "<prompt-file>", effort=args.effort)],
     }
     if adapter["session"]["source"] != "none":
-        result["resume"] = [*exe, *render(adapter, "resume", args.access, cwd, args.model, "<session-id>", "<prompt-file>")]
+        result["resume"] = [*exe, *render(adapter, "resume", args.access, cwd, args.model, "<session-id>", "<prompt-file>", effort=args.effort)]
     if adapter.get("notes"):
         result["notes"] = adapter["notes"]
     print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -888,13 +908,14 @@ def cmd_start(args: argparse.Namespace) -> int:
         raise Refused(f"working directory not found: {cwd}")
     if args.model and args.model.startswith("-"):
         raise Refused("model must not start with '-'")
+    render(adapter, "start", args.access, str(cwd), args.model, None, None, effort=args.effort)
     prompt = read_prompt(args.prompt_file)
     run_id = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{args.cli}-{secrets.token_hex(3)}"
     run_dir = runs_root(args.runs_dir) / run_id
     run_dir.mkdir(parents=True)
     meta = {
         "run_id": run_id, "cli": args.cli, "adapter_path": entry["path"], "adapter": adapter, "executable": exe,
-        "version": report["version"], "cwd": str(cwd), "access": args.access, "model": args.model,
+        "version": report["version"], "cwd": str(cwd), "access": args.access, "model": args.model, "effort": args.effort,
         "session_id": str(uuid.uuid4()) if adapter["session"]["source"] == "preassign" else None,
         "created_at": now(), "turns": [], "outcomes": [],
     }
@@ -1192,7 +1213,7 @@ def cmd_runs(args: argparse.Namespace) -> int:
         active = info["state"] in RUNNING or info["state"] == "created"
         if args.active and not active:
             continue
-        row = {key: info.get(key) for key in ("run_id", "cli", "model", "mode", "access", "created_at", "turn", "state", "process_status")}
+        row = {key: info.get(key) for key in ("run_id", "cli", "model", "effort", "mode", "access", "created_at", "turn", "state", "process_status")}
         if active and info["mode"] == "headless":
             row["watch"] = watch_argv(run_dir)
         elif not active and info.get("interactive_resume"):
@@ -1227,12 +1248,12 @@ def cmd_open(args: argparse.Namespace) -> int:
     # Only this pointer travels on the command line; the brief itself stays in the recorded file.
     opening = f"Read the brief at {prompt_path} and follow it. When you finish, give your final report and stop."
     argv = [*exe, *render(adapter, "interactive_start", args.access, str(cwd), args.model, session, None,
-                          opening=opening, run_name=run_id)]
+                          opening=opening, run_name=run_id, effort=args.effort)]
     refuse_batch_shell_syntax(exe, argv)
     prompt_path.parent.mkdir(parents=True)
     write_json(run_dir / "meta.json", {
         "run_id": run_id, "cli": args.cli, "adapter_path": entry["path"], "adapter": adapter, "executable": exe,
-        "version": report["version"], "cwd": str(cwd), "access": args.access, "model": args.model, "mode": "interactive",
+        "version": report["version"], "cwd": str(cwd), "access": args.access, "model": args.model, "effort": args.effort, "mode": "interactive",
         "session_id": session, "created_at": now(), "outcomes": [],
         "turns": [{"number": 1, "kind": "interactive", "argv": argv, "state": "created", "created_at": now()}],
     })
@@ -1406,6 +1427,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("cli")
     p.add_argument("--access", required=True, choices=ACCESS_LEVELS)
     p.add_argument("--model")
+    p.add_argument("--effort", help="Reasoning effort; one of the adapter's efforts.")
     p.add_argument("--cwd")
     p.add_argument("--runs-dir")
 
@@ -1420,6 +1442,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--prompt-file", required=True)
     p.add_argument("--access", required=True, choices=ACCESS_LEVELS)
     p.add_argument("--model")
+    p.add_argument("--effort", help="Reasoning effort; one of the adapter's efforts.")
     p.add_argument("--timeout", type=float, default=1800)
     p.add_argument("--executable")
     p.add_argument("--detach", action="store_true", help="Return once the turn launches; a detached recorder finishes it.")
@@ -1433,6 +1456,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--prompt-file", required=True)
     p.add_argument("--access", required=True, choices=ACCESS_LEVELS)
     p.add_argument("--model")
+    p.add_argument("--effort", help="Reasoning effort; one of the adapter's efforts.")
     p.add_argument("--executable")
     p.add_argument("--runs-dir")
 

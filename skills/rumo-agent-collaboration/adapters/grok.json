@@ -3,8 +3,8 @@
   "executable": "grok",
   "verified": {
     "version": "grok 1.0.41",
-    "on": "2026-10-21",
-    "live_run": false
+    "on": "2026-10-23",
+    "live_run": true
   },
   "help": [
     {
@@ -18,7 +18,8 @@
         "--session-id",
         "--resume",
         "--no-subagents",
-        "--model"
+        "--model",
+        "--reasoning-effort"
       ]
     }
   ],
@@ -33,6 +34,17 @@
     "--model",
     "{model}"
   ],
+  "effort": [
+    "--reasoning-effort",
+    "{effort}"
+  ],
+  "efforts": [
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max"
+  ],
   "start": [
     "--prompt-file",
     "{prompt_file}",
@@ -42,7 +54,8 @@
     "{access}",
     "-s",
     "{session}",
-    "{model}"
+    "{model}",
+    "{effort}"
   ],
   "resume": [
     "--prompt-file",
@@ -53,7 +66,8 @@
     "{access}",
     "--resume",
     "{session}",
-    "{model}"
+    "{model}",
+    "{effort}"
   ],
   "interactive_start": [
     "--no-subagents",
@@ -61,6 +75,7 @@
     "-s",
     "{session}",
     "{model}",
+    "{effort}",
     "{opening}"
   ],
   "session": {
@@ -93,5 +108,5 @@
     "--resume",
     "{session}"
   ],
-  "notes": "Read-only only: the write level would need grok's --sandbox profile, which is not confirmed on every platform. The live run on 1.0.41 stopped at 'Not signed in'; the error event shape is real, and success is read from the same result event."
+  "notes": "Read-only only: the write level would need grok's --sandbox profile, which is not confirmed on every platform. On 1.0.41 one signed-in read-only turn with --reasoning-effort ran; the signed-out error event shape is also real."
 }

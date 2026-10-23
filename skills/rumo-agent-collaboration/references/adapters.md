@@ -13,11 +13,11 @@ An adapter is a JSON file that tells `agent_run.py` how to drive one CLI: how to
 
 | CLI | Status | Access levels |
 |---|---|---|
-| codex | flags checked on 0.162.0 | read-only, workspace-write |
-| claude | flags checked on 2.1.305 | read-only, workspace-write |
-| pi | flags checked on 1.3.0 | read-only, native-write (no shell) |
+| codex | one read-only turn with model and effort run on 0.162.0 | read-only, workspace-write |
+| claude | one read-only turn with model and effort run on 2.1.309 | read-only, workspace-write |
+| pi | one read-only turn with effort run on 1.3.0 | read-only, native-write (no shell) |
 | qwen | flags checked and one read-only turn run on 0.25.2 | read-only, workspace-write |
-| grok | flags checked on 1.0.41; the live run stopped at sign-in | read-only |
+| grok | one read-only turn with effort run on 1.0.41 | read-only |
 | cursor (`cursor-agent`) | unverified, from the CLI reference | read-only |
 | gemini | disabled: headless Plan Mode can switch to unrestricted implementation | declared read-only is insufficient |
 | opencode | disabled: managed config can override inline permissions | effective read-only permissions are unconfirmed |
@@ -53,14 +53,15 @@ These exclusions concern the adapter requirements, not whether each CLI can deve
 | `access` | `read-only` (required), optional `workspace-write` and `native-write`, each a list of flags. A missing level is refused |
 | `resume_access` | optional per-level flags for resume, when the CLI spells them differently there |
 | `model` | flags for a named model, using `{model}`; omitted when the user named none |
-| `start`, `resume` | argv templates. `{access}` and `{model}` expand to their flag lists; `{session}`, `{cwd}`, `{prompt_file}` are substituted in place |
+| `effort`, `efforts` | optional flags for a reasoning effort, using `{effort}`, and the level names the CLI accepts. A level outside `efforts` is refused; omitted when none is named. Declare both or neither |
+| `start`, `resume` | argv templates. `{access}`, `{model}`, and `{effort}` expand to their flag lists; `{session}`, `{cwd}`, `{prompt_file}` are substituted in place |
 | `env` | literal environment variables for the child, such as an inline permission config |
 | `access_env` | optional mapping from an offered access level to environment variables; overrides `env` for that level, in the child only |
 | `session` | `{"source": "preassign"}` (the script passes a new UUID as `{session}`), `{"source": "event", "match", "field"}`, or `{"source": "none"}` (one turn only) |
 | `output` | `{"format": "text"}` (all of stdout is the reply) or `{"format": "jsonl", "final", "error"}` |
 | `progress` | optional list of rules that `watch` renders as `[label] text` lines; display only |
 | `interactive` | args a person uses to reopen the session, with `{session}` |
-| `interactive_start` | optional argv for `open`: starts the CLI interactively with `{access}`, `{session}`, optional `{model}` and `{run_name}`, and `{opening}`, the script's one-line pointer to the brief. Requires a preassigned session; `{opening}` and `{run_name}` are refused anywhere else |
+| `interactive_start` | optional argv for `open`: starts the CLI interactively with `{access}`, `{session}`, optional `{model}`, `{effort}`, and `{run_name}`, and `{opening}`, the script's one-line pointer to the brief. Requires a preassigned session; `{opening}` and `{run_name}` are refused anywhere else |
 | `notes` | what was and was not exercised, and any known limit |
 
 A `final` or `error` rule is `{"match": {...}, "field": ..., "pick", "transform"}`. `match` maps dotted paths to required values; an empty `match` takes every event. `field` is a dotted path or a list of candidates; the first nonempty text result wins. `pick` is `last` (default) or `join` for replies streamed in pieces. `transform: "text_parts"` joins the `text` parts of a content array. `error` may be a list of rules.
