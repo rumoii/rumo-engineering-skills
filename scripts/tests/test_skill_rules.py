@@ -126,14 +126,14 @@ RULES = {
     ),
     "rumo-review": (
         "do not edit code in review mode",
-        "Review (default) and Simplify modes never edit code; only Loop and Respond do, and only on an explicit request.",
+        "Review (default), Panel, and Simplify modes never edit code; only Loop and Respond do, and only on an explicit request.",
         "Do not post replies, resolve threads, or request another review on the hosting platform unless the user asks.",
         "Do not guess the base from branch names.",
         "For a diff, report only issues this change introduces or materially exposes",
         "For a named-scope audit, report existing actionable issues inside that scope",
         "A guarantee you cannot see elsewhere is an open question attached to the finding, not a reason to withhold it.",
         "Each finding names the repository, file and line, the consequence, the triggering condition, and the evidence.",
-        "nothing is sent to another CLI until the user agrees",
+        "Nothing is sent to another model or CLI until the user agrees",
     ),
     "rumo-test": (
         "watch it fail because the behavior is missing",
@@ -275,15 +275,19 @@ REFERENCE_RULES = {
     "rumo-review/references/codex-app-server.md": (
         "Do not let the script apply fixes.",
     ),
-    "rumo-review/references/other-cli.md": (
+    "rumo-review/references/panel.md": (
         "Never start another CLI on your own.",
-        "Run only after the user agrees to that CLI and that content.",
-        "A request naming the CLI, review target, and scope already supplies that agreement; do not ask again for the same scope.",
+        "Otherwise run only after the user agrees to those lanes and that content.",
+        "A request that names the panel or the CLI, the review target, and the scope already supplies agreement; do not ask again for the same scope.",
         "Unverified status alone does not require repeated approval.",
-        "Without a read-only setting you have confirmed, do not use that CLI.",
-        "It is not evidence that the change has no findings.",
-        "Never sign in, copy credentials, or change the CLI's configuration on the user's behalf.",
-        "otherwise launch it with `--detach`, end your turn",
+        "without a confirmed read-only setting, do not use that CLI.",
+        "A dropout is not evidence that the change has no findings.",
+        "Never retry it on another model or substitute a close one, and never sign in, copy credentials, or change a CLI's configuration on the user's behalf.",
+        "save your findings to a file before reading any lane's output.",
+        "Withhold the fix history, earlier findings, and your own conclusions.",
+        "launch with `--detach` instead, finish your own review, end your turn",
+        "Do not propose one for small or low-risk changes.",
+        "the panel never edits code.",
     ),
     "rumo-review/references/judging-findings.md": (
         "Security, data-loss, and correctness findings get a full check even when only one reviewer raised them",

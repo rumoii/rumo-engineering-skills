@@ -75,6 +75,8 @@ After the last edit to code, tests, checkers, configuration, or docs, run the se
 
 While a required check fails, the result is blocked. Never weaken an assertion, lower a threshold, add a broad skip, or relabel a failure to get green.
 
+After the final run passes, propose a review panel of other models as `rumo-review`'s `references/panel.md` describes; its `auto_panel` setting decides whether to ask first, launch, or skip the proposal.
+
 ## Optional Independent Verification
 
 Use this only when the user or a policy asks for it and a helper with a fresh context is available. It adds an adversarial check; it never replaces the user's spec approval.

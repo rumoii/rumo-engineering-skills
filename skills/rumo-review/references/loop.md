@@ -15,7 +15,7 @@ Prefer the most direct independent review surface; all of them feed the same loo
 3. Otherwise, use the client's built-in review command if it has one (client-specific: for example `/review` in Codex or `/code-review` in Claude Code).
 4. Otherwise, review in the current session following SKILL.md, and say in the report that the review was not independent.
 
-A review by a different model through another installed CLI can replace or join any of these, but only after the user agrees; read [other-cli.md](other-cli.md) first.
+A review panel of other models can replace or join any of these, but only when the user asked for one; read [panel.md](panel.md) first.
 
 ## Cycle
 

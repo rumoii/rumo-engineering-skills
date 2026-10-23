@@ -1,6 +1,6 @@
 ---
 name: rumo-review
-description: Use for a read-only code review of uncommitted changes, a branch diff, or a commit, or a named-scope audit of existing issues; for an explicitly requested review-fix-repeat loop until no blocking findings remain; for an explicitly requested simplification audit of removable complexity; or for addressing review feedback from someone else. Report correctness, security, lifecycle, compatibility, operations, and test risks with file-and-line evidence. Do not use to run pre-handoff checks; use rumo-verify instead.
+description: Use for a read-only code review of uncommitted changes, a branch diff, or a commit, or a named-scope audit of existing issues; for a multi-model review panel or a second opinion from another model through agent CLIs ("多模型评审"); for an explicitly requested review-fix-repeat loop until no blocking findings remain; for an explicitly requested simplification audit of removable complexity; or for addressing review feedback from someone else. Report correctness, security, lifecycle, compatibility, operations, and test risks with file-and-line evidence. Do not use to run pre-handoff checks; use rumo-verify instead.
 ---
 
 # Rumo Review
@@ -13,12 +13,13 @@ Lead with actionable findings, not a tour of the diff.
 | --- | --- | --- |
 | Review (default) | Any review request | No |
 | Loop | The user explicitly asks to review, fix, and repeat; read [references/loop.md](references/loop.md) | Yes, must-fix items only |
+| Panel | The user asks for several models or a second opinion from another one, or you propose it for a high-risk change; read [references/panel.md](references/panel.md) | No |
 | Simplify | The user explicitly asks for simplification or removable-complexity findings; read [references/simplify.md](references/simplify.md) | No |
 | Respond | The user hands over review comments from a person or a tool and asks to address them | Yes, accepted comments only |
 
-Review (default) and Simplify modes never edit code; only Loop and Respond do, and only on an explicit request.
+Review (default), Panel, and Simplify modes never edit code; only Loop and Respond do, and only on an explicit request.
 
-When the user asks for a second opinion from a different model or CLI, read [references/other-cli.md](references/other-cli.md); nothing is sent to another CLI until the user agrees.
+Nothing is sent to another model or CLI until the user agrees, as [references/panel.md](references/panel.md) describes.
 
 ## Settle The Target
 

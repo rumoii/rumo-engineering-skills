@@ -35,7 +35,7 @@ You do not need to learn engineering conventions first. Once installed, the agen
 - **Brakes on risky operations.** Before dropping data, deleting files, changing a server, or touching production, the agent confirms the target and blast radius read-only and writes only after backup, rollback, and your explicit approval.
 - **Small tasks stay small.** A one-line copy change gets no plan and no review, just the most relevant check before handoff. Every skill description stays within 100 words, enforced by the validator, so the always-loaded context stays cheap.
 - **Verify once, reuse every time.** A project verification recipe records how to start the application, what to click, and what proves success, and is run end to end once. The next agent follows it to check real features instead of rediscovering them.
-- **Cross-client, and able to delegate.** The same skills install into Claude Code, Codex, and other clients that read `SKILL.md`. They can also hand a task to another local CLI or model to run or review, record the run, and check the result before accepting it.
+- **Cross-client, and able to delegate.** The same skills install into Claude Code, Codex, and other clients that read `SKILL.md`. They can also hand a task to another local CLI or model, or have the models you configured review the same change independently; the agent reviews it too, checks every finding against the code, and merges them into one report that names which models raised each finding.
 
 ## What Changes
 
@@ -179,7 +179,7 @@ Installed by default.
 | `rumo-test` | Evidence planning, test-first implementation, and high-assurance spec-and-evidence work |
 | `rumo-debug` | Reproduce, localize, and prove a root cause; read-only unless the fix is requested |
 | `rumo-verify` | Exact change scope and the smallest sufficient checks before claiming done; building repository gates; project verification recipes |
-| `rumo-review` | Read-only diff review or named-scope audit, an explicit review-fix loop, a simplification audit, addressing review feedback, or, with your consent, a cross-model review through another installed CLI |
+| `rumo-review` | Read-only diff review or named-scope audit, an explicit review-fix loop, a simplification audit, addressing review feedback, or, with your consent, a review panel of the models you configured, merged and checked |
 | `rumo-git-commit` | Commits, branch landing, history cleanup, releases, pushes, pull requests, and following an open pull request's CI checks, per repository conventions |
 | `rumo-interface` | Compatible evolution of APIs, messages, configuration, and stored formats, with HTTP contract checks |
 | `rumo-lifecycle-safety` | Ownership, retry, cancellation, timeout, shutdown, and cleanup for long-lived work |
