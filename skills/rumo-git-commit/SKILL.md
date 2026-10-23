@@ -19,6 +19,7 @@ Do not require a particular language, trailer set, version scheme, or branch pat
 - Preserve unrelated tracked, staged, unstaged, and untracked work.
 - Split atomic commits when changes are independently reviewable and each commit remains usable.
 - For substantive behavior changes, include a commit body explaining why the change is needed, the main changes, and verification actually performed; state when verification was not run. Only purely mechanical changes, such as formatting or spelling fixes, may use a title alone.
+- Write the reason as a fact about the code, its users, or the evidence, never as the conversation that led to it ("as the user asked", "per review", "per the final decision"); see Remove Session Residue in [`rumo-prose`](../rumo-prose/SKILL.md). When the change takes back something never released, such as draft wording or content added earlier in the same unreleased work, name the resulting state; name a removal only when released behavior, interfaces, or content go away. A `git revert` commit keeps its standard "Revert" title.
 - After creating a commit, read its full message to confirm the intended title and body were saved before any authorized push.
 - Never create a tag unless the user explicitly asks for tagging or release work.
 - Never push unless the user explicitly asks.

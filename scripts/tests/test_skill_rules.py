@@ -59,6 +59,8 @@ RULES = {
         "Preserve unrelated tracked, staged, unstaged, and untracked work.",
         "Never create a tag unless the user explicitly asks",
         "Never push unless the user explicitly asks.",
+        "Write the reason as a fact about the code, its users, or the evidence, never as the conversation that led to it",
+        "name a removal only when released behavior, interfaces, or content go away.",
         "Open or update a pull request only when the user asks.",
         "Never merge it automatically",
         "require a preview and explicit confirmation",
