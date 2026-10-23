@@ -175,7 +175,7 @@ RULES = {
         "only when the user says this session should step away",
         "treat any request to hand work to another agent as delegation, whatever verb it uses",
         "Keep it to that line; do not ask again.",
-        "`start` checks the CLI itself and opens a watch window by default",
+        "`start` checks the CLI itself and runs without a window; `watch` shows its progress.",
         "Work that edits files or runs commands goes to an Orca terminal when Orca is installed",
         "When the CLI has no interactive template, use `start` and say why.",
         "Use `workspace-write` only where the adapter documents a directory restriction.",

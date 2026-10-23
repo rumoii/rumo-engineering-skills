@@ -9,7 +9,7 @@ Read when the route is another installed agent CLI. `scripts/agent_run.py` runs 
 python <skill-dir>/scripts/agent_config.py lanes delegate
 # The models a CLI offers, with per-model efforts when it reports them
 python <skill-dir>/scripts/agent_config.py models <cli>
-# Read-only work: runs in the background and opens a watch window for the user
+# Read-only work: runs in the background; `agent_run.py watch <run-id>` shows its progress
 python <skill-dir>/scripts/agent_run.py start <cli> --cwd <dir> --prompt-file <brief.md> --access read-only [--model <id>] [--effort <level>] [--detach]
 # Work that edits files or runs commands: a visible CLI window
 python <skill-dir>/scripts/agent_run.py open <cli> --cwd <dir> --prompt-file <brief.md> --access <level> [--model <id>] [--effort <level>]
@@ -19,7 +19,7 @@ python <skill-dir>/scripts/agent_run.py record <run-id> --outcome accepted|rejec
 ```
 
 - `start` and `open` check the CLI and the adapter's flags themselves, so do not run `list`, `check`, or `show` first for a verified adapter. Only before the first launch through an unverified adapter or one written in this task, run `agent_run.py show` and show the user the full command and known limits. Unverified status alone does not require repeated approval. Official documentation may establish a write mode while `verified` stays null: call it untested, not locally verified.
-- In a client that runs background commands and reports their exit, run `start` that way without `--detach`; elsewhere add `--detach`. `--no-window` skips the watch window.
+- In a client that runs background commands and reports their exit, run `start` that way without `--detach`; elsewhere add `--detach`. `--window` also opens a terminal window running `watch`.
 - Write the brief to a file outside the repository. Use `py -3` instead of `python` on Windows when that is the configured launcher.
 
 Read on only when a command refuses, a run looks wrong, or the work needs more than this:
@@ -72,7 +72,7 @@ Copilot and Aider native-write edit files; the caller executes requested checks.
 ## Run
 
 ```text
-python <skill-dir>/scripts/agent_run.py start <cli> --cwd <dir> --prompt-file <brief.md> --access read-only [--model <id>] [--timeout 1800]
+python <skill-dir>/scripts/agent_run.py start <cli> --cwd <dir> --prompt-file <brief.md> --access read-only [--model <id>] [--timeout <seconds>]
 python <skill-dir>/scripts/agent_run.py start <cli> --cwd <isolated-dir> --prompt-file <brief.md> --access native-write
 python <skill-dir>/scripts/agent_run.py resume <run-id> --prompt-file <follow-up.md>
 python <skill-dir>/scripts/agent_run.py start <cli> ... [--detach] [--no-window]
@@ -86,17 +86,17 @@ python <skill-dir>/scripts/agent_run.py record <run-id> --outcome accepted|rejec
 ```
 
 - Write the brief to a file outside the repository; the script sends it on stdin or as the file the adapter names, never on the command line.
-- The timeout must be finite and greater than zero. Prompt stdin is backed by the recorded file, so a child that never reads it cannot block the recorder before the timeout.
+- There is no time limit unless `--timeout` is given; pass one only when the user or a real deadline supplies it, never a guessed duration. A given timeout must be finite and greater than zero. Prompt stdin is backed by the recorded file, so a child that never reads it cannot block the recorder before the timeout.
 - Starting and resuming require a reliable process identity implementation, currently Windows and Linux/WSL. Other platforms refuse before launch; inspecting records remains available.
 - Each command prints a UTF-8 JSON summary: state, exit code, session ID, whether the adapter was verified, the path of the final reply, and `interactive_resume` with the directory and command a person uses to continue the session by hand.
 - Exit codes: `0` the turn finished with a reply; `1` it failed, was cancelled, or produced no reply; `2` refused or an I/O/preflight operation failed (inspect the record before retrying); `3` the turn hit the timeout and was stopped. A failed or empty turn is not evidence that work is done or that there is nothing to find.
 - `--detach` on `start` or `resume` hands the turn to a recorder process outside the caller's process group and returns once the turn is launched. Exit 0 then means launched, not finished: the summary's `state` stays a running state, and it adds `recorder_pid`, `recorder_pid_started`, `watch` (the command that follows the turn), and `survives_caller`. On Windows `survives_caller` is false when the caller's job object forbids breakaway, so ending the caller's session may also end the recorder; on Linux it is null, because a new session does not survive a cgroup or container teardown. A recorder that does not move the turn past `created` makes `start` exit 2 with the end of `recorder.log` from the run directory.
 - `watch` prints one line per event that the adapter's `progress` rules match, such as a tool call or a reply, and skips the brief and other user messages. Without rules it prints an event count every 10 seconds and the start of the final reply. It waits up to a minute for a turn that is not recorded yet, ends with the turn, and exits with the turn's code; it exits 2 when the record still shows a running turn whose process has been gone for a minute, or a turn created but never launched. `--hold` waits for Enter at the end so a window stays readable. Interrupting `watch` leaves the run running.
-- `start` and `resume` open a terminal window running `watch --hold` for the new turn unless given `--no-window`; the summary's `window` says whether it opened, how (`wt-tab`, `console`, or `x-terminal-emulator`), and why not. On Windows, every window opens as a tab of one Windows Terminal window named `rumo-agents` when `wt` is available and no argument contains `;`; otherwise as a new console. On Linux it needs `DISPLAY` or `WAYLAND_DISPLAY` and `x-terminal-emulator`, and `opened` means only that the terminal did not fail within a second, not that a window appeared; that path is untested here. A tab uses Windows Terminal's environment, not the caller's.
+- With `--window`, `start` and `resume` also open a terminal window running `watch --hold` for the new turn; the summary's `window` says whether it opened, how (`wt-tab`, `console`, or `x-terminal-emulator`), and why not. On Windows, every window opens as a tab of one Windows Terminal window named `rumo-agents` when `wt` is available and no argument contains `;`; otherwise as a new console. On Linux it needs `DISPLAY` or `WAYLAND_DISPLAY` and `x-terminal-emulator`, and `opened` means only that the terminal did not fail within a second, not that a window appeared; that path is untested here. A tab uses Windows Terminal's environment, not the caller's.
 - `wait` prints nothing until the turn ends, then the summary, and exits with the turn's code. Use it only as a background command in a client that reports its exit; do not loop on it.
 - `runs` lists recorded runs newest first with their mode, state, and the command to watch an active headless run or reopen a finished session; `--active` keeps only runs still running. An unreadable record appears as an error row.
 - `open` starts the CLI interactively, through the adapter's `interactive_start`, in a terminal window the user can type into; the window opens the same way as the watch window. The brief stays in `turns/1/prompt.md`; only a one-line pointer to it travels on the command line. A host process inside the window records the turn as `interactive` while the CLI runs and `closed` when it exits or, best effort, when the window is closed; a host killed before it records leaves a turn to reconcile with `cancel`. The access flags are the adapter's for that level, and the CLI asks the user in the window for anything those flags do not pre-approve. There is no timeout. Only adapters with a preassigned session offer `interactive_start`, so that after the window closes `resume` can ask the same session for its final report. The bundled claude, qwen, pi, and grok adapters have one; codex reports its session only in headless events and has none.
-- Long turns: in a client that runs background commands and notifies on completion, run `start` or `resume` that way; otherwise use `--detach`. Either way, set `--timeout` above the longest expected turn, because the recorder stops the turn at that limit.
+- Long turns: in a client that runs background commands and notifies on completion, run `start` or `resume` that way; otherwise use `--detach`. A turn runs until it ends or is cancelled; with `--timeout`, the recorder stops it at that limit.
 - `resume` refuses disabled adapters, a previous turn still running or without a recorded end, and an adapter whose session source is `none`. For a turn with no recorded end, inspect the backend session first. `cancel` can mark it `abandoned` only when the process is confirmed gone or its PID has a different strong identity. Unknown identity, including an old POSIX timestamp, blocks automatic cancellation and recovery; see [records.md](records.md).
 
 ## Brief Contents

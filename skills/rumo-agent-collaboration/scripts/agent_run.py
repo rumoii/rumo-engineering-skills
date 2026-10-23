@@ -712,9 +712,14 @@ def refuse_batch_shell_syntax(executable: list[str], argv: list[str]) -> None:
         raise Refused("batch launcher arguments contain shell syntax; use a direct executable instead")
 
 
-def run_turn(run_dir: Path, meta: dict, kind: str, prompt: str, timeout: float) -> int:
-    if not math.isfinite(timeout) or timeout <= 0:
+def check_timeout(timeout: float | None) -> None:
+    # No implicit limit: a duration comes only from the user or a real deadline.
+    if timeout is not None and (not math.isfinite(timeout) or timeout <= 0):
         raise Refused("timeout must be finite and greater than zero")
+
+
+def run_turn(run_dir: Path, meta: dict, kind: str, prompt: str, timeout: float | None) -> int:
+    check_timeout(timeout)
     adapter = meta["adapter"]
     problems = validate_adapter(adapter)
     if problems:
@@ -765,7 +770,7 @@ def run_turn(run_dir: Path, meta: dict, kind: str, prompt: str, timeout: float) 
             write_json(run_dir / "meta.json", fresh)
 
         while proc.poll() is None:
-            if time.monotonic() - started >= timeout:
+            if timeout is not None and time.monotonic() - started >= timeout:
                 timed_out = True
                 stop_tree(proc.pid, pid_started)
                 break
@@ -931,8 +936,7 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 def cmd_start(args: argparse.Namespace) -> int:
-    if not math.isfinite(args.timeout) or args.timeout <= 0:
-        raise Refused("timeout must be finite and greater than zero")
+    check_timeout(args.timeout)
     require_process_identity()
     entry = get_adapter(args.cli, args.runs_dir)
     adapter = entry["adapter"]
@@ -990,8 +994,7 @@ def cmd_resume(args: argparse.Namespace) -> int:
     if not meta.get("session_id"):
         raise Refused("no session ID was recorded, so there is nothing to resume; start a new run")
     prompt = read_prompt(args.prompt_file)
-    if not math.isfinite(args.timeout) or args.timeout <= 0:
-        raise Refused("timeout must be finite and greater than zero")
+    check_timeout(args.timeout)
     extra = {"window": open_watch_window(run_dir, len(meta["turns"]) + 1)} if args.window else {}
     if args.detach:
         return run_detached(run_dir, "resume", args.prompt_file, args.timeout, extra)
@@ -1000,14 +1003,15 @@ def cmd_resume(args: argparse.Namespace) -> int:
     return code
 
 
-def run_detached(run_dir: Path, kind: str, prompt_file: str, timeout: float, extra: dict) -> int:
+def run_detached(run_dir: Path, kind: str, prompt_file: str, timeout: float | None, extra: dict) -> int:
     """Hand the turn to a recorder outside the caller's process group, and return once the turn launches."""
     with record_lock(run_dir):
         number = len(load_meta(run_dir)["turns"]) + 1
     script = str(Path(__file__).resolve())
     argv = [
         sys.executable, script, "_turn", run_dir.name, "--kind", kind,
-        "--prompt-file", str(Path(prompt_file).resolve()), "--timeout", repr(timeout), "--runs-dir", str(run_dir.parent),
+        "--prompt-file", str(Path(prompt_file).resolve()), "--runs-dir", str(run_dir.parent),
+        *(["--timeout", repr(timeout)] if timeout is not None else []),
     ]
     survives: bool | None = None
     with (run_dir / "recorder.log").open("ab") as log:
@@ -1482,11 +1486,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--access", required=True, choices=ACCESS_LEVELS)
     p.add_argument("--model")
     p.add_argument("--effort", help="Reasoning effort; one of the adapter's efforts.")
-    p.add_argument("--timeout", type=float, default=1800)
+    p.add_argument("--timeout", type=float, help="Stop the turn after this many seconds; by default there is no limit.")
     p.add_argument("--executable")
     p.add_argument("--detach", action="store_true", help="Return once the turn launches; a detached recorder finishes it.")
-    p.add_argument("--window", action=argparse.BooleanOptionalAction, default=True,
-                   help="Open a terminal window that watches the turn (default); --no-window skips it.")
+    p.add_argument("--window", action=argparse.BooleanOptionalAction, default=False,
+                   help="Also open a terminal window that watches the turn; by default only `watch` shows progress.")
     p.add_argument("--runs-dir")
 
     p = sub.add_parser("open", help="Start the CLI interactively in a terminal window the user can see and type into.")
@@ -1502,10 +1506,10 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("resume", help="Send another turn to the recorded session.")
     p.add_argument("run_id")
     p.add_argument("--prompt-file", required=True)
-    p.add_argument("--timeout", type=float, default=1800)
+    p.add_argument("--timeout", type=float, help="Stop the turn after this many seconds; by default there is no limit.")
     p.add_argument("--detach", action="store_true", help="Return once the turn launches; a detached recorder finishes it.")
-    p.add_argument("--window", action=argparse.BooleanOptionalAction, default=True,
-                   help="Open a terminal window that watches the turn (default); --no-window skips it.")
+    p.add_argument("--window", action=argparse.BooleanOptionalAction, default=False,
+                   help="Also open a terminal window that watches the turn; by default only `watch` shows progress.")
     p.add_argument("--runs-dir")
 
     p = sub.add_parser("watch", help="Follow a turn's progress until it ends; exits with the turn's code.")
@@ -1532,7 +1536,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("run_id")
     p.add_argument("--kind", required=True, choices=("start", "resume"))
     p.add_argument("--prompt-file", required=True)
-    p.add_argument("--timeout", type=float, required=True)
+    p.add_argument("--timeout", type=float)
     p.add_argument("--runs-dir")
 
     for name, text in (("status", "Print the run record summary."), ("cancel", "Stop the run's own process tree, or mark a dead turn abandoned.")):

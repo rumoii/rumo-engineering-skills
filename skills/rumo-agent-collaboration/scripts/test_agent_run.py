@@ -851,15 +851,25 @@ class WindowTest(Harness):
             if not opened:
                 self.assertIn("exited with code 1", result["reason"])
 
-    def test_start_and_resume_open_a_window_unless_told_not_to(self) -> None:
+    def test_start_and_resume_open_a_window_only_when_asked(self) -> None:
         seen = []
         with patch.object(agent_run, "cmd_start", side_effect=lambda a: seen.append(a.window) or 0), \
                 patch.object(agent_run, "cmd_resume", side_effect=lambda a: seen.append(a.window) or 0):
             agent_run.main(["start", "pi", "--cwd", ".", "--prompt-file", "p.md", "--access", "read-only"])
-            agent_run.main(["start", "pi", "--cwd", ".", "--prompt-file", "p.md", "--access", "read-only", "--no-window"])
+            agent_run.main(["start", "pi", "--cwd", ".", "--prompt-file", "p.md", "--access", "read-only", "--window"])
             agent_run.main(["resume", "run-1", "--prompt-file", "p.md"])
-            agent_run.main(["resume", "run-1", "--prompt-file", "p.md", "--no-window"])
-        self.assertEqual(seen, [True, False, True, False])
+            agent_run.main(["resume", "run-1", "--prompt-file", "p.md", "--window"])
+        self.assertEqual(seen, [False, True, False, True])
+
+    def test_turns_have_no_time_limit_unless_one_is_given(self) -> None:
+        seen = []
+        with patch.object(agent_run, "cmd_start", side_effect=lambda a: seen.append(a.timeout) or 0):
+            agent_run.main(["start", "pi", "--cwd", ".", "--prompt-file", "p.md", "--access", "read-only"])
+            agent_run.main(["start", "pi", "--cwd", ".", "--prompt-file", "p.md", "--access", "read-only", "--timeout", "60"])
+        self.assertEqual(seen, [None, 60.0])
+        with self.assertRaises(agent_run.Refused):
+            agent_run.check_timeout(0)
+        agent_run.check_timeout(None)
 
     def test_start_window_opens_a_held_watch_of_the_new_turn(self) -> None:
         args = argparse.Namespace(cli="claude", cwd=str(self.cwd), prompt_file=str(self.prompt), access="read-only", model=None, effort=None,
