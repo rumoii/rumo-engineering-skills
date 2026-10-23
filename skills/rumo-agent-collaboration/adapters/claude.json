@@ -50,6 +50,14 @@
     "xhigh",
     "max"
   ],
+  "models": {
+    "static": [
+      "fable",
+      "opus",
+      "sonnet"
+    ],
+    "note": "Aliases for the latest model of each family; a full model name such as claude-opus-5-5 also works."
+  },
   "start": [
     "-p",
     "--output-format",

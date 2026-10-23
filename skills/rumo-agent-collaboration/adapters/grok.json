@@ -45,6 +45,13 @@
     "xhigh",
     "max"
   ],
+  "models": {
+    "args": [
+      "models"
+    ],
+    "format": "text",
+    "pattern": "^\\s+\\*\\s+(?P<id>[\\w.:/-]+)"
+  },
   "start": [
     "--prompt-file",
     "{prompt_file}",

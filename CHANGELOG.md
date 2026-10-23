@@ -6,6 +6,7 @@
 
 - 新增默认技能 `rumo-setup`：为多模型评审、多方案设计和默认委派选择 CLI、模型与思考强度，保存前对每条线跑一次只读探测；之后可随时重跑，只改点名的项。配置存放在 `~/.rumo-engineering-skills/agents.json`，只由脚本读取，不占会话上下文。安装器最后一行改为提示运行 `rumo-setup`。新增触发用例 `setup-first-run`、`setup-change-role`。
 - `rumo-agent-collaboration`：新增 `scripts/agent_config.py`（`show`、`lanes`、`check --probe`、`set-role`、`set-auto-panel`）。适配器新增 `effort` / `efforts` 字段，`start`、`open`、`show` 支持 `--effort`，续接时沿用记录的强度；codex、claude、grok、pi 已声明。codex、claude、grok、pi 实际跑通一轮带强度的只读调用，`verified.live_run` 改为 true。用户没点名 CLI 时使用配置的 `delegate` 线。
+- 适配器新增 `models` 字段，`agent_config.py models <cli>` 列出 CLI 可用的模型：codex 读 `codex debug models`（含每个模型支持的强度和默认强度），grok 读 `grok models`，pi 读 `pi --list-models`（列出 pi 里配置的所有提供方，ID 为 `provider/model`），claude 给出 `fable`、`opus`、`sonnet` 别名；qwen 不能列出，需手填。`rumo-setup` 改为先列出模型供选择，不再要求用户自己填 ID。
 - 插件清单：description 改为概括说明，不再逐个列技能名；原列表漏了 `rumo-agent-collaboration` 和 `rumo-reflect`。
 - 安装器：`install.sh` 中需要带值的参数缺值时，明确提示缺哪个参数的值，并且不做任何改动。
 - 评测：Codex 触发运行器的样本 `AGENTS.md` 不再禁止使用其他 agent，避免压低协作类用例的通过率。

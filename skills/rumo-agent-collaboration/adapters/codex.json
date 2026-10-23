@@ -70,6 +70,23 @@
     "max",
     "ultra"
   ],
+  "models": {
+    "args": [
+      "debug",
+      "models"
+    ],
+    "format": "json",
+    "items": "models",
+    "id": "slug",
+    "efforts": {
+      "list": "supported_reasoning_levels",
+      "field": "effort"
+    },
+    "default_effort": "default_reasoning_level",
+    "skip": {
+      "visibility": "hide"
+    }
+  },
   "start": [
     "exec",
     "--json",

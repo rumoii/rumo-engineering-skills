@@ -11,6 +11,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 HERE = Path(__file__).resolve().parent
@@ -20,6 +21,13 @@ spec = importlib.util.spec_from_file_location("test_agent_run", HERE / "test_age
 assert spec and spec.loader
 test_agent_run = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(test_agent_run)
+agent_run = test_agent_run.agent_run
+BUNDLED = test_agent_run.BUNDLED
+
+spec = importlib.util.spec_from_file_location("agent_config", SCRIPT)
+assert spec and spec.loader
+agent_config = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(agent_config)
 
 
 class AgentConfigTest(unittest.TestCase):
@@ -106,6 +114,59 @@ class AgentConfigTest(unittest.TestCase):
         report = json.loads(result.stdout)
         self.assertFalse(report["lanes"][0]["probe"]["ok"])
         self.assertIn("probe failed", report["lanes"][0]["problems"])
+
+
+
+class ModelListingTest(unittest.TestCase):
+    """Listing samples are constructed from the shapes codex, grok, and pi printed on 2026-10-23."""
+
+    def listed(self, cli: str, stdout: str) -> list[dict]:
+        result = subprocess.CompletedProcess([], 0, stdout.encode("utf-8"), b"")
+        with patch.object(agent_config.subprocess, "run", return_value=result):
+            return agent_config.list_models(BUNDLED[cli], ["fake"])["models"]
+
+    def test_codex_catalog_keeps_visible_models_with_their_efforts(self) -> None:
+        catalog = {"models": [
+            {"slug": "gpt-6.1-sol", "visibility": "list", "default_reasoning_level": "low",
+             "supported_reasoning_levels": [{"effort": "low"}, {"effort": "ultra"}]},
+            {"slug": "codex-auto-review", "visibility": "hide", "supported_reasoning_levels": []},
+            {"slug": "gpt-5.5", "visibility": "list", "supported_reasoning_levels": [{"effort": "high"}]},
+        ]}
+        self.assertEqual(self.listed("codex", json.dumps(catalog)), [
+            {"id": "gpt-6.1-sol", "efforts": ["low", "ultra"], "default_effort": "low"},
+            {"id": "gpt-5.5", "efforts": ["high"]},
+        ])
+
+    def test_text_listings_become_model_ids(self) -> None:
+        grok = "You are logged in.\n\nDefault model: grok-4.7\n\nAvailable models:\n  * grok-4.7 (default)\n  * grok-4.7-mini\n"
+        self.assertEqual([m["id"] for m in self.listed("grok", grok)], ["grok-4.7", "grok-4.7-mini"])
+        pi = ("provider              model               context  max-out  thinking  images\n"
+              "ollama                qwen:uncensored-4b  32.8K    512      no        no    \n"
+              "deepseek              deepseek-v4-pro     1.0M     64K      yes       no    \n")
+        self.assertEqual([m["id"] for m in self.listed("pi", pi)], ["ollama/qwen:uncensored-4b", "deepseek/deepseek-v4-pro"])
+
+    def test_fixed_aliases_and_unlistable_clis_need_no_command(self) -> None:
+        with patch.object(agent_config.subprocess, "run") as run:
+            self.assertEqual([m["id"] for m in agent_config.list_models(BUNDLED["claude"], None)["models"]], ["fable", "opus", "sonnet"])
+            self.assertEqual(agent_config.list_models(BUNDLED["qwen"], None)["models"], [])
+            run.assert_not_called()
+
+    def test_a_failed_listing_is_refused(self) -> None:
+        result = subprocess.CompletedProcess([], 1, b"", b"not signed in")
+        with patch.object(agent_config.subprocess, "run", return_value=result), self.assertRaises(agent_config.Refused):
+            agent_config.list_models(BUNDLED["grok"], ["fake"])
+
+    def test_malformed_models_entries_make_the_adapter_invalid(self) -> None:
+        base = {**BUNDLED["claude"]}
+        for models in ({"static": []}, {"args": ["models"], "format": "yaml"},
+                       {"args": ["{cwd}"], "format": "json", "items": "m", "id": "id"},
+                       {"args": ["ls"], "format": "text", "pattern": r"(?P<x>\S+)", "id": "{id}"},
+                       {"args": ["--dangerously-skip-permissions"], "format": "text", "pattern": "(?P<id>.+)"}):
+            with self.subTest(models=models):
+                self.assertTrue(agent_run.validate_adapter({**base, "models": models}))
+        for name, adapter in BUNDLED.items():
+            with self.subTest(cli=name):
+                self.assertEqual(agent_run.validate_adapter(adapter), [])
 
 
 if __name__ == "__main__":

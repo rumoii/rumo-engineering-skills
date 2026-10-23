@@ -53,6 +53,7 @@ These exclusions concern the adapter requirements, not whether each CLI can deve
 | `access` | `read-only` (required), optional `workspace-write` and `native-write`, each a list of flags. A missing level is refused |
 | `resume_access` | optional per-level flags for resume, when the CLI spells them differently there |
 | `model` | flags for a named model, using `{model}`; omitted when the user named none |
+| `models` | optional: how `agent_config.py models` finds the models a CLI offers. `{"static": [...]}` for fixed aliases; `{"args", "format": "json", "items", "id", "efforts": {"list", "field"}, "default_effort", "skip"}` for a JSON listing; `{"args", "format": "text", "pattern", "id"}` for text, where the pattern's named groups fill the `id` template such as `{provider}/{model}`. `args` are literal and checked for bypass flags like every template |
 | `effort`, `efforts` | optional flags for a reasoning effort, using `{effort}`, and the level names the CLI accepts. A level outside `efforts` is refused; omitted when none is named. Declare both or neither |
 | `start`, `resume` | argv templates. `{access}`, `{model}`, and `{effort}` expand to their flag lists; `{session}`, `{cwd}`, `{prompt_file}` are substituted in place |
 | `env` | literal environment variables for the child, such as an inline permission config |

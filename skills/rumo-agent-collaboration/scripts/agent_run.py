@@ -118,6 +118,40 @@ def valid_rule(rule: object) -> bool:
     )
 
 
+def models_problems(models: object) -> list[str]:
+    """A models entry is a fixed alias list, or a listing command whose JSON or text output names the models."""
+    if not isinstance(models, dict):
+        return ["must be an object"]
+    if "static" in models:
+        ok = isinstance(models["static"], list) and models["static"] and all(isinstance(m, str) and m.strip() for m in models["static"])
+        return [] if ok and set(models) <= {"static", "note"} else ["static must be a nonempty list of model names, with an optional note"]
+    args = models.get("args")
+    if not string_list(args) or any(t.startswith("{") for t in args or []):
+        return ["args must be literal argv tokens"]
+    if models.get("format") == "json":
+        allowed = {"args", "format", "items", "id", "efforts", "default_effort", "skip", "note"}
+        fields = [models.get("items"), models.get("id")]
+        efforts = models.get("efforts")
+        if efforts is not None:
+            fields += [efforts.get("list"), efforts.get("field")] if isinstance(efforts, dict) else [None]
+        if not all(isinstance(f, str) and all(f.split(".")) for f in fields) or set(models) - allowed:
+            return ["json format needs dotted items and id paths, optional efforts {list, field}, default_effort, and skip"]
+        if not isinstance(models.get("skip", {}), dict):
+            return ["skip must map dotted paths to values"]
+        return []
+    if models.get("format") == "text":
+        try:
+            pattern = re.compile(models.get("pattern", ""))
+        except (re.error, TypeError):
+            return ["text format needs a valid pattern"]
+        template = models.get("id", "{id}")
+        names = set(re.findall(r"\{(\w+)\}", template)) if isinstance(template, str) else {None}
+        if not names or not names <= set(pattern.groupindex) or set(models) - {"args", "format", "pattern", "id", "note"}:
+            return ["text format needs a pattern whose named groups fill the id template"]
+        return []
+    return ["format must be json or text, or use static"]
+
+
 def validate_adapter(adapter: object) -> list[str]:
     """Validate the declaration; this does not sandbox an arbitrary executable."""
     if not isinstance(adapter, dict):
@@ -219,6 +253,11 @@ def validate_adapter(adapter: object) -> list[str]:
         problems.append("effort flags need efforts: a nonempty list of lowercase level names")
     if efforts is not None and not effort_flags:
         problems.append("efforts requires effort flags")
+    models = adapter.get("models")
+    if models is not None:
+        problems += [f"models: {p}" for p in models_problems(models)]
+        if isinstance(models, dict) and string_list(models.get("args")):
+            argv_parts.append(models["args"])
     for table in (access, resume_access):
         if isinstance(table, dict) and any("{" in t or "}" in t for p in table.values() if string_list(p) for t in p):
             problems.append("access flags must be literal tokens")

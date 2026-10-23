@@ -14,9 +14,10 @@ claude@max; a lane with no model or effort uses the CLI's own default.
 auto_panel says what the agent may do when it judges, on its own, that a
 multi-model review or design is worth it: ask (default), allow, or off.
 
-Subcommands: show, lanes, check (with --probe, one tiny read-only turn per
-lane), set-role, set-auto-panel. Exit codes: 0 ok; 2 refused (invalid lane,
-unusable adapter, failed check or probe); 3 not configured (run rumo-setup).
+Subcommands: show, lanes, models (what a CLI offers), check (with --probe,
+one tiny read-only turn per lane), set-role, set-auto-panel. Exit codes: 0 ok;
+2 refused (invalid lane, unusable adapter, failed check or probe); 3 not
+configured (run rumo-setup).
 """
 
 from __future__ import annotations
@@ -174,6 +175,54 @@ def load_or_new(runs_dir: str | None) -> dict:
         return {"version": VERSION, "auto_panel": "ask", "roles": {}}
 
 
+def dotted(value: object, path: str) -> object:
+    for part in path.split("."):
+        value = value.get(part) if isinstance(value, dict) else None
+    return value
+
+
+def list_models(adapter: dict, exe: list[str] | None) -> dict:
+    """Models the CLI offers, read from its listing command or the adapter's fixed aliases."""
+    spec = adapter.get("models")
+    if not spec:
+        return {"source": None, "models": [], "note": "this CLI cannot list its models; enter a model ID or keep the CLI default"}
+    note = {"note": spec["note"]} if spec.get("note") else {}
+    if "static" in spec:
+        return {"source": "adapter", "models": [{"id": m} for m in spec["static"]], **note}
+    if exe is None:
+        raise Refused(f"{adapter['executable']} is not installed or not on PATH")
+    out = subprocess.run([*exe, *spec["args"]], capture_output=True, timeout=120)
+    if out.returncode:
+        raise Refused(f"listing models failed with exit {out.returncode}: {out.stderr.decode('utf-8', 'replace').strip()[-500:]}")
+    text = out.stdout.decode("utf-8", errors="replace")
+    models = []
+    if spec["format"] == "json":
+        try:
+            items = dotted(json.loads(text), spec["items"])
+        except json.JSONDecodeError as exc:
+            raise Refused(f"model listing is not JSON: {exc}") from exc
+        for item in items if isinstance(items, list) else []:
+            if any(dotted(item, path) == value for path, value in spec.get("skip", {}).items()):
+                continue
+            model_id = dotted(item, spec["id"])
+            if not isinstance(model_id, str):
+                continue
+            row: dict = {"id": model_id}
+            if spec.get("efforts"):
+                levels = dotted(item, spec["efforts"]["list"])
+                row["efforts"] = [e for e in (dotted(level, spec["efforts"]["field"]) if isinstance(level, dict) else level
+                                              for level in (levels if isinstance(levels, list) else [])) if isinstance(e, str)]
+            if spec.get("default_effort") and isinstance(dotted(item, spec["default_effort"]), str):
+                row["default_effort"] = dotted(item, spec["default_effort"])
+            models.append(row)
+    else:
+        pattern = re.compile(spec["pattern"])
+        for line in text.splitlines():
+            if match := pattern.search(line):
+                models.append({"id": spec.get("id", "{id}").format(**match.groupdict())})
+    return {"source": " ".join(spec["args"]), "models": models, **note}
+
+
 def probe(lane: dict, runs_dir: str | None, timeout: float) -> subprocess.Popen:
     """Start one tiny read-only turn that must echo a marker; the caller drains it."""
     marker = f"RUMO-PROBE-{secrets.token_hex(4)}"
@@ -265,6 +314,15 @@ def cmd_check(args: argparse.Namespace) -> int:
     return 0 if ok else 2
 
 
+def cmd_models(args: argparse.Namespace) -> int:
+    entry = agent_run.get_adapter(args.cli, args.runs_dir)
+    adapter = entry["adapter"]
+    spec = adapter.get("models") or {}
+    exe = None if "static" in spec or not spec else agent_run.resolve_executable(adapter, args.executable)
+    print(json.dumps({"cli": args.cli, "efforts": adapter.get("efforts") or [], **list_models(adapter, exe)}, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_set_role(args: argparse.Namespace) -> int:
     lanes = with_executables([parse_lane(text) for text in args.lane], args.executable)
     config = load_or_new(args.runs_dir)
@@ -292,6 +350,10 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("lanes", help="Print one role's lanes and the auto_panel setting.")
     p.add_argument("role", choices=ROLES)
 
+    p = sub.add_parser("models", help="List the models a CLI offers, with per-model efforts when the CLI reports them.")
+    p.add_argument("cli")
+    p.add_argument("--executable", help="Path to the CLI when it is not on PATH.")
+
     p = sub.add_parser("check", help="Check configured lanes, or candidate --lane values before writing them.")
     p.add_argument("--lane", action="append", help="Check this lane instead of the configuration; repeatable.")
     p.add_argument("--executable", action="append", help="cli=path for a CLI that is not on PATH; repeatable.")
@@ -311,7 +373,7 @@ def main(argv: list[str] | None = None) -> int:
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8")
-    handlers = {"show": cmd_show, "lanes": cmd_lanes, "check": cmd_check,
+    handlers = {"show": cmd_show, "lanes": cmd_lanes, "check": cmd_check, "models": cmd_models,
                 "set-role": cmd_set_role, "set-auto-panel": cmd_set_auto_panel}
     try:
         return handlers[args.command](args)

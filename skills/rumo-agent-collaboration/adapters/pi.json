@@ -52,6 +52,15 @@
     "xhigh",
     "max"
   ],
+  "models": {
+    "args": [
+      "--list-models"
+    ],
+    "format": "text",
+    "pattern": "^(?P<provider>[\\w.-]+)\\s+(?P<model>[\\w.:/-]+)\\s+\\S+\\s+\\S+\\s+(?:yes|no)\\s",
+    "id": "{provider}/{model}",
+    "note": "Every provider configured in pi is listed; the id is provider/model."
+  },
   "start": [
     "-p",
     "--mode",
