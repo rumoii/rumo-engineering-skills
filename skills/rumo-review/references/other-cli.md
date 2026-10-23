@@ -17,7 +17,7 @@ A request naming the CLI, review target, and scope already supplies that agreeme
 ## Choose And Check The CLI
 
 1. Prefer a provider different from the current client's model; a second run of the same model adds little independence.
-2. Confirm the CLI is installed, then read its `--help` (or the help of its non-interactive subcommand) and find two things: a non-interactive mode that takes a prompt and exits, and a read-only mode, sandbox, or permission setting that prevents file edits and command side effects. Without a read-only setting you have confirmed, do not use that CLI.
+2. Only when running the CLI directly, without `rumo-agent-collaboration` (whose `start` checks an adapter's CLI itself): confirm the CLI is installed, then read its `--help` (or the help of its non-interactive subcommand) and find two things: a non-interactive mode that takes a prompt and exits, and a read-only mode, sandbox, or permission setting that prevents file edits and command side effects. Without a read-only setting you have confirmed, do not use that CLI.
 3. Examples, to be checked against the installed version's help before use: `codex exec --sandbox read-only` and `claude -p --permission-mode plan`.
 
 ## Run

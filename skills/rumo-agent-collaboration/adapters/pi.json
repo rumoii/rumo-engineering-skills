@@ -29,7 +29,7 @@
       "--tools",
       "read,grep,find,ls"
     ],
-    "workspace-write": [
+    "native-write": [
       "--tools",
       "read,grep,find,ls,edit,write"
     ]
@@ -121,5 +121,5 @@
     "--session",
     "{session}"
   ],
-  "notes": "pi has no sandbox, so the write level adds edit and write but never bash. Resolve a model fragment with `pi --list-models <fragment>`. MCP and extension discovery are disabled because --tools alone retains MCP tools. The existing write level is a tool allowlist, not an OS directory sandbox."
+  "notes": "pi has no sandbox, so the write level adds edit and write but never bash. Resolve a model fragment with `pi --list-models <fragment>`. MCP and extension discovery are disabled because --tools alone retains MCP tools. The native-write level is a tool allowlist, not an OS directory sandbox; edits are applied without asking."
 }

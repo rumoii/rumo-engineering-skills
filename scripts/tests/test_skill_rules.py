@@ -164,6 +164,8 @@ RULES = {
         "For a named external CLI review, use rumo-review for review standards and this skill for execution and records.",
         "Read rumo-review before writing the review brief",
         "a CLI without a confirmed read-only mode cannot have an adapter.",
+        "Do not call an adapter tested end to end unless its `verified.live_run` is true.",
+        "Otherwise add `--detach` to `start`, or after `open` wait for the user.",
         "Do not launch a disabled adapter, including the bundled Gemini and OpenCode declarations.",
         "Never give the receiver more access than you have, and never pass a flag that bypasses its sandbox, approvals, or tool limits.",
         "Do not switch route, model, or access level on your own.",

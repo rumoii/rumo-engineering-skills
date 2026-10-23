@@ -1150,10 +1150,17 @@ def open_window(argv: list[str], cwd: str, title: str) -> dict:
         if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")) or not terminal:
             return {"opened": False, "via": None, "reason": "no graphical terminal: DISPLAY/WAYLAND_DISPLAY is unset or x-terminal-emulator is missing"}
         try:
-            subprocess.Popen([terminal, "-e", *argv], cwd=cwd, start_new_session=True,
-                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            proc = subprocess.Popen([terminal, "-e", *argv], cwd=cwd, start_new_session=True,
+                                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except OSError as exc:
             return {"opened": False, "via": None, "reason": f"could not start x-terminal-emulator: {exc}"}
+        # Some terminals hand the window to a server and exit 0 at once; a quick nonzero exit means no window.
+        try:
+            code = proc.wait(timeout=1)
+        except subprocess.TimeoutExpired:
+            code = None
+        if code:
+            return {"opened": False, "via": None, "reason": f"x-terminal-emulator exited with code {code} right after launch"}
         return {"opened": True, "via": "x-terminal-emulator", "reason": None}
     return {"opened": False, "via": None, "reason": "windows open only on Windows and Linux desktops"}
 

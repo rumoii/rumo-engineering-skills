@@ -18,7 +18,7 @@ import threading
 import time
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 
 HERE = Path(__file__).resolve().parent
@@ -254,7 +254,7 @@ class BundledAdapterTest(unittest.TestCase):
             ("claude", "read-only", ["--permission-mode", "plan"]),
             ("claude", "workspace-write", ["--permission-mode", "acceptEdits"]),
             ("pi", "read-only", ["--tools", "read,grep,find,ls"]),
-            ("pi", "workspace-write", ["--tools", "read,grep,find,ls,edit,write"]),
+            ("pi", "native-write", ["--tools", "read,grep,find,ls,edit,write"]),
             ("qwen", "read-only", ["--approval-mode", "plan"]),
             ("qwen", "workspace-write", ["--approval-mode", "auto-edit"]),
             ("grok", "read-only", ["--permission-mode", "plan"]),
@@ -812,6 +812,18 @@ class WindowTest(Harness):
             result = agent_run.open_window(["watch"], "/tmp", "t")
         self.assertFalse(result["opened"])
         self.assertIn("DISPLAY", result["reason"])
+
+    def test_linux_terminal_that_fails_at_once_is_not_reported_as_open(self) -> None:
+        for wait, opened in ((lambda timeout: 1, False), (Mock(side_effect=subprocess.TimeoutExpired("term", 1)), True)):
+            with self.subTest(opened=opened), patch.object(agent_run.os, "name", "posix"), \
+                    patch.object(agent_run.sys, "platform", "linux"), patch.dict(os.environ, {"DISPLAY": ":0"}), \
+                    patch.object(agent_run.shutil, "which", return_value="/usr/bin/x-terminal-emulator"), \
+                    patch.object(agent_run.subprocess, "Popen") as popen:
+                popen.return_value.wait = wait
+                result = agent_run.open_window(["watch"], "/tmp", "t")
+            self.assertEqual(result["opened"], opened)
+            if not opened:
+                self.assertIn("exited with code 1", result["reason"])
 
     def test_start_and_resume_open_a_window_unless_told_not_to(self) -> None:
         seen = []

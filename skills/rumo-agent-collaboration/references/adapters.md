@@ -15,7 +15,7 @@ An adapter is a JSON file that tells `agent_run.py` how to drive one CLI: how to
 |---|---|---|
 | codex | flags checked on 0.162.0 | read-only, workspace-write |
 | claude | flags checked on 2.1.305 | read-only, workspace-write |
-| pi | flags checked on 1.3.0 | read-only, workspace-write (no shell) |
+| pi | flags checked on 1.3.0 | read-only, native-write (no shell) |
 | qwen | flags checked and one read-only turn run on 0.25.2 | read-only, workspace-write |
 | grok | flags checked on 1.0.41; the live run stopped at sign-in | read-only |
 | cursor (`cursor-agent`) | unverified, from the CLI reference | read-only |
