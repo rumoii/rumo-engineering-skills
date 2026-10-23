@@ -4,6 +4,8 @@
 
 ## 未发布
 
+## 0.8.0 - 2026-10-24
+
 - `rumo-review` 新增 Panel 模式（`references/panel.md`，取代 `references/other-cli.md`）：请 `rumo-setup` 配置的 review 线同时独立评审同一份改动。评审前先写一段改动意图；所有线共用一份 brief，不含自己的结论；当前 agent 自己先评完并存下结论，再读各线结果。失败、超时或空结果记为掉线，不换模型顶上。每条发现都对照代码核实，标出由哪几条线提出，报告附线路表、驳回清单和一致与分歧。只请一个模型给第二意见，就是只有一条线的面板。你点名时开；高风险改动由 agent 提议，按 `auto_panel` 先问、直接开或不提。
 - `rumo-test`：高保障流程最终检查通过后，提议多模型评审面板。
 - `rumo-agent-collaboration`：`agent_run.py start` / `resume` 默认不再弹进度窗口，后台运行，用 `watch` 查看进度；需要窗口时加 `--window`。`open` 的交互窗口不变。
