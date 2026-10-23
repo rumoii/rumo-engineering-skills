@@ -77,7 +77,7 @@
 | 跟进 PR | 你要求时：冲突 → 评审意见 → CI；不合并 |
 | 暂停 | 停在安全边界，不做不可逆操作，写续做说明；你不说就不提交 |
 
-想指定技能时可以点名调用：
+想指定技能时可以点名调用（用插件安装时，Claude Code 的技能名要带前缀，例如 `/rumo-engineering-skills:rumo-clarify`）：
 
 | 想做的事 | Codex | Claude Code |
 | --- | --- | --- |
@@ -126,7 +126,7 @@ AI 没收到这段提示词、只按 README 安装时，也遵守同一条规则
 
 ### 用安装器安装
 
-需要 Git 和 Python 3，不需要管理员权限。`-ExecutionPolicy Bypass` 只对这一次运行生效，不改系统设置。
+需要 Git 和 Python 3，不需要管理员权限。`-ExecutionPolicy Bypass` 只对这一次运行生效，不改系统设置。后文的 Windows 命令简写成 `.\install.ps1 ...`；系统禁止运行脚本时，照这里写成 `powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 ...`。
 
 ```powershell
 git clone https://github.com/rumoii/rumo-engineering-skills.git
@@ -228,7 +228,7 @@ cd rumo-engineering-skills
 ./install.sh --no-pull --remove-baseline
 ```
 
-之后不带参数重跑安装器时会自动更新这段内容；没写入过的，安装结束时会提示一行。插件用户和其他客户端可以直接运行辅助脚本，例如 `python3 skills/rumo-coding-guidelines/scripts/baseline_block.py --target ~/.claude/CLAUDE.md --install`，也可以手动把 [agents-snippet.md](skills/rumo-coding-guidelines/references/agents-snippet.md) 里的代码块贴进去。
+之后不带参数重跑安装器时会自动更新这段内容；没写入过的，安装结束时会提示一行。插件用户和其他客户端可以在 clone 下来的仓库目录里运行辅助脚本，例如 `python3 skills/rumo-coding-guidelines/scripts/baseline_block.py --target ~/.claude/CLAUDE.md --install`，也可以手动把 [agents-snippet.md](skills/rumo-coding-guidelines/references/agents-snippet.md) 里的代码块贴进去。
 
 </details>
 
