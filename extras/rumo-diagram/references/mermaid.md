@@ -59,7 +59,7 @@ The template already provides fit, theme toggle, scale, PNG/SVG export, theme-aw
 
 Resolve `SKILL_DIR` from the directory containing this loaded `SKILL.md`, not from a source checkout or the target project. If it cannot be resolved, stop and report the path blocker instead of guessing.
 
-Install the declared runtime dependency once in the installed skill directory, then run the exporter from the target project so relative paths belong to that project:
+Check whether the declared runtime dependency already exists in the installed skill directory. If it is missing, explain the installation directory and network impact and get the user's agreement before installing it; without agreement, keep the Markdown/HTML deliverables and stop before PNG export. Once the dependency is available, run the exporter from the target project so relative paths belong to that project:
 
 ```bash
 npm install --omit=dev --prefix "$SKILL_DIR"

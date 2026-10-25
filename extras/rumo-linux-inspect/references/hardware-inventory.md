@@ -33,7 +33,7 @@ For each target, keep exactly these two local result files:
 
 The raw record must preserve the command evidence needed to audit the summary and may contain sensitive asset identifiers. It must not contain passwords or terminal control sequences.
 
-After both files are complete, remove only the exact legacy file `Linux硬件信息采集_<host>_报告.txt` when it exists. Never use a wildcard or remove another host's file.
+Keep the legacy file `Linux硬件信息采集_<host>_报告.txt` by default; generating the two new files does not authorize deleting it. Remove that exact path only when the user explicitly requests cleanup, and then follow `rumo-filesystem-safety`. Never use a wildcard or remove another host's file.
 
 ## Concise Summary Rules
 

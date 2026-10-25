@@ -38,7 +38,9 @@ to its maintained conventions:
       "backup_rule": "",
       "restart_command": "",
       "verification_commands": [],
-      "rollback_command": ""
+      "rollback_command": "",
+      "build_command": "",
+      "build_workdir": ""
     }
   ]
 }

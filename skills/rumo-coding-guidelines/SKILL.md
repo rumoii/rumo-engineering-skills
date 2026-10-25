@@ -53,7 +53,7 @@ Treat review, explanation, and monitoring requests as read-only until the user a
 
 ### Task Flows
 
-Match the task to one of these routes, and read [references/task-flows.md](references/task-flows.md) for its steps and stop points before following it. A flow is a default route, not a checklist to copy; when you skip a step, say why in the final report. Tasks that fit none keep the rules above.
+Match the task to one of these routes. For any route except a small edit or an investigation, whose rows below are complete, read [references/task-flows.md](references/task-flows.md) for its steps and stop points before following it. A flow is a default route, not a checklist to copy; when you skip a step, say why in the final report. Tasks that fit none keep the rules above.
 
 | Task | Route |
 | --- | --- |

@@ -1,6 +1,4 @@
 interface:
   display_name: "Rumo Handoff"
-  short_description: "把当前任务整理成自包含的交接文档，便于其他会话或客户端接力"
-  default_prompt: "Use $rumo-handoff to write a self-contained handoff document for the current task."
-policy:
-  allow_implicit_invocation: false
+  short_description: "跨会话交接：按要求写交接文档，或在新会话里读取本项目最近的会话记录接续进度"
+  default_prompt: "Use $rumo-handoff to report where this project's work stands and what to do next."

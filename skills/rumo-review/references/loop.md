@@ -8,14 +8,13 @@ Settle one target before starting: uncommitted changes (default after a fix), a 
 
 ## Review Backends
 
-Prefer the most direct independent review surface; all of them feed the same loop:
+Prefer an independent fresh context, but never hard-code a provider. Use the lane the user names for this loop; otherwise use the configured `review` lane. If no lane is configured or the choice is materially ambiguous, ask instead of defaulting to Codex or another provider.
 
-1. When `codex app-server` is available, read [codex-app-server.md](codex-app-server.md) and run `scripts/app_server_review.py`. It gives an independent review thread and a machine-readable exit code.
-2. Otherwise, or after two app-server attempts end without a valid review result, when the client can start a helper with a fresh context (client-specific: for example a subagent), give it only the target, the review standard in SKILL.md, and the repository guidance. Withhold the fix history and earlier findings so it reviews the code, not your reasoning. It reports findings and never edits code.
-3. Otherwise, use the client's built-in review command if it has one (client-specific: for example `/review` in Codex or `/code-review` in Claude Code).
-4. Otherwise, review in the current session following SKILL.md, and say in the report that the review was not independent.
+Before the first external review, name the backend, model, diff and repository guidance to send, and that repeated cycles may spend quota. One agreement covers later cycles on the same lane and content scope; ask again before changing either. Give the reviewer only the target, the review standard in SKILL.md, and the necessary repository guidance. Withhold the fix history and earlier findings so it reviews the code, not your reasoning. It reports findings and never edits code.
 
-A review panel of other models can replace or join any of these, but only when the user asked for one; read [panel.md](panel.md) first.
+For a configured Codex lane, read [codex-app-server.md](codex-app-server.md) and run `scripts/app_server_review.py` for an independent thread and machine-readable result. For another configured lane, use the single-lane execution and record rules in [panel.md](panel.md), not a multi-model panel. A client-native fresh-context helper is also suitable when the user selects it.
+
+If the selected route is unavailable, report it and either stop or use the current session with the user's agreement. Say when a review was not independent; never substitute another provider or start a panel to keep the loop going. A review panel of other models can replace or join the independent review only when the user asked for one; read [panel.md](panel.md) first.
 
 ## Cycle
 

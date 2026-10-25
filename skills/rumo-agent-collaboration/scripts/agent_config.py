@@ -42,6 +42,8 @@ CONFIG_ENV = "RUMO_AGENTS_CONFIG"
 ROLES = ("review", "design", "delegate")
 USE_ROLES = ("delegate",)
 AUTO_PANEL = ("ask", "allow", "off")
+# Raising VERSION when the file's shape changes requires adding, in load(), an in-memory
+# upgrade of older files; the next write saves the new shape. A newer file is refused, never rewritten.
 VERSION = 1
 NOT_CONFIGURED = 3
 RUNNER = Path(__file__).resolve().parent / "agent_run.py"
@@ -122,7 +124,10 @@ def validate(config: object, runs_dir: str | None = None, roles_to_check: tuple[
     if not isinstance(config, dict):
         return ["configuration must be a JSON object"]
     problems = [f"unknown key {key!r}" for key in sorted(set(config) - {"version", "auto_panel", "roles"})]
-    if config.get("version") != VERSION:
+    version = config.get("version")
+    if type(version) is int and version > VERSION:
+        problems.append(f"version {version} was written by a newer rumo-engineering-skills; update the skills before changing it")
+    elif version != VERSION:
         problems.append(f"version must be {VERSION}")
     if config.get("auto_panel", "ask") not in AUTO_PANEL:
         problems.append(f"auto_panel must be one of {', '.join(AUTO_PANEL)}")

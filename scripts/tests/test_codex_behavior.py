@@ -238,6 +238,16 @@ class SampleTest(unittest.TestCase):
             )
             result = subprocess.run([sys.executable, "-B", "-c", replay], cwd=payments, capture_output=True, text=True)
             self.assertEqual(result.stdout.strip(), "t1-pay", result.stderr)
+            cross_route = (
+                "from types import SimpleNamespace as N\nfrom api.payments import create_payment, create_refund\n"
+                "store = N(charge=lambda tenant, amount: N(id=tenant + '-pay', amount=amount))\n"
+                "req = lambda: N(headers={'Idempotency-Key': 'k1'}, json={'amount': 100, 'payment_id': 't1-pay'})\n"
+                "user = N(id='u1', tenant_id='t1')\n"
+                "payment = create_payment(req(), user, store)\n"
+                "print(create_refund(req(), user, store) == payment)\n"
+            )
+            result = subprocess.run([sys.executable, "-B", "-c", cross_route], cwd=payments, capture_output=True, text=True)
+            self.assertEqual(result.stdout.strip(), "True", result.stderr)
 
             alerts = root / "alerts"
             seed(alerts, snapshot, CASES["alert-run-evidence"])
@@ -345,6 +355,52 @@ class ProcessLifetimeTest(unittest.TestCase):
             code, timed_out = run_turn([sys.executable, "-c", "import sys; sys.stdin.read(); sys.exit(3)"], "local fixture", root, root / "turn-1", 10)
             self.assertEqual(code, 3)
             self.assertFalse(timed_out)
+
+
+class SandboxCommandTest(unittest.TestCase):
+    def command_for(self, name: str) -> list[str]:
+        import argparse
+        from unittest.mock import patch
+        commands = []
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            snapshot = root / "snapshot"
+            for skill in CASES[name]["skills"]:
+                path = snapshot / "skills" / skill
+                path.mkdir(parents=True)
+                (path / "SKILL.md").write_text(f"name: {skill}\n", encoding="utf-8")
+
+            def fake_turn(command, prompt, sample, prefix, timeout):
+                commands.append(command)
+                events = [{"type": "thread.started", "thread_id": "t"}]
+                events += [
+                    {"type": "item.completed", "item": {
+                        "type": "command_execution", "status": "completed", "exit_code": 0,
+                        "command": f"Get-Content .agents/skills/{skill}/SKILL.md",
+                        "aggregated_output": f"name: {skill}\n",
+                    }}
+                    for skill in CASES[name]["skills"]
+                ]
+                events.append({"type": "turn.completed"})
+                prefix.with_suffix(".jsonl").write_text("\n".join(json.dumps(event) for event in events), encoding="utf-8")
+                return 0, False
+
+            args = argparse.Namespace(output_dir=root / "results", snapshot=snapshot, codex="not-invoked", timeout=10)
+            with patch("scripts.run_codex_behavior.run_turn", side_effect=fake_turn):
+                run_case(args, name, [], {})
+        return commands[0]
+
+    def test_commit_sample_alone_grants_scoped_git_writes(self) -> None:
+        command = self.command_for("commit-prepare")
+        self.assertIn('default_permissions="rumo-commit-sample"', command)
+        self.assertIn('permissions.rumo-commit-sample.extends=":workspace"', command)
+        self.assertIn('permissions.rumo-commit-sample.filesystem={":workspace_roots"={".git"="write"}}', command)
+        self.assertNotIn("--sandbox", command)
+
+    def test_other_cases_keep_workspace_write_without_git_permission(self) -> None:
+        command = self.command_for("review-existing")
+        self.assertEqual(command[command.index("--sandbox") + 1], "workspace-write")
+        self.assertFalse(any("default_permissions" in arg or ".git" in arg for arg in command))
 
 
 class WithoutSkillsTest(unittest.TestCase):

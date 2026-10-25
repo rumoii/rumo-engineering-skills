@@ -72,6 +72,10 @@ RULES = {
         "A handoff does not transfer approval for actions the user has not granted.",
         "## Tried And Dropped",
         "Copy the plan's decisions and dead ends",
+        "never reads another project's",
+        "Where they disagree, the repository wins; say so.",
+        "Stop after the report unless the user asked to continue.",
+        "Never repeat credentials that appear in a record.",
     ),
     "rumo-interface": (
         "A search is discovery, not proof of absence.",
@@ -163,10 +167,9 @@ RULES = {
         "A worktree is not a sandbox.",
         "never switch to automatic approval to finish.",
         "do not transfer ownership without a resumable session.",
-        "For a named external CLI review, use rumo-review for review standards and this skill for execution and records.",
-        "Read rumo-review before writing the review brief",
+        "Reviews by another model, including a named external CLI, belong to rumo-review alone: its panel runs them with this skill's scripts.",
         "a CLI without a confirmed read-only mode cannot have an adapter.",
-        "Do not call an adapter tested end to end unless its `verified.live_run` is true.",
+        "Do not describe an adapter as tested end to end unless its `verified.live_run` is true.",
         "Otherwise add `--detach` to `start`, or after `open` wait for the user.",
         "Do not launch a disabled adapter, including the bundled Gemini and OpenCode declarations.",
         "Never give the receiver more access than you have, and never pass a flag that bypasses its sandbox, approvals, or tool limits.",
@@ -235,6 +238,9 @@ REFERENCE_RULES = {
     "rumo-remote-ops/references/service-deploy.md": (
         "Execute rollback only when already authorized, applicable to current state, and safe for data created since deployment",
     ),
+    "rumo-interface/references/http.md": (
+        "never hide an unchecked dimension behind a combined idempotency failure mark",
+    ),
     "rumo-database-change-safety/references/procedure.md": (
         "Do not improvise a repair on the live target.",
     ),
@@ -274,6 +280,12 @@ REFERENCE_RULES = {
     ),
     "rumo-review/references/codex-app-server.md": (
         "Do not let the script apply fixes.",
+    ),
+    "rumo-review/references/loop.md": (
+        "never hard-code a provider",
+        "One agreement covers later cycles on the same lane and content scope",
+        "Withhold the fix history and earlier findings",
+        "never substitute another provider or start a panel to keep the loop going",
     ),
     "rumo-plan/references/design-panel.md": (
         "The panel produces designs only, never code, and the plan is not broken into tasks until the user picks one.",
@@ -354,7 +366,22 @@ REFERENCE_RULES = {
 }
 
 # Optional skills under extras/ whose rules guard the user's authority.
-EXTRA_RULES: dict[str, tuple[str, ...]] = {}
+EXTRA_RULES: dict[str, tuple[str, ...]] = {
+    "rumo-offline-delivery-audit": (
+        "A review or audit is static and read-only by default",
+        "never substitute static inspection for installation evidence",
+    ),
+}
+EXTRA_REFERENCE_RULES: dict[str, tuple[str, ...]] = {
+    "rumo-diagram/references/mermaid.md": (
+        "get the user's agreement before installing it",
+        "stop before PNG export",
+    ),
+    "rumo-linux-inspect/references/hardware-inventory.md": (
+        "generating the two new files does not authorize deleting it",
+        "follow `rumo-filesystem-safety`",
+    ),
+}
 
 # Each always-on snippet bullet must restate a rule a skill already owns, so the
 # pasted copy cannot grow rules of its own. Keys match the bullet; values are
@@ -403,6 +430,11 @@ class SkillRulesTest(unittest.TestCase):
             for rule in rules:
                 with self.subTest(skill=skill, rule=rule):
                     self.assertTrue(rule in text, f"{skill}: pinned rule missing")
+        for reference, rules in EXTRA_REFERENCE_RULES.items():
+            text = " ".join((REPO_ROOT / "extras" / reference).read_text(encoding="utf-8").split())
+            for rule in rules:
+                with self.subTest(reference=reference, rule=rule):
+                    self.assertTrue(rule in text, f"{reference}: pinned rule missing")
 
 
 class AlwaysOnSnippetTest(unittest.TestCase):

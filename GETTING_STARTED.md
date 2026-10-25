@@ -146,7 +146,9 @@ $rumo-review 检查当前分支的未提交修改。
 $rumo-verify 我改完了，帮我确认可以提交。
 ```
 
-`rumo-handoff`，以及扩展里的 `rumo-daily-report`、`rumo-linux-inspect`、`rumo-imagegen` 是仅手动调用的技能：不会被客户端自动选用，使用时必须点名，例如 `$rumo-handoff 整理交接文档`。
+扩展里的 `rumo-daily-report`、`rumo-linux-inspect`、`rumo-imagegen` 是仅手动调用的技能：不会被客户端自动选用，使用时必须点名，例如 `$rumo-daily-report 整理日报`。
+
+第二天开新会话接着做时，直接问“汇报一下当前进度，以及下一步该做什么”。`rumo-handoff` 会读取本项目最近的 Claude Code 和 Codex 会话记录，对照仓库状态回答，不需要前一天写交接文档。
 
 ### 完整案例
 

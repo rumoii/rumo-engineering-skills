@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 from pathlib import Path
 import shutil
@@ -51,6 +52,26 @@ class RemoteMemoryScriptTests(unittest.TestCase):
         self.assertIn("comm", script)
         self.assertNotRegex(script, r"grep -[a-zA-Z]*n")
         self.assertIn("grep -ciF", script)
+        self.assertIn("===== process resources =====", script)
+        self.assertIn("/proc/$pid/status", script)
+        self.assertIn("/proc/$pid/fd", script)
+        self.assertIn("not collected: no JVM declared in profile", script)
+
+    def test_jvm_requires_a_declaration_and_uses_only_bounded_read_only_diagnostics(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            profile = Path(temp_dir)
+            (profile / "runtime.json").write_text(json.dumps({"products": {}}), encoding="utf-8")
+            self.assertEqual(REMOTE_MEMORY.jvm_pid_files(profile), [])
+            (profile / "runtime.json").write_text(json.dumps({
+                "products": {"application": {"runtime": "jvm", "pid_file": "/run/application.pid"}}
+            }), encoding="utf-8")
+            declared = REMOTE_MEMORY.jvm_pid_files(profile)
+            self.assertEqual(declared, [("application", "/run/application.pid")])
+            script = REMOTE_MEMORY.remote_script("", "", 30, declared)
+            self.assertIn("jcmd \"$pid\" GC.heap_info", script)
+            self.assertIn("jcmd \"$pid\" VM.native_memory summary", script)
+            self.assertIn("head -80", script)
+            self.assertNotIn("jcmd \"$pid\" Thread.print", script)
 
     @unittest.skipUnless(os.name == "posix" and shutil.which("sh"), "needs a POSIX shell")
     def test_log_summary_reports_counts_without_log_content(self) -> None:

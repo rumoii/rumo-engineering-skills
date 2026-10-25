@@ -9,6 +9,8 @@ Treat the deliverable as the artifact the customer receives, not as a source dir
 
 Do not deploy to a customer, shared environment, or remote host unless the user explicitly requests that write. Building or auditing a local artifact does not authorize external publication.
 
+A review or audit is static and read-only by default: do not execute the packaged entry point or change an installation target. Building requires an inspected entry point and an explicit output directory. Isolated installation, upgrade, or rollback requires separate agreement on the isolated target, write scope, data backup, and rollback authorization. Without that agreement, mark those layers blocked or not run; never substitute static inspection for installation evidence.
+
 ## Establish The Delivery Requirements
 
 Before building or auditing, identify:
@@ -82,7 +84,7 @@ If a networked build is required, that does not prove offline installation. Repe
 
 ## Verify Installation, Upgrade, And Rollback
 
-Execute the packaged entry point from the extracted artifact. Verify the operating system and shell syntax that the customer will use.
+After the isolated-install agreement above, execute the packaged entry point from the extracted artifact. Verify the operating system and shell syntax that the customer will use.
 
 Check:
 

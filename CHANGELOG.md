@@ -4,6 +4,22 @@
 
 ## 未发布
 
+- 看外部 agent 的进度只需一步：`agent_run.py start` 和 `resume` 一启动，就先在 stderr 打印一行现成的 `watch` 命令（含 run ID），stdout 仍然只输出最后的摘要，agent 能直接把这条命令交给你，不必再让你先查 `runs --active`。`agent_run.py watch` 不带 run ID 时，会在同一屏跟踪所有正在运行的任务，每行标明是哪个 CLI、哪个任务；多模型面板的几条线可以一起看。
+- `rumo-handoff` 支持新会话接续：在新会话里问“汇报一下当前进度、下一步做什么”或“接着上次做”时，会用新增的只读脚本 `scripts/session_digest.py` 列出本项目最近的 Claude Code 和 Codex 会话，并压缩成时间线。时间线只保留你的消息、每轮的最终回复和最近一次压缩摘要，不读别的项目的会话。之后对照仓库状态，汇报做到哪了、验证过什么、下一步建议，汇报完就停，等你说继续。会话结束时不需要再写交接文档；交接文档仍然只在你要求时写。它改为可以自动调用，`rumo-coding-guidelines` 的接续流程也指向它。新增触发用例 `handoff-pickup`、`handoff-write`。
+- `rumo-lifecycle-safety`、`rumo-frontend` 的 description 写明不该用的情况：在主机上安装或运维服务交给 `rumo-remote-ops`，没有后台任务的同步代码不用它；只查原因、不要修的页面问题交给 `rumo-debug`。新增不应触发的用例 `lifecycle-skip-service`、`frontend-skip-diagnosis`。
+- `agent_config.py` 读到更新版本的 rumo 写入的配置时，提示先更新技能，不再只报 “version must be 1”；配置文件照旧不被改写。代码里写明以后改结构时的约定：提升版本，同时在读取处补上旧版本的内存升级，下次写入才落盘。
+- 一台机器只有一份 agent 配置，不支持按仓库覆盖：`rumo-setup` 和 README 写明两条退路，某次任务在请求里点名线路；某个仓库长期用另一套时，把 `RUMO_AGENTS_CONFIG` 指向另一份配置。
+- README 把 CLI 分三组写：codex、claude、grok、pi、qwen 实际跑通过，属于支持；aider、cline、copilot、cursor、goose 属于实验性，并写明升为支持的条件；gemini、opencode 已停用，要先解决权限问题才能启用。补充安装器方式固定在某个版本的方法；写明安全护栏是写给 agent 的规则，不是拦截机制。
+- 外部模型评审只归 `rumo-review`：它的面板自己调用协作技能的脚本。`rumo-agent-collaboration` 的 description 和正文不再要求同时加载两个技能，示例里不再用已停用的 Gemini。用例 `collab-external-review` 改为只加载 `rumo-review`，提示词点名 qwen，在 Claude 和 Codex 里意思相同。
+- `rumo-interface` 的 HTTP 评审报告分别说明幂等键对调用主体、租户、操作和 endpoint 的隔离，以及请求指纹，不再用一个合并的“幂等失败”标记掩盖未检查的维度。
+- `rumo-review` 的修复循环保留独立评审，线路由用户点名或 review 配置决定，不再硬编码 Codex 优先；首次外发前确认一次，后续循环沿用同一线路，不默认启动多模型面板。
+- `rumo-handoff` 按 ID 读取旧 Codex 会话时不再受最近 500 条全局记录限制；列表达到扫描预算仍未找全本项目记录时明确报告截断。部署计划脚本现在校验唯一的 Profile deployment 和必要命令，空 Profile 或缺字段会拒绝生成计划。
+- 离线包静态审查不再默认执行安装器，构建和隔离安装分别授权；Mermaid 缺依赖时先取得安装同意；Linux 硬件巡检默认保留旧报告。内存巡检补齐有界线程、FD 和声明式 JVM 证据，缺失时明确标记未收集。
+- 外部 agent 的新运行记录在 POSIX 上默认目录 0700、文件 0600，Windows 保留现有 ACL；README 写明 start/resume 当前仅支持 Windows 和 Linux/WSL。
+- `rumo-setup` 首次运行时问要不要写入常驻基线，推荐写入；写入当前客户端的用户级说明文件，Claude Code 和 Codex 以外的客户端先问文件路径。插件用户因此不需要 clone 仓库。
+- `rumo-coding-guidelines`：小改动和只调查两条流程不再要求先读 `task-flows.md`，表格里的步骤已经写全。
+- 扩展：`rumo-daily-report` 的 description 补上中英文之间的空格；`rumo-imagegen` 去掉无法判断的 “more appropriate” 条件。
+
 ## 0.9.0 - 2026-10-24
 
 - `rumo-plan` 新增多方案设计面板（`references/design-panel.md`）：你让几个模型各出一个方案，或者设计确实拿不准、会影响接口、存储数据或模块边界时，请 `rumo-setup` 配置的 design 线各自独立出一版方案：先写调用方怎么用，再写数据形状、模块划分和放弃过的方案。当前 agent 也出一版，存档后再读各线结果。比较时看坏味道清单和接口深度，选一个做底、最多移植一两处，交给你选定后才拆任务。启动、授权、掉线和运行记录整篇沿用 `rumo-review` 的面板，只替换 brief、自评和比较报告三处。设计坏味道从 3 条扩到 6 条，新增：同一份状态有多个写入者、同一件事有两种做法、同一份清单要多处手动同步。新增触发用例 `plan-design-panel`。

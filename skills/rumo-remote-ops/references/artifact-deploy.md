@@ -2,7 +2,7 @@
 
 Incremental deployment is profile-driven. Do not infer build commands, artifact layout, remote roots, service names, or default hosts from repository names.
 
-Use [`rumo-project-profile`](../../rumo-project-profile/SKILL.md) and require a `backend.json` or `runtime.json` section that identifies:
+Use [`rumo-project-profile`](../../rumo-project-profile/SKILL.md) and require a unique matching entry in `runtime.json` `deployments` that identifies:
 
 - the build command and working directory;
 - source artifacts and their owning modules;
@@ -21,6 +21,6 @@ Use [`rumo-project-profile`](../../rumo-project-profile/SKILL.md) and require a 
 - Restart only the services that consume the changed artifact.
 - Stop on ambiguous module ownership, target paths, service names, failed backup, failed copy, failed restart, or failed health verification.
 
-Run `scripts/incremental_deploy_plan.py --profile <profile-dir> --artifact <file> --host <host> --destination <path> --service <name>` to generate a non-executing plan. The script never connects to a remote host or changes files. Any live deployment remains a separately authorized workflow carried out with the verified commands from the plan and profile.
+Run `scripts/incremental_deploy_plan.py --profile <profile-dir> --artifact <file> --host <host> --destination <path> --service <name>` to generate a non-executing plan. The script reads the unique `runtime.json` deployment matching the destination and includes its build, backup, restart, verification, and rollback commands. A missing or ambiguous deployment, or a required field left empty, rejects the plan. The script never connects to a remote host or changes files. Any live deployment remains a separately authorized workflow carried out with the verified commands from the plan and profile.
 
 Report source commit, build command, artifact hashes, destination, backup, restarted services, verification, rollback readiness, and any field behavior not exercised.

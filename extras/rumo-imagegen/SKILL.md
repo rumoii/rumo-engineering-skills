@@ -1,6 +1,6 @@
 ---
 name: rumo-imagegen
-description: Generate and save one raster image through a user-configured OpenAI-compatible image endpoint. Use only when the user explicitly selects this configured service; do not use for diagrams, screenshots, or when a first-party image tool is more appropriate.
+description: Generate and save one raster image through a user-configured OpenAI-compatible image endpoint. Use only when the user explicitly selects this configured service; do not use for diagrams or screenshots.
 disable-model-invocation: true
 ---
 

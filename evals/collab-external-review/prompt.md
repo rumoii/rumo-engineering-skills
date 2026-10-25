@@ -4,4 +4,4 @@ allowed_tools: [Read, Glob, Grep, Skill]
 tags: [trigger]
 ---
 
-让 Codex 只读评审一下当前 diff。
+让 qwen 只读评审一下当前 diff。

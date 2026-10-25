@@ -18,6 +18,8 @@ Read when continuing delegated or transferred work in a new conversation, or whe
     final.md         the last reply, when one was found
 ```
 
+New run, turn, prompt, event, error, reply, lock, and metadata files are created private on POSIX: directories 0700 and files 0600. Windows keeps the user's existing ACL. Existing records are not migrated or chmodded in bulk.
+
 `resume` uses and revalidates the adapter copy in `meta.json`; start a new run to pick up changed flags. A disable decision in either that snapshot or the current selected adapter blocks recovery without rewriting the snapshot. `status` includes `disabled_reason` and withholds the interactive resume command for disabled runs. Notes and safe cancellation remain available. Do not paste tokens or keys into a brief; name where they live instead. Raw CLI output may contain sensitive material, so keep records private and inspect them before sharing.
 
 ## Turn States

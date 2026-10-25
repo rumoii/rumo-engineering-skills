@@ -28,6 +28,7 @@ import math
 import os
 import re
 import secrets
+import shlex
 import shutil
 import signal
 import subprocess
@@ -487,10 +488,26 @@ def runs_root(value: str | None) -> Path:
     return root.expanduser().resolve()
 
 
+def private_mkdir(path: Path, exist_ok: bool = False) -> None:
+    created = not path.exists()
+    path.mkdir(parents=True, mode=0o700, exist_ok=exist_ok)
+    if created and os.name != "nt":
+        path.chmod(0o700)
+
+
+def private_open(path: Path, mode: str):
+    return open(path, mode, opener=lambda target, flags: os.open(target, flags, 0o600))
+
+
+def private_write(path: Path, data: bytes) -> None:
+    with private_open(path, "wb") as handle:
+        handle.write(data)
+
+
 def write_json(path: Path, data: object) -> None:
     tmp = path.with_name(path.name + f".{os.getpid()}.{secrets.token_hex(4)}.tmp")
     try:
-        tmp.write_bytes((json.dumps(data, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
+        private_write(tmp, (json.dumps(data, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
         os.replace(tmp, path)
     finally:
         tmp.unlink(missing_ok=True)
@@ -501,7 +518,7 @@ def record_lock(run_dir: Path):
     """OS-owned lock: a crashed writer releases it without deleting a lock file."""
     if not (run_dir / "meta.json").is_file():
         raise Refused(f"no run record at {run_dir}")
-    with (run_dir / ".lock").open("a+b") as handle:
+    with private_open(run_dir / ".lock", "a+b") as handle:
         if handle.tell() == 0:
             handle.write(b"\0")
             handle.flush()
@@ -750,12 +767,12 @@ def run_turn(run_dir: Path, meta: dict, kind: str, prompt: str, timeout: float |
                 raise Refused("run changed while preparing the turn; inspect status before retrying")
             if fresh["turns"] and fresh["turns"][-1].get("state") not in TERMINAL:
                 raise Refused("previous turn has no recorded end; inspect status before retrying")
-            turn_dir.mkdir(parents=True)
-            prompt_path.write_bytes(prompt.encode("utf-8"))
+            private_mkdir(turn_dir)
+            private_write(prompt_path, prompt.encode("utf-8"))
             fresh["turns"].append({"number": number, "argv": argv, "state": "created", "created_at": now()})
             write_json(run_dir / "meta.json", fresh)
             # A file-backed stdin cannot block the recorder while sending a large prompt.
-            with prompt_path.open("rb") as input_file, stdout_path.open("wb") as out, (turn_dir / "stderr.log").open("wb") as err:
+            with prompt_path.open("rb") as input_file, private_open(stdout_path, "wb") as out, private_open(turn_dir / "stderr.log", "wb") as err:
                 try:
                     proc = subprocess.Popen(
                         argv, cwd=meta["cwd"], stdin=input_file if adapter["prompt"] == "stdin" else subprocess.DEVNULL,
@@ -808,7 +825,7 @@ def run_turn(run_dir: Path, meta: dict, kind: str, prompt: str, timeout: float |
     parsed = parse_output(adapter, events, text, preassigned)
     session = parsed["session"] or session
     if parsed["final"] is not None:
-        (turn_dir / "final.md").write_bytes(parsed["final"].encode("utf-8"))
+        private_write(turn_dir / "final.md", parsed["final"].encode("utf-8"))
     if timed_out:
         state, result = "timed-out", 3
     elif code == 0 and parsed["final"] is not None and not parsed["error"]:
@@ -955,7 +972,8 @@ def cmd_start(args: argparse.Namespace) -> int:
     prompt = read_prompt(args.prompt_file)
     run_id = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{args.cli}-{secrets.token_hex(3)}"
     run_dir = runs_root(args.runs_dir) / run_id
-    run_dir.mkdir(parents=True)
+    private_mkdir(run_dir.parent, exist_ok=True)
+    private_mkdir(run_dir)
     meta = {
         "run_id": run_id, "cli": args.cli, "adapter_path": entry["path"], "adapter": adapter, "executable": exe,
         "version": report["version"], "cwd": str(cwd), "access": args.access, "model": args.model, "effort": args.effort,
@@ -966,6 +984,7 @@ def cmd_start(args: argparse.Namespace) -> int:
     extra = {"window": open_watch_window(run_dir, 1)} if args.window else {}
     if args.detach:
         return run_detached(run_dir, "start", args.prompt_file, args.timeout, extra)
+    announce(run_dir, 1)
     code = run_turn(run_dir, meta, "start", prompt, args.timeout)
     print(json.dumps({**summary(run_dir), **extra}, ensure_ascii=False, indent=2))
     return code
@@ -998,9 +1017,17 @@ def cmd_resume(args: argparse.Namespace) -> int:
     extra = {"window": open_watch_window(run_dir, len(meta["turns"]) + 1)} if args.window else {}
     if args.detach:
         return run_detached(run_dir, "resume", args.prompt_file, args.timeout, extra)
+    announce(run_dir, len(meta["turns"]) + 1)
     code = run_turn(run_dir, meta, "resume", prompt, args.timeout)
     print(json.dumps({**summary(run_dir), **extra}, ensure_ascii=False, indent=2))
     return code
+
+
+def announce(run_dir: Path, number: int) -> None:
+    """Before the turn runs, tell a caller that runs it in the background how to follow it; stdout keeps only the summary."""
+    argv = watch_argv(run_dir)
+    command = subprocess.list2cmdline(argv) if os.name == "nt" else shlex.join(argv)
+    print(f"run {run_dir.name} turn {number} started; follow it with: {command}", file=sys.stderr, flush=True)
 
 
 def run_detached(run_dir: Path, kind: str, prompt_file: str, timeout: float | None, extra: dict) -> int:
@@ -1014,7 +1041,7 @@ def run_detached(run_dir: Path, kind: str, prompt_file: str, timeout: float | No
         *(["--timeout", repr(timeout)] if timeout is not None else []),
     ]
     survives: bool | None = None
-    with (run_dir / "recorder.log").open("ab") as log:
+    with private_open(run_dir / "recorder.log", "ab") as log:
         options: dict[str, Any] = {"cwd": str(run_dir), "stdin": subprocess.DEVNULL, "stdout": log, "stderr": log}
         if os.name == "nt":
             flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
@@ -1078,101 +1105,171 @@ def select_turn(run_dir: Path, requested: int | None) -> int:
         time.sleep(0.2)
 
 
-def follow_turn(run_dir: Path, number: int, stream: Path | None, consume=None) -> tuple[dict, str | None]:
-    """Poll the record until the turn ends or stalls, passing new output bytes to `consume`.
+class TurnFollower:
+    """Polls one turn's record and output, passing new output bytes to `consume`."""
 
-    Returns the last turn record and, for a stall, the message explaining it.
-    """
-    offset, stalled_since = 0, None
-    while True:
-        with record_lock(run_dir):
-            turn = load_meta(run_dir)["turns"][number - 1]
+    def __init__(self, run_dir: Path, number: int, stream: Path | None, consume=None) -> None:
+        self.run_dir, self.number, self.stream, self.consume = run_dir, number, stream, consume
+        self.offset, self.stalled_since = 0, None
+
+    def step(self) -> tuple[dict, str | None] | None:
+        """One poll: the last turn record and, for a stall, the message explaining it; None while the turn runs."""
+        with record_lock(self.run_dir):
+            turn = load_meta(self.run_dir)["turns"][self.number - 1]
         # Read after the state so that a terminal state also covers every byte written before it.
-        if stream is not None and stream.is_file():
-            with stream.open("rb") as handle:
-                handle.seek(offset)
+        if self.stream is not None and self.stream.is_file():
+            with self.stream.open("rb") as handle:
+                handle.seek(self.offset)
                 chunk = handle.read()
-            offset += len(chunk)
-            if chunk and consume:
-                consume(chunk)
+            self.offset += len(chunk)
+            if chunk and self.consume:
+                self.consume(chunk)
         state = turn.get("state")
         if state in TERMINAL:
             return turn, None
         if state == "created" and "pid" not in turn:
-            problem = f"turn {number} was created but never launched; inspect status"
+            problem = f"turn {self.number} was created but never launched; inspect status"
         elif process_status(turn) in ("gone", "foreign"):
-            problem = f"turn {number} is still {state} but its process is gone; run status, then cancel to reconcile"
+            problem = f"turn {self.number} is still {state} but its process is gone; run status, then cancel to reconcile"
         else:
             problem = None
         if problem is None:
-            stalled_since = None
+            self.stalled_since = None
         else:
-            stalled_since = stalled_since or time.monotonic()
-            if time.monotonic() - stalled_since >= WATCH_GRACE:
+            self.stalled_since = self.stalled_since or time.monotonic()
+            if time.monotonic() - self.stalled_since >= WATCH_GRACE:
                 return turn, problem
-        if consume:
-            consume(b"")
+        if self.consume:
+            self.consume(b"")
+        return None
+
+
+def follow_turn(run_dir: Path, number: int, stream: Path | None, consume=None) -> tuple[dict, str | None]:
+    """Poll the record until the turn ends or stalls; returns the last turn record and any stall message."""
+    follower = TurnFollower(run_dir, number, stream, consume)
+    while (result := follower.step()) is None:
         time.sleep(0.5)
+    return result
 
 
-def cmd_watch(args: argparse.Namespace) -> int:
-    run_dir = run_path(args)
-    number = select_turn(run_dir, args.turn)
-    with record_lock(run_dir):
-        meta = load_meta(run_dir)
-    adapter = meta["adapter"]
-    rules = adapter.get("progress")
-    if rules is None:
-        # Progress rules only render output, so the current adapter may supply them for an older snapshot.
-        current = load_adapters(str(run_dir.parent)).get(meta["cli"])
-        rules = current["adapter"].get("progress") if current and not current["problems"] else None
-    rules = rules or []
-    text_output = adapter["output"]["format"] == "text"
-    turn_dir = run_dir / "turns" / str(number)
-    stream = turn_dir / ("stdout.txt" if text_output else "events.jsonl")
-    pending, seen, heartbeat = b"", 0, time.monotonic()
+class TurnView:
+    """Renders one turn's output as progress lines, each prefixed with `label` when several runs share a screen."""
 
-    def show(line: bytes) -> None:
-        nonlocal seen
+    def __init__(self, run_dir: Path, number: int, label: str = "") -> None:
+        with record_lock(run_dir):
+            self.meta = load_meta(run_dir)
+        adapter = self.meta["adapter"]
+        rules = adapter.get("progress")
+        if rules is None:
+            # Progress rules only render output, so the current adapter may supply them for an older snapshot.
+            current = load_adapters(str(run_dir.parent)).get(self.meta["cli"])
+            rules = current["adapter"].get("progress") if current and not current["problems"] else None
+        self.rules = rules or []
+        self.text_output = adapter["output"]["format"] == "text"
+        self.number, self.label, self.prefix = number, label, f"[{label}] " if label else ""
+        self.turn_dir = run_dir / "turns" / str(number)
+        stream = self.turn_dir / ("stdout.txt" if self.text_output else "events.jsonl")
+        self.follower = TurnFollower(run_dir, number, stream, self.consume)
+        self.pending, self.seen, self.heartbeat = b"", 0, time.monotonic()
+
+    def say(self, text: str) -> None:
+        print(self.prefix + text, flush=True)
+
+    def show(self, line: bytes) -> None:
         text = line.decode("utf-8", errors="replace").rstrip("\r")
-        if text_output:
-            print(text, flush=True)
+        if self.text_output:
+            self.say(text)
             return
         try:
             event = json.loads(text)
         except ValueError:
             return
         if isinstance(event, dict):
-            seen += 1
-            for out in progress_lines(rules, event):
-                print(out, flush=True)
+            self.seen += 1
+            for out in progress_lines(self.rules, event):
+                self.say(out)
 
-    def consume(chunk: bytes) -> None:
-        nonlocal pending, heartbeat
-        *lines, pending = (pending + chunk).split(b"\n")
+    def consume(self, chunk: bytes) -> None:
+        *lines, self.pending = (self.pending + chunk).split(b"\n")
         for line in lines:
-            show(line)
-        if not rules and not text_output and time.monotonic() - heartbeat >= 10:
-            print(f"... {seen} events so far", flush=True)
-            heartbeat = time.monotonic()
+            self.show(line)
+        if not self.rules and not self.text_output and time.monotonic() - self.heartbeat >= 10:
+            self.say(f"... {self.seen} events so far")
+            self.heartbeat = time.monotonic()
 
-    print(f"watching {meta['cli']} run {meta['run_id']} turn {number}; Ctrl+C stops watching, not the run", flush=True)
-    turn, problem = follow_turn(run_dir, number, stream, consume)
-    if problem:
-        print(problem, flush=True)
-        code = 2
-    else:
-        if pending.strip():
-            show(pending)
-        final = turn_dir / "final.md"
-        if not rules and not text_output and final.is_file():
+    def finish(self, turn: dict, problem: str | None) -> int:
+        if problem:
+            self.say(problem)
+            return 2
+        if self.pending.strip():
+            self.show(self.pending)
+        final = self.turn_dir / "final.md"
+        if not self.rules and not self.text_output and final.is_file():
             for line in final.read_text(encoding="utf-8", errors="replace").splitlines()[:20]:
-                print(line, flush=True)
-        print(f"turn {number} {turn['state']}; final reply: {final if final.is_file() else 'none'}", flush=True)
-        code = turn_code(turn["state"])
+                self.say(line)
+        self.say(f"turn {self.number} {turn['state']}; final reply: {final if final.is_file() else 'none'}")
+        return turn_code(turn["state"])
+
+
+def active_headless_runs(root: Path) -> tuple[list[Path], list[str]]:
+    """Headless runs whose latest turn has not ended, oldest first, and the IDs of those whose process is gone."""
+    found, stale = [], []
+    for run_dir in sorted(p for p in root.iterdir() if (p / "meta.json").is_file()) if root.is_dir() else []:
+        try:
+            info = summary(run_dir)
+        except Refused:
+            continue
+        if info["mode"] == "headless" and (info["state"] in RUNNING or info["state"] == "created"):
+            (stale if info.get("process_status") in ("gone", "foreign") else found).append(run_dir.name)
+    return [root / name for name in found], stale
+
+
+def cmd_watch(args: argparse.Namespace) -> int:
+    if args.run_id is None:
+        if args.turn is not None:
+            raise Refused("--turn needs a run ID")
+        run_dirs, stale = active_headless_runs(runs_root(args.runs_dir))
+        if stale:
+            print(f"skipping {len(stale)} run(s) recorded as running whose process is gone: {', '.join(stale)}; "
+                  "run status, then cancel to reconcile", flush=True)
+        if not run_dirs:
+            print("no active headless runs; `runs` lists the recorded ones", flush=True)
+            code = 0
+        elif len(run_dirs) == 1:
+            code = watch_one(run_dirs[0])
+        else:
+            code = watch_many(run_dirs)
+    else:
+        code = watch_one(run_path(args), args.turn)
     if args.hold:
         hold_window("press Enter to close")
     return code
+
+
+def watch_one(run_dir: Path, turn: int | None = None) -> int:
+    view = TurnView(run_dir, select_turn(run_dir, turn))
+    view.say(f"watching {view.meta['cli']} run {view.meta['run_id']} turn {view.number}; Ctrl+C stops watching, not the run")
+    while (result := view.follower.step()) is None:
+        time.sleep(0.5)
+    return view.finish(*result)
+
+
+def watch_many(run_dirs: list[Path]) -> int:
+    views = []
+    for run_dir in run_dirs:
+        with record_lock(run_dir):
+            cli = load_meta(run_dir)["cli"]
+        views.append(TurnView(run_dir, select_turn(run_dir, None), f"{cli} {run_dir.name[-6:]}"))
+    print(f"watching {len(views)} active runs: " + ", ".join(f"[{view.label}] {view.meta['run_id']}" for view in views)
+          + "; Ctrl+C stops watching, not the runs", flush=True)
+    codes: dict[int, int] = {}
+    while len(codes) < len(views):
+        for index, view in enumerate(views):
+            if index not in codes and (result := view.follower.step()) is not None:
+                codes[index] = view.finish(*result)
+        if len(codes) < len(views):
+            time.sleep(0.5)
+    return max(codes.values())
 
 
 def cmd_wait(args: argparse.Namespace) -> int:
@@ -1293,14 +1390,15 @@ def cmd_open(args: argparse.Namespace) -> int:
     argv = [*exe, *render(adapter, "interactive_start", args.access, str(cwd), args.model, session, None,
                           opening=opening, run_name=run_id, effort=args.effort)]
     refuse_batch_shell_syntax(exe, argv)
-    prompt_path.parent.mkdir(parents=True)
+    private_mkdir(run_dir.parent, exist_ok=True)
+    private_mkdir(prompt_path.parent)
     write_json(run_dir / "meta.json", {
         "run_id": run_id, "cli": args.cli, "adapter_path": entry["path"], "adapter": adapter, "executable": exe,
         "version": report["version"], "cwd": str(cwd), "access": args.access, "model": args.model, "effort": args.effort, "mode": "interactive",
         "session_id": session, "created_at": now(), "outcomes": [],
         "turns": [{"number": 1, "kind": "interactive", "argv": argv, "state": "created", "created_at": now()}],
     })
-    prompt_path.write_bytes(prompt.encode("utf-8"))
+    private_write(prompt_path, prompt.encode("utf-8"))
     host = [sys.executable, str(Path(__file__).resolve()), "_host", run_id, "--runs-dir", str(run_dir.parent)]
     window = open_window(host, str(cwd), f"{args.cli} {run_id}")
     if not window["opened"]:
@@ -1512,8 +1610,9 @@ def main(argv: list[str] | None = None) -> int:
                    help="Also open a terminal window that watches the turn; by default only `watch` shows progress.")
     p.add_argument("--runs-dir")
 
-    p = sub.add_parser("watch", help="Follow a turn's progress until it ends; exits with the turn's code.")
-    p.add_argument("run_id")
+    p = sub.add_parser("watch", help="Follow a turn's progress until it ends; exits with the turn's code. "
+                       "Without a run ID, follows every active headless run on one screen.")
+    p.add_argument("run_id", nargs="?")
     p.add_argument("--turn", type=int, help="Turn number; defaults to the latest.")
     p.add_argument("--hold", action="store_true", help="Wait for Enter before exiting, so a window stays open.")
     p.add_argument("--runs-dir")

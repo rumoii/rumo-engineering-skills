@@ -135,6 +135,14 @@ class AgentConfigTest(unittest.TestCase):
                 self.assertEqual(self.run_config("set-auto-panel", "off").returncode, 2)
                 self.assertEqual(self.config.read_text(encoding="utf-8"), content)
 
+    def test_a_newer_configuration_asks_for_an_update(self) -> None:
+        content = json.dumps({"version": 2, "roles": {}})
+        self.config.write_text(content, encoding="utf-8")
+        result = self.run_config("set-auto-panel", "off")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("written by a newer rumo-engineering-skills", result.stderr.decode("utf-8", "replace"))
+        self.assertEqual(self.config.read_text(encoding="utf-8"), content)
+
     def test_probe_runs_one_read_only_turn_per_distinct_lane(self) -> None:
         exe = f"codex={self.fake}"
         self.assertEqual(self.run_config("set-role", "review", "--lane", "codex@high", "--executable", exe).returncode, 0)

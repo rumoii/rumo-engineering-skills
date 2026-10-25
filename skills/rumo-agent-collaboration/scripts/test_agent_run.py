@@ -718,6 +718,51 @@ class DetachWatchTest(Harness):
         self.assertNotIn(PROMPT.splitlines()[1], out)
         self.assertIn("turn 1 exited", out)
 
+    def test_watch_without_a_run_id_follows_every_active_run_on_one_screen(self) -> None:
+        runs = [self.start_detached(mode="hang"), self.start_detached(mode="hang")]
+        watcher = subprocess.Popen([sys.executable, str(SCRIPT), "watch", "--runs-dir", str(self.runs)],
+                                   env=self.env("pi"), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        time.sleep(3)
+        for info in runs:
+            cancel = self.run_script("cancel", info["run_id"], "--runs-dir", str(self.runs), dialect="pi")
+            self.assertEqual(cancel.returncode, 0, cancel.stderr.decode("utf-8", "replace"))
+        out, err = (stream.decode("utf-8", "replace") for stream in watcher.communicate(timeout=120))
+        self.assertIn("watching 2 active runs", out, err)
+        for info in runs:
+            self.assertIn(f"[pi {info['run_id'][-6:]}] turn 1 cancelled", out)
+            self.wait_for_recorder(info, 1)
+
+    def test_watch_without_a_run_id_reports_when_nothing_runs(self) -> None:
+        self.assertEqual(self.start("codex").returncode, 0)
+        idle = self.run_script("watch", "--runs-dir", str(self.runs))
+        self.assertEqual(idle.returncode, 0, idle.stderr.decode("utf-8", "replace"))
+        self.assertIn("no active headless runs", idle.stdout.decode("utf-8"))
+        refused = self.run_script("watch", "--turn", "1", "--runs-dir", str(self.runs))
+        self.assertEqual(refused.returncode, 2)
+        self.assertIn("--turn needs a run ID", refused.stderr.decode("utf-8"))
+
+    def test_watch_without_a_run_id_skips_runs_whose_process_is_gone(self) -> None:
+        summary = json.loads(self.start("codex").stdout)
+        run_dir = self.runs / summary["run_id"]
+        meta = self.meta(run_dir)
+        marker = agent_run.start_marker(os.getpid())
+        self.assertIsNotNone(marker)
+        meta["turns"].append({"number": 2, "state": "launched", "pid": os.getpid(), "pid_started": marker + "1"})
+        agent_run.write_json(run_dir / "meta.json", meta)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = agent_run.cmd_watch(argparse.Namespace(run_id=None, turn=None, hold=False, runs_dir=str(self.runs)))
+        self.assertEqual(code, 0)
+        self.assertIn(f"skipping 1 run(s) recorded as running whose process is gone: {summary['run_id']}", out.getvalue())
+        self.assertIn("no active headless runs", out.getvalue())
+
+    def test_start_names_the_watch_command_on_stderr_and_keeps_stdout_json(self) -> None:
+        result = self.start("codex")
+        summary = json.loads(result.stdout)
+        first = result.stderr.decode("utf-8").splitlines()[0]
+        self.assertIn(f"run {summary['run_id']} turn 1 started; follow it with: ", first)
+        self.assertIn(f"watch {summary['run_id']}", first)
+
     def test_detached_resume_waits_for_the_running_turn_then_continues(self) -> None:
         info = self.start_detached(mode="hang")
         busy = self.detached("resume", info["run_id"], "--prompt-file", str(self.prompt))
@@ -1549,6 +1594,29 @@ class SafetyRegressionTest(unittest.TestCase):
             agent_run.update_turn(root, 1, state="cancelled")
             agent_run.update_turn(root, 1, state="exited")
             self.assertEqual(original(root)["turns"][0]["state"], "cancelled")
+
+
+class PrivateRecordsTest(unittest.TestCase):
+    @unittest.skipUnless(os.name == "posix", "POSIX permissions")
+    def test_new_run_directories_and_files_are_private(self) -> None:
+        import stat
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp) / "runs" / "run"
+            turn_dir = run_dir / "turns" / "1"
+            agent_run.private_mkdir(run_dir.parent, exist_ok=True)
+            agent_run.private_mkdir(turn_dir)
+            agent_run.private_write(turn_dir / "prompt.md", b"private brief")
+            with agent_run.private_open(turn_dir / "events.jsonl", "wb") as handle:
+                handle.write(b"{}")
+            with agent_run.private_open(turn_dir / "stderr.log", "wb") as handle:
+                handle.write(b"")
+            agent_run.write_json(run_dir / "meta.json", {"turns": []})
+            with agent_run.record_lock(run_dir):
+                pass
+            for directory in (run_dir.parent, run_dir, turn_dir.parent, turn_dir):
+                self.assertEqual(stat.S_IMODE(directory.stat().st_mode), 0o700)
+            for path in (turn_dir / "prompt.md", turn_dir / "events.jsonl", turn_dir / "stderr.log", run_dir / "meta.json", run_dir / ".lock"):
+                self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
 
 
 if __name__ == "__main__":

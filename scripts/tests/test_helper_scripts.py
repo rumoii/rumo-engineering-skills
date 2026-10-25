@@ -44,14 +44,27 @@ class IncrementalDeployPlanTests(unittest.TestCase):
         self.root = Path(self.temp_dir.name)
         self.profile = self.root / "profile"
         self.profile.mkdir()
+        self.deployment = {
+            "id": "application",
+            "purpose": "development",
+            "host_env": "PROJECT_DEPLOY_HOST",
+            "user_env": "PROJECT_DEPLOY_USER",
+            "destination": "/srv/app",
+            "services": ["application"],
+            "backup_rule": "timestamped-copy",
+            "restart_command": "systemctl restart application",
+            "verification_commands": ["curl -fsS http://127.0.0.1/health"],
+            "rollback_command": "/srv/app/rollback.sh",
+            "build_command": "./build.sh",
+            "build_workdir": ".",
+        }
+        self.write_deployments([self.deployment])
 
-    def tearDown(self) -> None:
-        self.temp_dir.cleanup()
+    def write_deployments(self, deployments: list[dict]) -> None:
+        (self.profile / "runtime.json").write_text(json.dumps({"deployments": deployments}), encoding="utf-8")
 
-    def test_plan_hashes_artifacts_without_remote_writes(self) -> None:
-        artifact = self.root / "app.jar"
-        artifact.write_bytes(b"artifact-bytes")
-        result = run_script(
+    def run_plan(self, artifact: Path) -> subprocess.CompletedProcess[str]:
+        return run_script(
             DEPLOY_PLAN,
             "--profile", str(self.profile),
             "--artifact", str(artifact),
@@ -59,24 +72,52 @@ class IncrementalDeployPlanTests(unittest.TestCase):
             "--destination", "/srv/app",
         )
 
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    def test_plan_hashes_artifacts_without_remote_writes(self) -> None:
+        artifact = self.root / "app.jar"
+        artifact.write_bytes(b"artifact-bytes")
+        result = self.run_plan(artifact)
+
         self.assertEqual(result.returncode, 0, result.stderr)
         plan = json.loads(result.stdout)
         self.assertEqual(plan["mode"], "dry-run")
         self.assertIs(plan["executes_remote_writes"], False)
         self.assertEqual(plan["artifacts"][0]["sha256"], hashlib.sha256(b"artifact-bytes").hexdigest())
         self.assertEqual(plan["artifacts"][0]["size"], len(b"artifact-bytes"))
+        self.assertEqual(plan["build"], {"command": "./build.sh", "workdir": "."})
+        self.assertEqual(plan["backup"], "timestamped-copy")
+        self.assertEqual(plan["rollback"], "/srv/app/rollback.sh")
+        self.assertEqual(plan["verification"], ["curl -fsS http://127.0.0.1/health"])
 
     def test_missing_artifact_is_rejected(self) -> None:
-        result = run_script(
-            DEPLOY_PLAN,
-            "--profile", str(self.profile),
-            "--artifact", str(self.root / "missing.jar"),
-            "--host", "example.test",
-            "--destination", "/srv/app",
-        )
+        result = self.run_plan(self.root / "missing.jar")
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("artifact not found", result.stderr)
+
+    def test_empty_or_incomplete_profile_is_rejected(self) -> None:
+        artifact = self.root / "app.jar"
+        artifact.write_bytes(b"artifact-bytes")
+        (self.profile / "runtime.json").unlink()
+        result = self.run_plan(artifact)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("deployments list is required", result.stderr)
+
+        del self.deployment["rollback_command"]
+        self.write_deployments([self.deployment])
+        result = self.run_plan(artifact)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("rollback_command", result.stderr)
+
+    def test_missing_or_ambiguous_destination_is_rejected(self) -> None:
+        artifact = self.root / "app.jar"
+        artifact.write_bytes(b"artifact-bytes")
+        self.write_deployments([self.deployment, self.deployment])
+        result = self.run_plan(artifact)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("found 2", result.stderr)
 
 
 class FrontendProbeTests(unittest.TestCase):

@@ -78,4 +78,4 @@ Exercise the assembled route and serializer, not only helpers. Depending on the 
 
 ## Review Output
 
-Order findings by consequence: broken consumers; authentication, authorization, and isolation defects; duplicate effects, unbounded cost, throttling, and incident-control gaps; pagination, response cost, errors, and leaked internals; ergonomics only when they create a concrete burden. Cite file and line, and end with the checklist marks. If nothing verified survives, say so.
+Order findings by consequence: broken consumers; authentication, authorization, and isolation defects; duplicate effects, unbounded cost, throttling, and incident-control gaps; pagination, response cost, errors, and leaked internals; ergonomics only when they create a concrete burden. Cite file and line, and end with the checklist marks. For idempotency, report key scoping to the principal, tenant, operation, and endpoint, plus the request fingerprint, separately; never hide an unchecked dimension behind a combined idempotency failure mark. If nothing verified survives, say so.

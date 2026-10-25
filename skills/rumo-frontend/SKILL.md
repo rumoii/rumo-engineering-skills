@@ -1,6 +1,6 @@
 ---
 name: rumo-frontend
-description: Use when building, refactoring, or designing frontend pages and components, including a new interface with no existing pattern to follow or a request to improve visual quality or accessibility; starting or troubleshooting a local frontend development server (package scripts, backend proxy, ports, certificates, micro-frontends); or capturing browser evidence such as screenshots or a short GIF when explicitly asked. Do not capture persistent visual evidence merely because frontend code changed.
+description: Use when building, refactoring, or designing frontend pages and components, including a new interface with no existing pattern to follow or a request to improve visual quality or accessibility; starting or troubleshooting a local frontend development server (package scripts, backend proxy, ports, certificates, micro-frontends); or capturing browser evidence such as screenshots or a short GIF when explicitly asked. Do not capture persistent visual evidence merely because frontend code changed, and do not use to diagnose broken behavior in an existing page without a fix request (use rumo-debug).
 ---
 
 # Rumo Frontend

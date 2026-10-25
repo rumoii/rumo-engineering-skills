@@ -32,7 +32,7 @@
 
 - **团队实战出来的。** 我所在公司的研发部门自 2026 年 6 月起有数十人日常使用这套技能，他们用的是加入了具体业务内容的定制版；这里是去掉业务内容的通用版。技能里不含任何公司、产品、主机或部署信息，私有信息放在本地 [项目 Profile](#进阶) 里。文档中文优先，另有完整英文版。
 - **用评测说话，不靠自述。** 在 Claude Code 和 Codex 上分别评测两件事：会不会根据一句普通的话选中技能，选中后做得对不对；并设有不装技能的对照组。技能的描述或行为规则一改，推送前就要在真实客户端上[验收](CONTRIBUTING.md#acceptance-before-push)。用例都在 [`evals/`](evals/)。
-- **危险操作有刹车。** 删库、删文件、改服务器、碰生产环境之前，先只读确认目标和影响范围，备份和回滚准备好、你明确同意后才写。
+- **危险操作有刹车。** 删库、删文件、改服务器、碰生产环境之前，先只读确认目标和影响范围，备份和回滚准备好、你明确同意后才写。这些是写给 agent 的规则，不是拦截机制；要硬性限制，请用客户端自己的权限设置。
 - **小事不折腾。** 改一行文案不写计划、不做评审，改完跑最相关的检查就交付。每条技能描述不超过 100 词，由校验器把关，常驻上下文的开销很小。
 - **验证一次，以后照着做。** 项目验证配方把“怎么启动、点哪里、看到什么算成功”写下来，并实际跑通一次。下一个 agent 不用重新摸索，改完直接照着验证真实功能。
 - **跨客户端，能协作。** 同一套技能可以装进 Claude Code、Codex 和其他读 `SKILL.md` 的客户端；还能把任务交给本机的另一个 CLI 或模型去执行，或者请你配置的几个模型同时独立评审同一份改动；agent 自己也评一遍，逐条对照代码核实后合并成一份报告，注明每条问题是哪几个模型提出的。
@@ -150,6 +150,11 @@ cd rumo-engineering-skills
 - 以后随时重跑 `/rumo-setup`，或直接说“把评审换成 grok，思考强度 high”；只改你点名的项。
 - 配置在 `~/.rumo-engineering-skills/agents.json`，只有脚本读它，不占会话上下文。没配置时，用到多模型功能的地方会提示你先运行 `rumo-setup`。
 - 默认只用当前 agent 一条线；多模型只在你点名、改动被评为高风险，或 agent 判断值得时才开，后两种是否先问你由配置里的 `auto_panel` 决定。
+- 一台机器只有这一份配置，不支持按仓库覆盖。某次想换线，直接在请求里点名，例如“用 codex 评审”；某个仓库要长期用另一套，在那个目录里把 `RUMO_AGENTS_CONFIG` 指向另一份配置（可以用 direnv 之类的工具自动切换），再运行 `rumo-setup`。
+- 支持的 CLI 分三组：
+  - **支持**：codex、claude、grok、pi、qwen，都实际跑通过。
+  - **实验性**：aider、cline、copilot、cursor、goose，适配器是按各自文档写的，`rumo-setup` 会标为“未测试”。装上其中某个后，按 [adapters.md](skills/rumo-agent-collaboration/references/adapters.md) 跑 `check`，再跑一轮真实的只读调用，把结果写进 `verified`，它就升为支持。
+  - **已停用**：gemini、opencode。它们的只读设置可能被绕过（原因见 adapters.md），脚本拒绝启动。要启用，得先把权限问题解决；不能靠删掉 `disabled_reason` 来启用。
 
 ### 遇到问题
 
@@ -165,7 +170,7 @@ cd rumo-engineering-skills
 | Codex | 安装器 | 安装、加载、自动选用评测、行为评测（含实际运行测试的用例） |
 | 其他读取 `~/.agents/skills` 的客户端 | 安装器 + 共享目录 | 只验证过安装和加载 |
 
-点名调用成功只说明客户端加载了技能，不说明它会根据自然语言自动选中技能。其他客户端的接入方式见[新手指南](GETTING_STARTED.md#其他客户端)。
+点名调用成功只说明客户端加载了技能，不说明它会根据自然语言自动选中技能。其他客户端的接入方式见[新手指南](GETTING_STARTED.md#其他客户端)。外部 agent 的 `start` / `resume` 目前只支持 Windows 和 Linux/WSL；其他平台（包括 macOS）只能查看已有运行记录，安装技能不代表可以使用这些外部运行功能。
 
 ## 默认技能
 
@@ -188,11 +193,11 @@ cd rumo-engineering-skills
 | `rumo-remote-ops` | 远程 Linux 查询与变更、服务部署、备份恢复和制品部署 |
 | `rumo-prose` | 保留全部事实的注释、报错、日志、界面文案、文档与 agent 文件 |
 | `rumo-frontend` | 前端页面开发与新界面设计、可访问性检查、本地开发服务排障、按需采集浏览器证据 |
-| `rumo-handoff` | 生成自包含的交接文档，便于其他会话或客户端接力（仅手动调用） |
+| `rumo-handoff` | 新会话里问“汇报一下当前进度、下一步做什么”时，读取本项目最近的 Claude Code 和 Codex 会话记录并对照仓库状态接续；你要求时生成自包含的交接文档 |
 | `rumo-project-profile` | 为其他技能解析和校验私有项目 Profile |
 | `rumo-reflect` | 复盘当前会话的反复错误与纠正，逐条讨论该固化到哪里，你批准后才改 |
 | `rumo-setup` | 首次或随时配置多模型评审、多方案设计和默认委派用的 CLI、模型与思考强度，保存前逐条只读探测 |
-| `rumo-agent-collaboration` | 把任务交给另一个 CLI 或模型（Codex、Claude Code、pi、qwen、grok、Cursor、GitHub Copilot CLI、Aider、Cline CLI、Goose，或自己加适配器接入的 CLI，以及 Orca）委派、整体转交或接力；客户端自带的子 agent 不归它管。点名且范围明确即构成授权，每个任务一个负责人；支持只读和开发，native-write 不承诺目录隔离，文档适配器仍标未核实。支持 Windows、Linux/WSL；Gemini CLI、OpenCode 声明保留供查看，启动和旧记录恢复均被脚本拒绝 |
+| `rumo-agent-collaboration` | 把任务委派、整体转交或接力给另一个 CLI 或模型，也可以通过 Orca 协作；客户端自带的子 agent 不归它管。支持哪些 CLI 见[第一次配置 agent](#第一次配置-agent可选) |
 
 ## 可选扩展
 
@@ -238,7 +243,7 @@ cd rumo-engineering-skills
 ./install.sh --no-pull --remove-baseline
 ```
 
-之后不带参数重跑安装器时会自动更新这段内容；没写入过的，安装结束时会提示一行。插件用户和其他客户端可以在 clone 下来的仓库目录里运行辅助脚本，例如 `python3 skills/rumo-coding-guidelines/scripts/baseline_block.py --target ~/.claude/CLAUDE.md --install`，也可以手动把 [agents-snippet.md](skills/rumo-coding-guidelines/references/agents-snippet.md) 里的代码块贴进去。
+之后不带参数重跑安装器时会自动更新这段内容；没写入过的，安装结束时会提示一行。插件用户和其他客户端第一次运行 `rumo-setup` 时，它会问要不要写入当前客户端的用户级说明文件，不需要 clone 仓库；用的不是 Claude Code 或 Codex 时，它会先问你那个文件的路径。也可以在 clone 下来的仓库目录里直接运行辅助脚本，例如 `python3 skills/rumo-coding-guidelines/scripts/baseline_block.py --target ~/.claude/CLAUDE.md --install`，也可以手动把 [agents-snippet.md](skills/rumo-coding-guidelines/references/agents-snippet.md) 里的代码块贴进去。
 
 </details>
 
@@ -246,7 +251,7 @@ cd rumo-engineering-skills
 
 安装器只会写这几处：客户端技能目录里的 `rumo-*` 链接；你同意后写入 `CLAUDE.md`、`AGENTS.md` 的基线标记块；以及用 `-ProfilesRepo` 时保存的 `~/.rumo-engineering-skills/config.json`。
 
-**更新。** 安装器：去掉 `-NoPull`（`--no-pull`）重跑 `.\install.ps1` 或 `./install.sh`，它会先 `git pull --ff-only` 拉取最新版本，再重新链接，已装的扩展和基线会保留，然后开新会话。插件：先执行 `claude plugin marketplace update rumo-engineering-skills`，再执行 `claude plugin update rumo-engineering-skills@rumo-engineering-skills`，然后开新会话。已装的插件只在发版提升 `version` 后才会更新；每版改了什么见 [CHANGELOG.md](CHANGELOG.md)。
+**更新。** 安装器：去掉 `-NoPull`（`--no-pull`）重跑 `.\install.ps1` 或 `./install.sh`，它会先 `git pull --ff-only` 拉取最新版本，再重新链接，已装的扩展和基线会保留，然后开新会话。插件：先执行 `claude plugin marketplace update rumo-engineering-skills`，再执行 `claude plugin update rumo-engineering-skills@rumo-engineering-skills`，然后开新会话。已装的插件只在发版提升 `version` 后才会更新；每版改了什么见 [CHANGELOG.md](CHANGELOG.md)。安装器装的是指向本仓库的链接，想固定在某个版本时，在仓库目录执行 `git checkout v0.9.0` 这类发版标签，再加 `-NoPull`（`--no-pull`）重跑安装器；回到最新版本时先 `git checkout main`，再不带 `-NoPull` 重跑。
 
 **卸载。** 安装器：可以先加 `-DryRun`（`--dry-run`）看会删什么，再运行 `.\install.ps1 -Uninstall` 或 `./install.sh --uninstall`。卸载只删除指向本仓库的 `rumo-*` 链接和常驻基线，不碰其他来源的技能；clone 下来的仓库、`~/.rumo-engineering-skills/config.json` 和项目 Profile 都会保留，不再需要时手动删除。插件：执行 `claude plugin uninstall rumo-engineering-skills@rumo-engineering-skills`，然后开新会话。
 

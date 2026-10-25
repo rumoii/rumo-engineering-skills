@@ -1,6 +1,6 @@
 ---
 name: rumo-daily-report
-description: "Generate a plain-language Chinese daily report from the current completed conversation and append it to the configured date-based TXT file when the user asks to整理日报 or generate a daily report."
+description: "Generate a plain-language Chinese daily report from the current completed conversation and append it to the configured date-based TXT file when the user asks to 整理日报 or generate a daily report."
 disable-model-invocation: true
 ---
 

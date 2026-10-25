@@ -316,6 +316,12 @@ def run_case(args: argparse.Namespace, name: str, overrides: list[dict], setting
         base += ["-c", 'windows.sandbox="unelevated"']
     for key, value in settings.items():
         base += ["-c", key + "=" + json.dumps(value)]
+    if name == "commit-prepare":
+        base += [
+            "-c", 'default_permissions="rumo-commit-sample"',
+            "-c", 'permissions.rumo-commit-sample.extends=":workspace"',
+            "-c", 'permissions.rumo-commit-sample.filesystem={":workspace_roots"={".git"="write"}}',
+        ]
     all_events: list[dict] = []
     runs = []
     started = time.monotonic()
@@ -324,7 +330,10 @@ def run_case(args: argparse.Namespace, name: str, overrides: list[dict], setting
         if turn == 1:
             paths = "\n".join(str(root / ".agents" / "skills" / name / "SKILL.md") for name in case["skills"])
             prompt = f"Read and apply these exact skill files and their applicable references before acting:\n{paths}\n\n{question}" if with_skills else question
-            command = [*base, "--sandbox", "workspace-write", "--cd", str(root), "-"]
+            command = [*base]
+            if name != "commit-prepare":
+                command += ["--sandbox", "workspace-write"]
+            command += ["--cd", str(root), "-"]
         else:
             if not thread:
                 break

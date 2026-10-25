@@ -32,7 +32,7 @@ You do not need to learn engineering conventions first. Once installed, the agen
 
 - **Proven on a real team.** Since June 2026, dozens of engineers in the R&D department at my company have used these skills daily, in a customized edition with company-specific business content; this repository is the general edition without it. The skills carry no company, product, host, or deployment specifics; private facts live in a local [project profile](#advanced). Documentation is Chinese-first, with a complete English edition.
 - **Evals, not claims.** Model-run evals in Claude Code and Codex check two things: whether a plain-language request picks the right skill, and whether the agent then does the right thing, against a baseline arm without the skills. Any change to a skill's description or behavioral rules is [accepted in a real client](CONTRIBUTING.md#acceptance-before-push) before push. The cases live in [`evals/`](evals/).
-- **Brakes on risky operations.** Before dropping data, deleting files, changing a server, or touching production, the agent confirms the target and blast radius read-only and writes only after backup, rollback, and your explicit approval.
+- **Brakes on risky operations.** Before dropping data, deleting files, changing a server, or touching production, the agent confirms the target and blast radius read-only and writes only after backup, rollback, and your explicit approval. These are rules for the agent, not an enforcement mechanism; use your client's own permission settings for hard limits.
 - **Small tasks stay small.** A one-line copy change gets no plan and no review, just the most relevant check before handoff. Every skill description stays within 100 words, enforced by the validator, so the always-loaded context stays cheap.
 - **Verify once, reuse every time.** A project verification recipe records how to start the application, what to click, and what proves success, and is run end to end once. The next agent follows it to check real features instead of rediscovering them.
 - **Cross-client, and able to delegate.** The same skills install into Claude Code, Codex, and other clients that read `SKILL.md`. They can also hand a task to another local CLI or model, or have the models you configured review the same change independently; the agent reviews it too, checks every finding against the code, and merges them into one report that names which models raised each finding.
@@ -150,6 +150,11 @@ Multi-model review, multi-design comparison, and handing work to another agent u
 - Rerun `/rumo-setup` at any time, or say "make review use grok at high"; only the items you name change.
 - The configuration lives in `~/.rumo-engineering-skills/agents.json`. Only scripts read it, so it costs no session context. Until it exists, features that need another agent tell you to run `rumo-setup`.
 - By default only the current agent works. A multi-model panel opens when you ask, when a change is rated high risk, or when the agent judges it worthwhile; `auto_panel` in the configuration decides whether the last two ask you first.
+- There is one configuration per machine and no per-repository override. To use other lanes once, name them in the request, such as "review this with codex". For a repository that should always use other lanes, point `RUMO_AGENTS_CONFIG` at a separate file while working there (direnv or a similar tool can switch it per directory), then run `rumo-setup`.
+- CLIs come in three groups:
+  - **Supported**: codex, claude, grok, pi, and qwen, each with a completed real run.
+  - **Experimental**: aider, cline, copilot, cursor, and goose, whose adapters are written from each CLI's documentation; `rumo-setup` marks them untested. After installing one, run `check` and one real read-only turn as [adapters.md](skills/rumo-agent-collaboration/references/adapters.md) describes, and record the result in `verified` to make it supported.
+  - **Disabled**: gemini and opencode, whose read-only settings can be bypassed (see adapters.md), so the scripts refuse to start them. Enabling one needs that permission gap fixed first, never just removing `disabled_reason`.
 
 ### Troubleshooting
 
@@ -165,7 +170,7 @@ Multi-model review, multi-design comparison, and handing work to another agent u
 | Codex | Installer | Install, loading, trigger evals, behavior evals (including cases that run tests) |
 | Other clients that read `~/.agents/skills` | Installer plus the shared directory | Install and loading only |
 
-A successful call by name shows that the client loaded the skill, not that it will pick the skill from a plain-language request. [GETTING_STARTED.md](GETTING_STARTED.md#其他客户端) (Chinese) shows how to connect other clients.
+A successful call by name shows that the client loaded the skill, not that it will pick the skill from a plain-language request. [GETTING_STARTED.md](GETTING_STARTED.md#其他客户端) (Chinese) shows how to connect other clients. External-agent `start` and `resume` currently require Windows or Linux/WSL. Other platforms, including macOS, can inspect existing run records only; installing the skills does not enable those external-run features.
 
 ## Default Skills
 
@@ -188,11 +193,11 @@ Installed by default.
 | `rumo-remote-ops` | Remote Linux queries and changes, service deployment, backup and restore, and artifact deployment |
 | `rumo-prose` | Comments, errors, logs, UI strings, docs, and agent-facing files that keep every fact |
 | `rumo-frontend` | Frontend page work and new interface design with accessibility checks, local dev-server troubleshooting, and requested browser evidence |
-| `rumo-handoff` | A self-contained handoff document for another session or client (manual only) |
+| `rumo-handoff` | In a new session, asked for the current progress or the next step, condense this project's recent Claude Code and Codex sessions and check them against the repository; on request, write a self-contained handoff document |
 | `rumo-project-profile` | Resolve and validate private project profiles for other skills |
 | `rumo-reflect` | Session retrospective: recurring mistakes and corrections, each fix discussed and applied only with your approval |
 | `rumo-setup` | Choose, once or at any time, the CLI, model, and reasoning effort for multi-model review, multi-design comparison, and default delegation; probes each lane read-only before saving |
-| `rumo-agent-collaboration` | Delegate, transfer, or relay work to another agent CLI or model (Codex, Claude Code, pi, qwen, grok, Cursor, GitHub Copilot CLI, Aider, Cline CLI, Goose, any CLI you add an adapter for, or Orca), leaving native subagents alone. A named route and bounded task supply authorization; one owner handles read-only or development work. Native-write promises no directory isolation; documented adapters stay unverified. Supports Windows and Linux/WSL. Gemini CLI and OpenCode declarations remain inspectable, but the runner blocks new turns and recovery of old records |
+| `rumo-agent-collaboration` | Delegate, transfer, or relay work to another agent CLI or model, or collaborate through Orca, leaving native subagents alone. See [Configure Agents The First Time](#configure-agents-the-first-time-optional) for which CLIs are supported |
 
 ## Optional Extras
 
@@ -238,7 +243,7 @@ Clients load a skill only when its description matches the request, so a small e
 ./install.sh --no-pull --remove-baseline
 ```
 
-Later runs without options keep the block current, and when it is absent they end with a one-line reminder. Plugin users and other clients can run the helper directly, for example `python3 skills/rumo-coding-guidelines/scripts/baseline_block.py --target ~/.claude/CLAUDE.md --install`, or paste the block from [agents-snippet.md](skills/rumo-coding-guidelines/references/agents-snippet.md) by hand.
+Later runs without options keep the block current, and when it is absent they end with a one-line reminder. Plugin users and other clients are offered the block the first time they run `rumo-setup`, which writes the current client's user-level instruction file without a clone and asks for that file's path in a client other than Claude Code or Codex. You can also run the helper directly, for example `python3 skills/rumo-coding-guidelines/scripts/baseline_block.py --target ~/.claude/CLAUDE.md --install`, or paste the block from [agents-snippet.md](skills/rumo-coding-guidelines/references/agents-snippet.md) by hand.
 
 </details>
 
@@ -246,7 +251,7 @@ Later runs without options keep the block current, and when it is absent they en
 
 The installer writes only these: the `rumo-*` links in client skill directories; the baseline block in `CLAUDE.md` and `AGENTS.md`, once you agree; and `~/.rumo-engineering-skills/config.json` when you pass `-ProfilesRepo`.
 
-**Update.** Installer: rerun `.\install.ps1` or `./install.sh` without `-NoPull` (`--no-pull`). It runs `git pull --ff-only` first, then relinks, keeping installed extras and the baseline block; start a new session afterwards. Plugin: run `claude plugin marketplace update rumo-engineering-skills`, then `claude plugin update rumo-engineering-skills@rumo-engineering-skills`, and start a new session. An installed plugin updates only when a release raises its `version`; see [CHANGELOG.md](CHANGELOG.md) for what each version changed.
+**Update.** Installer: rerun `.\install.ps1` or `./install.sh` without `-NoPull` (`--no-pull`). It runs `git pull --ff-only` first, then relinks, keeping installed extras and the baseline block; start a new session afterwards. Plugin: run `claude plugin marketplace update rumo-engineering-skills`, then `claude plugin update rumo-engineering-skills@rumo-engineering-skills`, and start a new session. An installed plugin updates only when a release raises its `version`; see [CHANGELOG.md](CHANGELOG.md) for what each version changed. The installer links to this checkout, so to stay on one version, check out a release tag such as `git checkout v0.9.0` in the checkout and rerun the installer with `-NoPull` (`--no-pull`); to return to the latest version, run `git checkout main` and rerun without `-NoPull`.
 
 **Uninstall.** Installer: add `-DryRun` (`--dry-run`) first to see what would go, then run `.\install.ps1 -Uninstall` or `./install.sh --uninstall`. Uninstall removes only the `rumo-*` links into this repository and the always-on baseline block, and leaves skills from other sources alone. It keeps the cloned repository, `~/.rumo-engineering-skills/config.json`, and project profiles; delete those by hand when you no longer need them. Plugin: run `claude plugin uninstall rumo-engineering-skills@rumo-engineering-skills`, then start a new session.
 
