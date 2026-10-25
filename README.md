@@ -251,7 +251,7 @@ cd rumo-engineering-skills
 
 安装器只会写这几处：客户端技能目录里的 `rumo-*` 链接；你同意后写入 `CLAUDE.md`、`AGENTS.md` 的基线标记块；以及用 `-ProfilesRepo` 时保存的 `~/.rumo-engineering-skills/config.json`。
 
-**更新。** 安装器：去掉 `-NoPull`（`--no-pull`）重跑 `.\install.ps1` 或 `./install.sh`，它会先 `git pull --ff-only` 拉取最新版本，再重新链接，已装的扩展和基线会保留，然后开新会话。插件：先执行 `claude plugin marketplace update rumo-engineering-skills`，再执行 `claude plugin update rumo-engineering-skills@rumo-engineering-skills`，然后开新会话。已装的插件只在发版提升 `version` 后才会更新；每版改了什么见 [CHANGELOG.md](CHANGELOG.md)。安装器装的是指向本仓库的链接，想固定在某个版本时，在仓库目录执行 `git checkout v0.9.0` 这类发版标签，再加 `-NoPull`（`--no-pull`）重跑安装器；回到最新版本时先 `git checkout main`，再不带 `-NoPull` 重跑。
+**更新。** 安装器：去掉 `-NoPull`（`--no-pull`）重跑 `.\install.ps1` 或 `./install.sh`，它会先 `git pull --ff-only` 拉取最新版本，再重新链接，已装的扩展和基线会保留，然后开新会话。如果 pull 成功而后续校验或安装失败，安装器会额外警告现有链接可能已经提供新内容；这不表示仓库已回滚。插件：先执行 `claude plugin marketplace update rumo-engineering-skills`，再执行 `claude plugin update rumo-engineering-skills@rumo-engineering-skills`，然后开新会话。已装的插件只在发版提升 `version` 后才会更新；每版改了什么见 [CHANGELOG.md](CHANGELOG.md)。安装器装的是指向本仓库的链接，想固定在某个版本时，在仓库目录执行 `git checkout v0.9.0` 这类发版标签，再加 `-NoPull`（`--no-pull`）重跑安装器；回到最新版本时先 `git checkout main`，再不带 `-NoPull` 重跑。
 
 **卸载。** 安装器：可以先加 `-DryRun`（`--dry-run`）看会删什么，再运行 `.\install.ps1 -Uninstall` 或 `./install.sh --uninstall`。卸载只删除指向本仓库的 `rumo-*` 链接和常驻基线，不碰其他来源的技能；clone 下来的仓库、`~/.rumo-engineering-skills/config.json` 和项目 Profile 都会保留，不再需要时手动删除。插件：执行 `claude plugin uninstall rumo-engineering-skills@rumo-engineering-skills`，然后开新会话。
 

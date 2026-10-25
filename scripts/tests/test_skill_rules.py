@@ -42,6 +42,7 @@ RULES = {
     "rumo-filesystem-safety": (
         "Use the light path only when every one of these holds",
         "Use the full path whenever any of these applies",
+        "Writing or editing a cleanup script does not authorize running it.",
         "Do not traverse a link to delete its destination.",
         "on every component of each path before deleting, not only on the target",
         "Removing a duplicate requires proof that the copies are separate objects",

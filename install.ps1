@@ -93,6 +93,13 @@ if ($Help) {
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+$PullCompleted = $false
+trap {
+  if ($PullCompleted) {
+    Write-Host "Repository pull completed, but installation did not finish; existing skill links may already serve updated content."
+  }
+  throw $_
+}
 $CodexHomeExplicit = -not [string]::IsNullOrWhiteSpace($CodexHome)
 $ClaudeHomeExplicit = -not [string]::IsNullOrWhiteSpace($ClaudeHome)
 $AgentsHomeExplicit = -not [string]::IsNullOrWhiteSpace($AgentsHome)
@@ -361,6 +368,7 @@ if (Test-Path (Join-Path $Repo ".git")) {
       git -C $Repo pull --ff-only
       if ($LASTEXITCODE -ne 0) { throw "git pull --ff-only failed." }
     }
+    $PullCompleted = -not $DryRun
   }
 } elseif (-not (Test-Path (Join-Path $Repo "skills"))) {
   $Parent = Split-Path -Parent $Repo

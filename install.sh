@@ -25,6 +25,16 @@ REMOVE_EXTRAS_REQUEST=""
 LIST_EXTRAS=0
 UNINSTALL=0
 LINK_SUMMARY=""
+PULL_COMPLETED=0
+
+warn_post_pull_failure() {
+  status=$?
+  if [ "$status" -ne 0 ] && [ "$PULL_COMPLETED" -eq 1 ]; then
+    echo 'Repository pull completed, but installation did not finish; existing skill links may already serve updated content.' >&2
+  fi
+  exit "$status"
+}
+trap warn_post_pull_failure EXIT
 
 usage() {
   printf '%s\n' \
@@ -250,7 +260,10 @@ command -v git >/dev/null 2>&1 || {
 }
 [ ! -d "$REPO_PATH/skills" ] || check_extra_names
 if [ -e "$REPO_PATH/.git" ]; then
-  [ "$RUN_PULL" -eq 0 ] || run git -C "$REPO_PATH" pull --ff-only
+  if [ "$RUN_PULL" -ne 0 ]; then
+    run git -C "$REPO_PATH" pull --ff-only
+    [ "$DRY_RUN" -eq 1 ] || PULL_COMPLETED=1
+  fi
 elif [ ! -d "$REPO_PATH/skills" ]; then
   run mkdir -p "$(dirname "$REPO_PATH")"
   run git clone "$REMOTE_URL" "$REPO_PATH"

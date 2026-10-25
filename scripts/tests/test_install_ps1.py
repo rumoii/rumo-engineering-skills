@@ -541,6 +541,25 @@ class InstallPowerShellExtrasTests(unittest.TestCase):
         self.assertIn("Unknown optional skill: rumo-missing", result.stdout + result.stderr)
         self.assertNotIn("pull --ff-only", result.stdout)
 
+    def test_post_pull_failure_warns_that_linked_content_may_be_updated(self) -> None:
+        (self.repo / ".git").mkdir()
+        fake_bin = self.temp_root / "bin"
+        fake_bin.mkdir()
+        (fake_bin / "git.cmd").write_text("@echo off\r\nexit /b 0\r\n", encoding="utf-8")
+        foreign = self.temp_root / "foreign" / "rumo-alpha"
+        foreign.mkdir(parents=True)
+        conflict = self.homes["ClaudeHome"] / "skills" / "rumo-alpha"
+        self.create_junction(conflict, foreign)
+
+        result = self.run_installer(
+            pull=True,
+            env={**os.environ, "PATH": str(fake_bin) + os.pathsep + os.environ["PATH"]},
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Skill link preflight failed", result.stdout + result.stderr)
+        self.assertIn("existing skill links may already serve updated content", result.stdout + result.stderr)
+
     def test_same_name_in_extras_and_remove_extras_fails(self) -> None:
         result = self.run_installer("-Extras", "rumo-gamma", "-RemoveExtras", "rumo-gamma")
 

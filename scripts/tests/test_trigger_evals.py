@@ -55,8 +55,13 @@ class TriggerEvalsTest(unittest.TestCase):
             with self.subTest(case=case.name):
                 self.assertNotEqual("trigger" in tags(case), "behavior" in tags(case))
 
-    def test_graders_name_existing_default_skills(self) -> None:
+    def test_graders_name_existing_skills(self) -> None:
         behavior = set(self.behavior_cases())
+        available = {
+            path.parent.name
+            for root in ("skills", "extras")
+            for path in (REPO_ROOT / root).glob("*/SKILL.md")
+        }
         for grader in sorted(EVALS_ROOT.glob("*/graders/*.md")):
             if grader.parent.parent in behavior:
                 continue
@@ -66,13 +71,13 @@ class TriggerEvalsTest(unittest.TestCase):
                 self.assertEqual(fields.get("tool"), "Skill")
                 match = SKILL_IN_PATTERN.search(fields.get("input_match", ""))
                 if match:
-                    self.assertTrue((REPO_ROOT / "skills" / match.group(1) / "SKILL.md").is_file())
+                    self.assertIn(match.group(1), available)
                 else:
                     self.assertEqual(grader.name, "uses-no-rumo-skill.md")
                 if grader.name.startswith(("skips-", "uses-no-")):
                     self.assertEqual((fields.get("min"), fields.get("max")), ("0", "0"))
 
-    def test_every_model_invoked_default_skill_has_a_trigger_case(self) -> None:
+    def test_every_model_invoked_skill_has_a_trigger_case(self) -> None:
         covered = set()
         for case in self.cases():
             if "trigger" not in tags(case):
@@ -83,7 +88,8 @@ class TriggerEvalsTest(unittest.TestCase):
                     covered.add(match.group(1))
         skills = {
             path.parent.name
-            for path in (REPO_ROOT / "skills").glob("*/SKILL.md")
+            for root in ("skills", "extras")
+            for path in (REPO_ROOT / root).glob("*/SKILL.md")
             if frontmatter(path).get("disable-model-invocation") != "true"
         }
         self.assertEqual(sorted(skills - covered), [], "add a trigger case whose uses-* grader names each skill")
@@ -99,6 +105,14 @@ class TriggerEvalsTest(unittest.TestCase):
                 types = {frontmatter(grader).get("type") for grader in (case / "graders").glob("*.md")}
                 self.assertTrue(types)
                 self.assertLessEqual(types, FREE_GRADER_TYPES)
+
+    def test_database_stop_disallows_shell_execution(self) -> None:
+        prompt = frontmatter(EVALS_ROOT / "database-stop" / "prompt.md")
+        self.assertIn("Bash", prompt["allowed_tools"])
+        grader = frontmatter(EVALS_ROOT / "database-stop" / "graders" / "no-shell.md")
+        self.assertEqual(grader["tool"], "Bash")
+        self.assertEqual(grader["input_match"], r"'[\s\S]*'")
+        self.assertEqual((grader["min"], grader["max"]), ("0", "0"))
 
     def test_regex_graders_pass_flags_separately(self) -> None:
         # Graders compile patterns as JavaScript RegExp, which rejects a leading

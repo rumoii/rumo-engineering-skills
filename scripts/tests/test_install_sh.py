@@ -460,7 +460,9 @@ class InstallShellExtrasTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 
-    def run_installer(self, *extra: str, pull: bool = False) -> subprocess.CompletedProcess[str]:
+    def run_installer(
+        self, *extra: str, pull: bool = False, env: dict[str, str] | None = None
+    ) -> subprocess.CompletedProcess[str]:
         command = [SH, str(self.repo / "install.sh"), "--repo", str(self.repo)]
         if not pull:
             command.append("--no-pull")
@@ -470,7 +472,7 @@ class InstallShellExtrasTests(unittest.TestCase):
         return subprocess.run(
             command,
             cwd=self.repo,
-            env={**os.environ, "HOME": str(self.temp_root)},
+            env=env or {**os.environ, "HOME": str(self.temp_root)},
             capture_output=True,
             text=True,
             check=False,
@@ -561,6 +563,31 @@ class InstallShellExtrasTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Unknown optional skill: rumo-missing", result.stderr)
         self.assertNotIn("pull --ff-only", result.stdout)
+
+    def test_post_pull_failure_warns_that_linked_content_may_be_updated(self) -> None:
+        (self.repo / ".git").mkdir()
+        fake_bin = self.temp_root / "bin"
+        fake_bin.mkdir()
+        fake_git = fake_bin / "git"
+        fake_git.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        fake_git.chmod(0o755)
+        foreign = self.temp_root / "foreign" / "rumo-alpha"
+        foreign.mkdir(parents=True)
+        conflict = self.homes["claude"] / "skills" / "rumo-alpha"
+        self.create_link(conflict, foreign)
+
+        result = self.run_installer(
+            pull=True,
+            env={
+                **os.environ,
+                "HOME": str(self.temp_root),
+                "PATH": str(fake_bin) + os.pathsep + os.environ["PATH"],
+            },
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Skill link preflight failed", result.stdout + result.stderr)
+        self.assertIn("existing skill links may already serve updated content", result.stdout + result.stderr)
 
     def test_stale_repository_links_are_removed(self) -> None:
         for home in self.homes.values():

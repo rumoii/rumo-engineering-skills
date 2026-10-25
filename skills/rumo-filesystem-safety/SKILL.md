@@ -1,11 +1,13 @@
 ---
 name: rumo-filesystem-safety
-description: "Use when about to delete or bulk-clean files or directories: recursive or wildcard removal, git clean or reset --hard that discards working-tree content, purging build outputs or caches, or deleting untracked or ignored content. Scales the review to the blast radius. Do not use for writing a cleanup script that is not run now, for database data cleanup (use rumo-database-change-safety), or for source-file removal within a requested refactor."
+description: "Use when about to delete or bulk-clean files or directories, or when writing a cleanup script intended for later execution, even if it is not run now: recursive or wildcard removal, git clean or reset --hard that discards working-tree content, purging build outputs or caches, or deleting untracked or ignored content. Scale the review to the blast radius, and never treat writing a script as authorization to execute it. Do not use for database data cleanup (use rumo-database-change-safety) or source-file removal within a requested refactor."
 ---
 
 # Rumo Filesystem Safety
 
 Prevent accidental filesystem deletion by matching the review effort to the blast radius. This skill is guidance, not an enforcement hook: an agent can still bypass it with a direct command or another tool.
+
+Writing or editing a cleanup script does not authorize running it. Apply the same target, boundary, link, and preview rules to the script's future effects; execute deletion only when separately authorized.
 
 ## Choose The Path
 

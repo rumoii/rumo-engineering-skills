@@ -95,23 +95,31 @@ not happen, report it as a gap.
 realistic request plus graders asserting which skill fires and which
 look-alike does not. The unit tests check only the suite's structure; running
 it calls a model and costs money, so it stays out of CI. Run it after changing
-a `description` (Claude Code 2.1.269 or later):
+a `description` (Claude Code 2.1.269 or later).
+
+For a full run, create a disposable copy of the candidate outside the checkout
+and copy the model-invoked extras from `extras/` into that copy's `skills/`.
+The released plugin still excludes extras; this snapshot only makes every
+skill under test available to the client. A default-only case can run directly
+against the checkout:
 
 ```bash
-claude plugin eval . --runs 1 --ablation none --no-publish
+claude plugin eval <snapshot-root> --runs 1 --ablation none --no-publish
+claude plugin eval . --case debug-readonly --runs 1 --ablation none --no-publish
 ```
 
 Use `--case <name>` for one case and `--runs 3` before trusting a borderline
-result. Results land in the ignored `evals/results/`. Add a case when a
-request picks the wrong skill. Every default skill that the model may select
-on its own needs at least one trigger case whose `uses-*` grader names it. `coding-baseline` is expected to fail: on a
+result. Results land in `evals/results/` under the evaluated root. Add a case
+when a request picks the wrong skill. Every default or optional skill that the model
+may select on its own needs at least one trigger case whose `uses-*` grader
+names it. `coding-baseline` is expected to fail: on a
 small edit the client does not load `rumo-coding-guidelines`, which is why the
 always-on snippet in its `references/` exists. A pass there means a
 description change altered how the baseline loads.
 
 Without `--runs`, each case runs three times per arm, and without
-`--ablation none` it runs a second arm without the plugin, so a full default
-run costs about six agent runs per case. `llm` graders add judge calls; pass
+`--ablation none` it runs a second arm without the plugin, so a full run
+costs about six agent runs per case. `llm` graders add judge calls; pass
 `--judge-model sonnet` when a small default judge looks unreliable. These
 evals exercise Claude models only. When the eval tool is unavailable, run the
 same prompts by hand in fresh sessions and compare the skills they pick.
@@ -122,8 +130,9 @@ same prompts by hand in fresh sessions and compare the skills they pick.
 without naming a skill. Each run seeds a sample repository with a snapshot's
 skills in `.agents/skills`, runs read-only, and counts a skill as chosen only
 when Codex read that sample copy of its `SKILL.md`. The `uses-*` and `skips-*`
-graders supply the expectations. It calls a model, so it is opt-in and stays
-out of CI:
+graders supply the expectations. For a full run or an extra case, include the
+model-invoked extras in the snapshot's `skills/` as above. It calls a model,
+so it is opt-in and stays out of CI:
 
 ```powershell
 python scripts/run_codex_trigger.py --snapshot <snapshot-root> --output-dir <task-evidence-dir> [--case debug-readonly] [--runs 3]
