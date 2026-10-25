@@ -133,6 +133,7 @@ RULES = {
     "rumo-review": (
         "do not edit code in review mode",
         "Review (default), Panel, and Simplify modes never edit code; only Loop and Respond do, and only on an explicit request.",
+        "If its conditions hold, end the report with the one-line proposal it describes; launch nothing from here.",
         "Do not post replies, resolve threads, or request another review on the hosting platform unless the user asks.",
         "Do not guess the base from branch names.",
         "For a diff, report only issues this change introduces or materially exposes",
@@ -309,7 +310,9 @@ REFERENCE_RULES = {
         "save your findings to a file before reading any lane's output.",
         "Withhold the fix history, earlier findings, and your own conclusions.",
         "launch with `--detach` instead, finish your own review, end your turn",
-        "Do not propose one for small or low-risk changes.",
+        "Do not propose one for small or low-risk changes, or when tests and evidence already settle the question.",
+        "say in one sentence which of those conditions makes this change worth another model's view",
+        "Propose at most once per target; after the user declines, do not raise it again until the target changes.",
         "the panel never edits code.",
     ),
     "rumo-review/references/judging-findings.md": (

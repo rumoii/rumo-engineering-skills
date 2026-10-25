@@ -75,7 +75,7 @@ After the last edit to code, tests, checkers, configuration, or docs, run the se
 
 While a required check fails, the result is blocked. Never weaken an assertion, lower a threshold, add a broad skip, or relabel a failure to get green.
 
-After the final run passes, propose a review panel of other models as `rumo-review`'s `references/panel.md` describes; its `auto_panel` setting decides whether to ask first, launch, or skip the proposal.
+After the final run passes, propose a review panel of other models when `rumo-review`'s `references/panel.md` conditions hold, which for a high-risk change means some correctness still rests on assumptions the evidence does not pin; its `auto_panel` setting decides whether to ask first, launch, or skip the proposal.
 
 ## Optional Independent Verification
 

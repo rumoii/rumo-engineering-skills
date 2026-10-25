@@ -5,7 +5,7 @@ Read before asking other models for competing designs. Each configured lane draf
 ## When To Run One
 
 - **The user asks** several models for designs or options.
-- **You propose one** in Plan Mode step 2 when the design is genuinely uncertain and the choice changes an interface, stored data, or the boundary between modules. Do not propose one for a choice with one obvious shape or a local change. `auto_panel` from `agent_config.py lanes design` decides the next step, as for review panels.
+- **You propose one** in Plan Mode step 2 only when all three hold: the choice is hard to reverse because it changes an interface, a data model, or the boundary between modules or services; the design is genuinely uncertain; and no quick prototype or measurement can settle it. Do not propose one for a choice with one obvious shape or a local change. Propose it the way `rumo-review` proposes a review panel: one sentence on why, the lanes, the quota, at most once per design question. `auto_panel` from `agent_config.py lanes design` decides the next step.
 
 Run it as `rumo-review`'s [references/panel.md](../../rumo-review/references/panel.md) describes, reading design for review throughout: `lanes design` in place of `lanes review`, the design problem as the target, the brief and the files it names as what leaves the machine, a lane that returns something other than a design as a dropout, and a single-model design when every lane drops out. This file replaces three parts of it: Run step 2 with The Brief below, the review in Run step 4 with your own draft (Compare step 1), and the judging in Run step 6 and its Report with Compare and Report below. Still record every run's decision with `agent_run.py record`.
 

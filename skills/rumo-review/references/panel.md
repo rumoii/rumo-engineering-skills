@@ -5,7 +5,8 @@ Read before a review by other models: a multi-model panel, or a second opinion f
 ## When To Run One
 
 - **The user asks:** a multi-model review, several models, the configured reviewers, or a second opinion from a named CLI or model.
-- **You propose one** for a change that `rumo-test` rated high risk, or a sizable change to authorization, money, durable data, concurrency, or a public interface. Do not propose one for small or low-risk changes. `auto_panel` from `agent_config.py lanes review` decides the next step: `ask` asks in one line, `allow` states the lanes and launches, and `off` means no proposal.
+- **You propose one** only when both hold. First, a mistake would be costly: `rumo-test` rated the change high risk, or it is a sizable change to authorization, money, durable data or a migration, concurrency, a public interface, or deployment and infrastructure scripts. Second, at least one of these: its correctness rests on assumptions that tests do not pin, such as a race, a permission edge case, or a compatibility rule; the approach itself may be wrong; or you are not confident, or two fixes for the same problem have already failed. Another model adds most on hidden assumptions and the direction of a change, not on surface bugs, so proposals should be rare. Do not propose one for small or low-risk changes, or when tests and evidence already settle the question.
+- **How to propose:** say in one sentence which of those conditions makes this change worth another model's view, which lanes would run, and that they spend quota. `auto_panel` from `agent_config.py lanes review` decides the next step: `ask` asks in one line, `allow` states the lanes and launches, and `off` means no proposal. Propose at most once per target; after the user declines, do not raise it again until the target changes.
 
 ## Authorization
 

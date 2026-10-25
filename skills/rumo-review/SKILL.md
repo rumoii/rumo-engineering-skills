@@ -73,6 +73,8 @@ Findings first, by severity:
 
 Each finding names the repository, file and line, the consequence, the triggering condition, and the evidence. Then open questions and assumptions, then a short scope and verification note. If nothing actionable turned up, say so and name the runtime, platform, deployment, or field boundaries that remain untested.
 
+When the user did not ask for other models but the change touches authorization, money, durable data, concurrency, a public interface, or deployment scripts, read When To Run One in [references/panel.md](references/panel.md) before finishing. If its conditions hold, end the report with the one-line proposal it describes; launch nothing from here.
+
 A finding that can be acted on:
 
 ```text
