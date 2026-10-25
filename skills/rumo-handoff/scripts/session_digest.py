@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""List and condense this project's recent Claude Code and Codex sessions so a new session can pick up the work.
+"""List and condense this project's recent Claude Code, Codex, and Kimi Code sessions so a new session can pick up the work.
 
 Read-only. Only sessions whose working directory is this project (the given
 directory or its Git root) are opened; other projects' sessions are never read.
 `show` keeps the user's messages, each turn's final reply, and the latest
-Claude compaction summary, and drops tool output and injected context.
+compaction summary, and drops tool output and injected context.
 """
 
 from __future__ import annotations
@@ -129,6 +129,27 @@ def codex_files(roots: set[str], prefix: str | None = None, needed: int | None =
     return files, truncated
 
 
+def kimi_files(roots: set[str], prefix: str | None = None) -> list[Path]:
+    index = home("KIMI_CODE_HOME", ".kimi-code") / "session_index.jsonl"
+    if not index.is_file():
+        return []
+    files = {}
+    for record in read_lines(index):
+        work_dir = record.get("workDir")
+        session_dir = record.get("sessionDir")
+        session_id = record.get("sessionId")
+        if not isinstance(work_dir, str) or norm(work_dir) not in roots:
+            continue
+        if not isinstance(session_dir, str) or not isinstance(session_id, str):
+            continue
+        if prefix is not None and not session_id.startswith(prefix):
+            continue
+        wire = Path(session_dir) / "agents" / "main" / "wire.jsonl"
+        if wire.is_file():
+            files[norm(wire)] = wire
+    return list(files.values())
+
+
 def parse_claude(path: Path) -> dict:
     session = {"client": "claude", "id": path.stem, "title": None, "headless": False, "entries": []}
     entries, pending, cwds = session["entries"], [], set()
@@ -219,11 +240,85 @@ def parse_codex(path: Path) -> dict:
     return session
 
 
+def kimi_time(value: object) -> str | None:
+    if isinstance(value, str):
+        return value
+    if not isinstance(value, (int, float)):
+        return None
+    try:
+        return datetime.fromtimestamp(value / 1000, timezone.utc).isoformat().replace("+00:00", "Z")
+    except (OverflowError, OSError, ValueError):
+        return None
+
+
+def parse_kimi(path: Path) -> dict:
+    session_dir = path.parents[2]
+    try:
+        state = json.loads((session_dir / "state.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        state = {}
+    if not isinstance(state, dict):
+        state = {}
+    session = {"client": "kimi", "id": state.get("id") or session_dir.name, "title": state.get("title"),
+               "headless": False, "entries": []}
+    cwd = state.get("cwd")
+    session["cwds"] = [norm(cwd)] if isinstance(cwd, str) and cwd else []
+    entries = session["entries"]
+    pending: dict[str, tuple[str, str] | None] = {"final": None, "last": None}
+
+    def flush() -> None:
+        reply = pending["final"] or pending["last"]
+        if reply:
+            entries.append({"kind": "agent", "time": reply[0], "text": reply[1]})
+        pending.update(final=None, last=None)
+
+    for record in read_lines(path):
+        kind = record.get("type")
+        when = kimi_time(record.get("time"))
+        if kind == "context.apply_compaction":
+            summary = record.get("summary")
+            if isinstance(summary, str) and summary.strip():
+                flush()
+                entries.append({"kind": "summary", "time": when, "text": summary.strip()})
+            continue
+        if kind != "agent.message.appended":
+            continue
+        envelope = record.get("message")
+        if not isinstance(envelope, dict):
+            continue
+        message = envelope.get("message")
+        meta = envelope.get("meta")
+        if not isinstance(message, dict) or not isinstance(meta, dict):
+            continue
+        role = message.get("role")
+        if role == "assistant":
+            text = texts(message.get("content"), ("text",)).strip()
+            if text:
+                pending["last"] = (when, text)
+                finish = meta.get("finish")
+                if isinstance(finish, dict) and finish.get("finishReason") == "completed":
+                    pending["final"] = (when, text)
+        elif role == "user":
+            origin = meta.get("origin")
+            if not isinstance(origin, dict) or origin.get("kind") != "user":
+                continue
+            raw_text = texts(message.get("content"), ("text",))
+            if raw_text.startswith("Skill tool loaded instructions for this request."):
+                continue
+            text = clean(raw_text)
+            if text:
+                flush()
+                entries.append({"kind": "user", "time": kimi_time(meta.get("createdAt")) or when, "text": text})
+    flush()
+    return session
+
+
 def sessions(cwd: Path, prefix: str | None = None, needed: int | None = None) -> tuple[list[dict], bool]:
     roots = project_roots(cwd)
     found = []
     codex, truncated = codex_files(roots, prefix, needed)
-    for files, parse in ((claude_files(roots), parse_claude), (codex, parse_codex)):
+    kimi = kimi_files(roots, prefix)
+    for files, parse in ((claude_files(roots), parse_claude), (codex, parse_codex), (kimi, parse_kimi)):
         for path in files:
             session = parse(path)
             if session.get("cwds") and not set(session["cwds"]) & roots:

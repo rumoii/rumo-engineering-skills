@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for session_digest.py against small constructed Claude Code and Codex session files; no model is called."""
+"""Tests for session_digest.py against small constructed Claude Code, Codex, and Kimi Code session files; no model is called."""
 
 from __future__ import annotations
 
@@ -30,6 +30,19 @@ def codex_message(role: str, text: str, time: str, phase: str | None = None) -> 
     return {"type": "response_item", "timestamp": time, "payload": payload}
 
 
+def kimi_message(role: str, text: str, time: str, final: bool = False) -> dict:
+    content = [{"type": "text", "text": text}]
+    message = {"role": role, "content": content}
+    if role == "user":
+        meta = {"createdAt": time, "origin": {"kind": "user"}}
+    else:
+        content.insert(0, {"type": "think", "think": "KIMI PRIVATE THOUGHT"})
+        meta = {"finish": {"finishReason": "completed" if final else "tool_calls"}}
+    moment = datetime.fromisoformat(time.replace("Z", "+00:00")).timestamp()
+    return {"type": "agent.message.appended", "time": int(moment * 1000),
+            "message": {"message": message, "meta": meta}}
+
+
 def write_jsonl(path: Path, records: list[dict]) -> None:
     """Write the records and date the file by its last timestamp, as a client that stopped writing then would."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -50,7 +63,9 @@ class SessionDigestTest(unittest.TestCase):
         self.other.mkdir(parents=True)
         self.claude_home = root / "claude home"
         self.codex_home = root / "codex home"
-        self.env = {**os.environ, "CLAUDE_CONFIG_DIR": str(self.claude_home), "CODEX_HOME": str(self.codex_home)}
+        self.kimi_home = root / "kimi home"
+        self.env = {**os.environ, "CLAUDE_CONFIG_DIR": str(self.claude_home), "CODEX_HOME": str(self.codex_home),
+                    "KIMI_CODE_HOME": str(self.kimi_home)}
 
     def tearDown(self) -> None:
         self.tmp.cleanup()
@@ -121,16 +136,51 @@ class SessionDigestTest(unittest.TestCase):
             codex_message("user", "Other project secret plan", "2026-10-21T03:00:00Z"),
         ])
 
+    def seed_kimi(self) -> None:
+        session_id = "session_gggg7777"
+        session_dir = self.kimi_home / "sessions" / "wd_my_app_hash" / session_id
+        wire = session_dir / "agents" / "main" / "wire.jsonl"
+        write_jsonl(wire, [
+            {"type": "profile.bind", "systemPrompt": "KIMI SYSTEM PROMPT", "environmentDisclosure": {"cwd": str(self.project)}},
+            kimi_message("user", "Review the Kimi export.", "2026-10-22T01:00:00Z"),
+            kimi_message("assistant", "Reading the Kimi diff.", "2026-10-22T01:00:01Z"),
+            kimi_message("assistant", "One Kimi finding.", "2026-10-22T01:00:02Z", final=True),
+            {"type": "agent.message.appended", "time": 1767229203000,
+             "message": {"message": {"role": "user", "content": [{"type": "text", "text": "KIMI INJECTED CONTEXT"}]},
+                         "meta": {"origin": {"kind": "injection"}}}},
+            {"type": "agent.message.appended", "time": 1767229203500,
+             "message": {"message": {"role": "user", "content": [{"type": "text",
+                                     "text": "Skill tool loaded instructions for this request. Follow them.\n<skill-loaded>KIMI SKILL INSTRUCTIONS</skill-loaded>"}]},
+                         "meta": {"origin": {"kind": "user", "inTurn": True}}}},
+            {"type": "context.apply_compaction", "summary": "Summary: Kimi export done, docs pending.",
+             "time": 1767229204000},
+            kimi_message("user", "Now write the Kimi docs.", "2026-10-22T01:00:05Z"),
+            kimi_message("assistant", "Kimi docs written.", "2026-10-22T01:00:06Z", final=True),
+            {"type": "agent.message.appended", "time": 1767229207000,
+             "message": {"message": {"role": "tool", "content": [{"type": "text", "text": "KIMI TOOL NOISE"}]}}},
+            {"type": "partial"},
+        ])
+        state = {"id": session_id, "cwd": str(self.project), "title": "kimi-export"}
+        (session_dir / "state.json").write_text(json.dumps(state), encoding="utf-8")
+        write_jsonl(self.kimi_home / "session_index.jsonl", [
+            {"sessionId": session_id, "sessionDir": str(session_dir), "workDir": str(self.project)},
+            {"sessionId": "session_hhhh8888", "sessionDir": str(self.kimi_home / "missing-other"),
+             "workDir": str(self.other)},
+        ])
+
     def test_lists_only_this_projects_sessions_newest_first(self) -> None:
         self.seed_claude()
         self.seed_codex()
+        self.seed_kimi()
         rows = self.listing()
-        self.assertEqual([row["id"] for row in rows], ["dddd4444", "cccc3333", "aaaa1111"])
+        self.assertEqual([row["id"] for row in rows], ["session_gggg7777", "dddd4444", "cccc3333", "aaaa1111"])
         self.assertNotIn("Other project", json.dumps(rows))
         by_id = {row["id"]: row for row in rows}
         self.assertTrue(by_id["dddd4444"]["headless"])
         self.assertFalse(by_id["cccc3333"]["headless"])
         self.assertEqual(by_id["aaaa1111"]["title"], "add-export")
+        self.assertEqual(by_id["session_gggg7777"]["title"], "kimi-export")
+        self.assertEqual(by_id["session_gggg7777"]["user_turns"], 2)
         self.assertEqual(by_id["aaaa1111"]["first_user"], "Add a CSV export.")
         self.assertEqual(by_id["aaaa1111"]["last_user"], "Now write the docs.")
 
@@ -164,6 +214,29 @@ class SessionDigestTest(unittest.TestCase):
         for noise in ("Reading the diff.", "AGENTS.md", "environment_context", "TOOL NOISE"):
             self.assertNotIn(noise, out)
 
+    def test_kimi_timeline_starts_at_the_latest_summary_and_drops_internal_records(self) -> None:
+        self.seed_kimi()
+        result = self.run_digest("show", "session_g")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        out = result.stdout
+        self.assertIn("# kimi session session_gggg7777", out)
+        self.assertIn("summary: Summary: Kimi export done, docs pending.", out)
+        self.assertIn("user: Now write the Kimi docs.", out)
+        self.assertIn("agent: Kimi docs written.", out)
+        self.assertNotIn("user: Review the Kimi export.", out)
+        for noise in ("KIMI SYSTEM PROMPT", "KIMI PRIVATE THOUGHT", "KIMI INJECTED CONTEXT", "KIMI TOOL NOISE",
+                      "KIMI SKILL INSTRUCTIONS", "Skill tool loaded", "Reading the Kimi diff."):
+            self.assertNotIn(noise, out)
+
+    def test_kimi_all_keeps_each_turns_final_reply_only(self) -> None:
+        self.seed_kimi()
+        out = self.run_digest("show", "session_g", "--all").stdout
+        self.assertIn("user: Review the Kimi export.", out)
+        self.assertIn("agent: One Kimi finding.", out)
+        self.assertNotIn("Reading the Kimi diff.", out)
+        self.assertNotIn("KIMI SKILL INSTRUCTIONS", out)
+        self.assertNotIn("Skill tool loaded", out)
+
     def test_long_messages_and_timelines_are_capped(self) -> None:
         cwd = str(self.project)
         records = []
@@ -181,7 +254,8 @@ class SessionDigestTest(unittest.TestCase):
     def test_another_projects_session_cannot_be_shown(self) -> None:
         self.seed_claude()
         self.seed_codex()
-        for prefix in ("bbbb", "eeee"):
+        self.seed_kimi()
+        for prefix in ("bbbb", "eeee", "hhhh"):
             result = self.run_digest("show", prefix)
             self.assertEqual(result.returncode, 2)
             self.assertNotIn("Other project", result.stdout + result.stderr)

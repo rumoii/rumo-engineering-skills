@@ -2,6 +2,10 @@
 
 每个版本的完整说明见 [GitHub Releases](https://github.com/rumoii/rumo-engineering-skills/releases)。插件用户只在 `.claude-plugin/plugin.json` 的 `version` 提升后才会收到更新，所以每次发版都要提升版本号，并在这里补一节。
 
+## Unreleased
+
+- `rumo-handoff` 写交接文档时会同时接入工作区已有的任务索引、现状文档或交接登记入口，让接收方不依赖原对话即可发现；没有现成入口时明确给出需要传递的路径，不另建平行文档体系。会话接续新增 Kimi Code：通过官方会话索引只读取当前项目的主会话，保留真实用户消息、每轮最终回复和最近压缩摘要，并排除工具输出、思考及注入内容。新增交接发现行为用例和 Kimi 单元测试。
+
 ## 1.0.0 - 2026-10-25
 
 - 看外部 agent 的进度只需一步：`agent_run.py start` 和 `resume` 一启动，就先在 stderr 打印一行现成的 `watch` 命令（含 run ID），stdout 仍然只输出最后的摘要，agent 能直接把这条命令交给你，不必再让你先查 `runs --active`。`agent_run.py watch` 不带 run ID 时，会在同一屏跟踪所有正在运行的任务，每行标明是哪个 CLI、哪个任务；多模型面板的几条线可以一起看。

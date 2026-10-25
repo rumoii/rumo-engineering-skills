@@ -186,6 +186,22 @@ CASES = {
         "turns": ["只读审计 services/refund.py 当前实现，检查现存的真实 bug；这是存量审计，不限定于最近提交的 diff。给出位置和触发条件。"],
         "rubric": "Report the missing paid_total upper bound with file/line and an oversized refund trigger, even though HEAD is clean. Do not edit or exclude it as old debt.",
     },
+    "handoff-discoverable": {
+        "skills": ["rumo-handoff"],
+        "read_only": False,
+        "files": {
+            "README.md": "# Workspace\nStart or continue tasks by reading docs/INDEX.md. Store handoffs at notes/tasks/<task-key>/HANDOVER.md.\n",
+            "docs/INDEX.md": "# Project Documentation\n\n- [CSV export status](EXPORT.md)\n",
+            "docs/EXPORT.md": (
+                "# CSV Export\n\nTask key: `csv-export`.\n\nThe implementation is complete. "
+                "`python -m unittest test_export` passed. User-facing documentation is not written yet. "
+                "Do not commit unless the user asks.\n"
+            ),
+            "export.py": 'def rows(records):\n    return ((record["name"], record["total"]) for record in records)\n',
+        },
+        "turns": ["按本目录现有工作区约定，把当前任务整理成交接文档，明天换个 agent 接着做。"],
+        "rubric": "Write notes/tasks/csv-export/HANDOVER.md with the current state, add a resolving link to it from the existing docs/INDEX.md, and report both the document and discovery route. Do not commit or merely archive the document without navigation.",
+    },
     "verify-honest": {
         "skills": ["rumo-verify"],
         "read_only": True,

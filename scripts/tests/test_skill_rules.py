@@ -77,6 +77,7 @@ RULES = {
         "Where they disagree, the repository wins; say so.",
         "Stop after the report unless the user asked to continue.",
         "Never repeat credentials that appear in a record.",
+        "Make the handoff discoverable without this conversation.",
     ),
     "rumo-interface": (
         "A search is discovery, not proof of absence.",

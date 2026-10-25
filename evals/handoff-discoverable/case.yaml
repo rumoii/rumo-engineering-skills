@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: handoff-discoverable
+description: A handoff must be linked from the workspace's existing navigation so the next agent can discover it.
+context:
+  scaffold_script: fixture.sh

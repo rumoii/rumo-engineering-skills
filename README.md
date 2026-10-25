@@ -193,7 +193,7 @@ cd rumo-engineering-skills
 | `rumo-remote-ops` | 远程 Linux 查询与变更、服务部署、备份恢复和制品部署 |
 | `rumo-prose` | 保留全部事实的注释、报错、日志、界面文案、文档与 agent 文件 |
 | `rumo-frontend` | 前端页面开发与新界面设计、可访问性检查、本地开发服务排障、按需采集浏览器证据 |
-| `rumo-handoff` | 新会话里问“汇报一下当前进度、下一步做什么”时，读取本项目最近的 Claude Code 和 Codex 会话记录并对照仓库状态接续；你要求时生成自包含的交接文档 |
+| `rumo-handoff` | 新会话里问“汇报一下当前进度、下一步做什么”时，读取本项目最近的 Claude Code、Codex 和 Kimi Code 会话记录并对照仓库状态接续；你要求时生成自包含的交接文档，并接入现有导航让接收方能够发现 |
 | `rumo-project-profile` | 为其他技能解析和校验私有项目 Profile |
 | `rumo-reflect` | 复盘当前会话的反复错误与纠正，逐条讨论该固化到哪里，你批准后才改 |
 | `rumo-setup` | 首次或随时配置多模型评审、多方案设计和默认委派用的 CLI、模型与思考强度，保存前逐条只读探测 |

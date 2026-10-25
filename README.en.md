@@ -193,7 +193,7 @@ Installed by default.
 | `rumo-remote-ops` | Remote Linux queries and changes, service deployment, backup and restore, and artifact deployment |
 | `rumo-prose` | Comments, errors, logs, UI strings, docs, and agent-facing files that keep every fact |
 | `rumo-frontend` | Frontend page work and new interface design with accessibility checks, local dev-server troubleshooting, and requested browser evidence |
-| `rumo-handoff` | In a new session, asked for the current progress or the next step, condense this project's recent Claude Code and Codex sessions and check them against the repository; on request, write a self-contained handoff document |
+| `rumo-handoff` | In a new session, asked for the current progress or the next step, condense this project's recent Claude Code, Codex, and Kimi Code sessions and check them against the repository; on request, write a self-contained handoff and link it into existing navigation so the recipient can discover it |
 | `rumo-project-profile` | Resolve and validate private project profiles for other skills |
 | `rumo-reflect` | Session retrospective: recurring mistakes and corrections, each fix discussed and applied only with your approval |
 | `rumo-setup` | Choose, once or at any time, the CLI, model, and reasoning effort for multi-model review, multi-design comparison, and default delegation; probes each lane read-only before saving |
