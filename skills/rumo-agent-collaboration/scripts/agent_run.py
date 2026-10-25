@@ -489,10 +489,15 @@ def runs_root(value: str | None) -> Path:
 
 
 def private_mkdir(path: Path, exist_ok: bool = False) -> None:
-    created = not path.exists()
+    missing = []
+    current = path
+    while not current.exists():
+        missing.append(current)
+        current = current.parent
     path.mkdir(parents=True, mode=0o700, exist_ok=exist_ok)
-    if created and os.name != "nt":
-        path.chmod(0o700)
+    if os.name != "nt":
+        for directory in missing:
+            directory.chmod(0o700)
 
 
 def private_open(path: Path, mode: str):
