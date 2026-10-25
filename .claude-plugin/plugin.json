@@ -1,6 +1,6 @@
 {
   "name": "rumo-engineering-skills",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "description": "Engineering workflow and safety skills for coding agents: clarify, plan, test, debug, verify, review, and commit, with guardrails for databases, files, remote hosts, interfaces, and long-running work, plus cross-agent collaboration.",
   "author": {
     "name": "rumoii"

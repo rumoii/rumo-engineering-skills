@@ -2,7 +2,7 @@
 
 每个版本的完整说明见 [GitHub Releases](https://github.com/rumoii/rumo-engineering-skills/releases)。插件用户只在 `.claude-plugin/plugin.json` 的 `version` 提升后才会收到更新，所以每次发版都要提升版本号，并在这里补一节。
 
-## 未发布
+## 1.0.0 - 2026-10-25
 
 - 看外部 agent 的进度只需一步：`agent_run.py start` 和 `resume` 一启动，就先在 stderr 打印一行现成的 `watch` 命令（含 run ID），stdout 仍然只输出最后的摘要，agent 能直接把这条命令交给你，不必再让你先查 `runs --active`。`agent_run.py watch` 不带 run ID 时，会在同一屏跟踪所有正在运行的任务，每行标明是哪个 CLI、哪个任务；多模型面板的几条线可以一起看。
 - `rumo-handoff` 支持新会话接续：在新会话里问“汇报一下当前进度、下一步做什么”或“接着上次做”时，会用新增的只读脚本 `scripts/session_digest.py` 列出本项目最近的 Claude Code 和 Codex 会话，并压缩成时间线。时间线只保留你的消息、每轮的最终回复和最近一次压缩摘要，不读别的项目的会话。之后对照仓库状态，汇报做到哪了、验证过什么、下一步建议，汇报完就停，等你说继续。会话结束时不需要再写交接文档；交接文档仍然只在你要求时写。它改为可以自动调用，`rumo-coding-guidelines` 的接续流程也指向它。新增触发用例 `handoff-pickup`、`handoff-write`。
@@ -19,6 +19,9 @@
 - `rumo-setup` 首次运行时问要不要写入常驻基线，推荐写入；写入当前客户端的用户级说明文件，Claude Code 和 Codex 以外的客户端先问文件路径。插件用户因此不需要 clone 仓库。
 - `rumo-coding-guidelines`：小改动和只调查两条流程不再要求先读 `task-flows.md`，表格里的步骤已经写全。
 - 扩展：`rumo-daily-report` 的 description 补上中英文之间的空格；`rumo-imagegen` 去掉无法判断的 “more appropriate” 条件。
+- 安装器在 pull 成功、后续校验或安装失败时，明确警告现有技能链接可能已经提供新内容，不再让用户误以为整个更新没有生效。
+- `rumo-filesystem-safety` 明确覆盖以后执行、本次不运行的清理脚本；编写或评审脚本不等于授权执行删除。
+- 自动触发的 extras 纳入触发用例覆盖检查，新增 Mermaid、Word 文档和离线交付包场景；`database-stop` 改为禁止未确认目标前的任何 shell 执行。
 
 ## 0.9.0 - 2026-10-24
 
