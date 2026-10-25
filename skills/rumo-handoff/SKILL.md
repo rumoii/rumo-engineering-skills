@@ -27,7 +27,7 @@ Write the document the next agent needs to continue without this conversation, o
 
 Use the location the user names. Otherwise follow the workspace's convention for task notes; if there is none, ask. Do not commit the document unless asked, and keep it out of product source trees by default.
 
-Make the handoff discoverable without this conversation. When the workspace has a task index, current-status document, or handoff registry that the next agent reads, add a concise link with the current state and check that it resolves. Do not create a parallel documentation system. If there is no such entry, give the user the exact path to pass to the receiving agent; ask where to link it when the user expects automatic discovery.
+Make the handoff discoverable without this conversation. When the workspace's own instructions name a task index, status document, or handoff registry that the next agent reads, add a concise link there with the current state and check that it resolves. Do not edit other tracked files, such as a product README, to point at an uncommitted handoff, and do not create a parallel documentation system. Otherwise give the user the exact path to pass to the receiving agent; ask where to link it when the user expects automatic discovery.
 
 ### Gather Facts First
 

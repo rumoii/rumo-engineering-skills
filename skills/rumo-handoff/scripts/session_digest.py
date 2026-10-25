@@ -26,6 +26,7 @@ INJECTED_TAGS = ("system-reminder", "local-command-caveat", "local-command-stdou
 INJECTED_RE = re.compile(r"<(%s)\b[^>]*>.*?</\1>" % "|".join(INJECTED_TAGS), re.S)
 # Tools whose results carry the user's own decision.
 DECISION_TOOLS = ("AskUserQuestion", "ExitPlanMode")
+SKILL_LOADED_RE = re.compile(r"<skill-loaded\b")
 COMMAND_RE = re.compile(r"<command-name>(.*?)</command-name>(?:.*?<command-args>(.*?)</command-args>)?", re.S)
 
 
@@ -303,7 +304,8 @@ def parse_kimi(path: Path) -> dict:
             if not isinstance(origin, dict) or origin.get("kind") != "user":
                 continue
             raw_text = texts(message.get("content"), ("text",))
-            if raw_text.startswith("Skill tool loaded instructions for this request."):
+            # A loaded skill shares the meta of a message the user types mid-turn; only its element differs.
+            if SKILL_LOADED_RE.search(raw_text):
                 continue
             text = clean(raw_text)
             if text:

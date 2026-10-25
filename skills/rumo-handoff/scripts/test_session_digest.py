@@ -148,13 +148,18 @@ class SessionDigestTest(unittest.TestCase):
             {"type": "agent.message.appended", "time": 1767229203000,
              "message": {"message": {"role": "user", "content": [{"type": "text", "text": "KIMI INJECTED CONTEXT"}]},
                          "meta": {"origin": {"kind": "injection"}}}},
+            # Kimi records a loaded skill and a message the user types mid-turn with the same meta;
+            # only the skill-loaded element tells them apart, whatever sentence precedes it.
             {"type": "agent.message.appended", "time": 1767229203500,
              "message": {"message": {"role": "user", "content": [{"type": "text",
-                                     "text": "Skill tool loaded instructions for this request. Follow them.\n<skill-loaded>KIMI SKILL INSTRUCTIONS</skill-loaded>"}]},
+                                     "text": "KIMI SKILL PREAMBLE\n<skill-loaded name=\"rumo-review\" trigger=\"model-tool\">KIMI SKILL INSTRUCTIONS</skill-loaded>"}]},
                          "meta": {"origin": {"kind": "user", "inTurn": True}}}},
             {"type": "context.apply_compaction", "summary": "Summary: Kimi export done, docs pending.",
              "time": 1767229204000},
             kimi_message("user", "Now write the Kimi docs.", "2026-10-22T01:00:05Z"),
+            {"type": "agent.message.appended", "time": 1767229205500,
+             "message": {"message": {"role": "user", "content": [{"type": "text", "text": "Keep the header row."}]},
+                         "meta": {"origin": {"kind": "user", "inTurn": True}}}},
             kimi_message("assistant", "Kimi docs written.", "2026-10-22T01:00:06Z", final=True),
             {"type": "agent.message.appended", "time": 1767229207000,
              "message": {"message": {"role": "tool", "content": [{"type": "text", "text": "KIMI TOOL NOISE"}]}}},
@@ -180,7 +185,7 @@ class SessionDigestTest(unittest.TestCase):
         self.assertFalse(by_id["cccc3333"]["headless"])
         self.assertEqual(by_id["aaaa1111"]["title"], "add-export")
         self.assertEqual(by_id["session_gggg7777"]["title"], "kimi-export")
-        self.assertEqual(by_id["session_gggg7777"]["user_turns"], 2)
+        self.assertEqual(by_id["session_gggg7777"]["user_turns"], 3)
         self.assertEqual(by_id["aaaa1111"]["first_user"], "Add a CSV export.")
         self.assertEqual(by_id["aaaa1111"]["last_user"], "Now write the docs.")
 
@@ -222,10 +227,11 @@ class SessionDigestTest(unittest.TestCase):
         self.assertIn("# kimi session session_gggg7777", out)
         self.assertIn("summary: Summary: Kimi export done, docs pending.", out)
         self.assertIn("user: Now write the Kimi docs.", out)
+        self.assertIn("user: Keep the header row.", out)
         self.assertIn("agent: Kimi docs written.", out)
         self.assertNotIn("user: Review the Kimi export.", out)
         for noise in ("KIMI SYSTEM PROMPT", "KIMI PRIVATE THOUGHT", "KIMI INJECTED CONTEXT", "KIMI TOOL NOISE",
-                      "KIMI SKILL INSTRUCTIONS", "Skill tool loaded", "Reading the Kimi diff."):
+                      "KIMI SKILL INSTRUCTIONS", "KIMI SKILL PREAMBLE", "Reading the Kimi diff."):
             self.assertNotIn(noise, out)
 
     def test_kimi_all_keeps_each_turns_final_reply_only(self) -> None:
@@ -235,7 +241,7 @@ class SessionDigestTest(unittest.TestCase):
         self.assertIn("agent: One Kimi finding.", out)
         self.assertNotIn("Reading the Kimi diff.", out)
         self.assertNotIn("KIMI SKILL INSTRUCTIONS", out)
-        self.assertNotIn("Skill tool loaded", out)
+        self.assertNotIn("KIMI SKILL PREAMBLE", out)
 
     def test_long_messages_and_timelines_are_capped(self) -> None:
         cwd = str(self.project)

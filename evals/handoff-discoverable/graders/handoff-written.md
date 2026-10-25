@@ -1,8 +1,8 @@
 ---
 type: regex
 target: {source: file, path: notes/tasks/csv-export/HANDOVER.md}
-pattern: '(?:python -m unittest test_export|documentation|commit)'
+pattern: '^(?=[\s\S]*python -m unittest test_export)(?=[\s\S]*(?:documentation|文档))'
 flags: i
 ---
 
-The handoff records the current task state.
+The handoff records both the passing test command and the unwritten user documentation.
