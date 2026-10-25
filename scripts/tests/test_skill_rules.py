@@ -207,6 +207,8 @@ RULES = {
         "Never put an API key, token, or password in the configuration",
         "do not edit the JSON by hand to get around it.",
         "Do not write defaults the user has not seen",
+        "Never show lane syntax to the user",
+        "When no other supported CLI is installed, say that no setup is needed",
     ),
 }
 PINNED_ELSEWHERE = {"rumo-clarify"}

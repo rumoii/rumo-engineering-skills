@@ -145,7 +145,32 @@ cd rumo-engineering-skills
 
 ### 第一次配置 agent（可选）
 
-多模型评审、多方案设计和“交给别的 agent 做”会用到本机另一个 CLI。装好后开新会话，运行 `/rumo-setup`（Claude Code 插件里是 `/rumo-engineering-skills:rumo-setup`，Codex 里是 `$rumo-setup`），按提示为每个用途选 CLI（Codex、Claude Code、qwen、grok、pi 等已有适配器的）、模型和思考强度。保存前会对每条线跑一次极小的只读探测，只发一句固定的话，不发仓库内容。
+**这是做什么的。** agent 可以调用你本机装的其他 AI 编程工具（Codex、Claude Code、qwen、grok、pi 等），请它们独立复查改动、另出一版方案来对比，或者把活交给它们做。`rumo-setup` 用来告诉 agent：可以找谁、用哪个模型、想多深。
+
+**要不要配。** 不配也完全能用，所有技能照常工作，只是少了“第二双眼睛”。本机只装了当前这一个 AI 工具时不用配。配了之后，别的工具只在真正被调用时才花它的额度。
+
+**怎样配比较合理。** 大多数人这样配就够了，`rumo-setup` 第一次运行也会这样推荐：
+
+| 用途 | 推荐 | 理由 |
+| --- | --- | --- |
+| 评审：复查改动 | 一个和当前 agent 不同厂商的工具，思考强度 high | 不同厂商的模型盲点不同；配一个就够，多加一个主要是多花额度 |
+| 设计：另出方案对比 | 同上 | 同上 |
+| 委派：把活交出去 | 同一个工具，思考强度 medium | 常规活不需要最深的思考，也更省额度 |
+| 你没开口、agent 觉得改动或方案有风险时 | 先问你要不要请其他 agent 一起看（`ask`） | 每次多花额度都由你决定 |
+
+例如平时用 Claude Code、本机还装了 Codex：评审和设计用 Codex（high），委派用 Codex（medium）。
+
+**术语对照。** 配置文件和脚本输出里会出现这些词：
+
+| 词 | 意思 |
+| --- | --- |
+| lane（线） | 一个“工具 + 模型 + 思考强度”的组合，写作 `codex:gpt-6.1-sol@high`；省略模型或强度就用该工具自己的默认值 |
+| review / design / delegate | 评审、设计、委派三个用途，各配一条或几条线 |
+| effort（思考强度） | 模型想得多深：越高越仔细，也越慢、越费额度 |
+| `auto_panel` | 你没开口、agent 判断某个改动或方案有风险时，要不要再请配置的其他 agent 一起看：先问你（`ask`，默认）、说明请谁后直接开始（`allow`），还是不主动请、等你开口（`off`） |
+| 探测 | 保存前给每条新线发一句固定的话，确认它能用；只花一点额度，不发仓库内容 |
+
+**怎么运行。** 装好后开新会话，运行 `/rumo-setup`（Claude Code 插件里是 `/rumo-engineering-skills:rumo-setup`，Codex 里是 `$rumo-setup`）。它先说明用途，列出本机检测到的工具，给一张带理由的推荐表，你可以整体接受或只改其中几项；探测通过后才写入，最后单独问一次要不要写入[常驻基线](#常驻基线)。
 
 - 以后随时重跑 `/rumo-setup`，或直接说“把评审换成 grok，思考强度 high”；只改你点名的项。
 - 配置在 `~/.rumo-engineering-skills/agents.json`，只有脚本读它，不占会话上下文。没配置时，用到多模型功能的地方会提示你先运行 `rumo-setup`。
@@ -153,7 +178,7 @@ cd rumo-engineering-skills
 - 一台机器只有这一份配置，不支持按仓库覆盖。某次想换线，直接在请求里点名，例如“用 codex 评审”；某个仓库要长期用另一套，在那个目录里把 `RUMO_AGENTS_CONFIG` 指向另一份配置（可以用 direnv 之类的工具自动切换），再运行 `rumo-setup`。
 - 支持的 CLI 分三组：
   - **支持**：codex、claude、grok、pi、qwen，都实际跑通过。
-  - **实验性**：aider、cline、copilot、cursor、goose，适配器是按各自文档写的，`rumo-setup` 会标为“未测试”。装上其中某个后，按 [adapters.md](skills/rumo-agent-collaboration/references/adapters.md) 跑 `check`，再跑一轮真实的只读调用，把结果写进 `verified`，它就升为支持。
+  - **实验性**：aider、cline、copilot、cursor、goose，适配器是按各自文档写的，`rumo-setup` 会提示它还没在真实环境跑通过、可能用不了。装上其中某个后，按 [adapters.md](skills/rumo-agent-collaboration/references/adapters.md) 跑 `check`，再跑一轮真实的只读调用，把结果写进 `verified`，它就升为支持。
   - **已停用**：gemini、opencode。它们的只读设置可能被绕过（原因见 adapters.md），脚本拒绝启动。要启用，得先把权限问题解决；不能靠删掉 `disabled_reason` 来启用。
 
 ### 遇到问题

@@ -145,7 +145,32 @@ The installer validates the repository, then links the default skills into every
 
 ### Configure Agents The First Time (Optional)
 
-Multi-model review, multi-design comparison, and handing work to another agent use another CLI on this machine. After installing, open a new session and run `/rumo-setup` (`/rumo-engineering-skills:rumo-setup` with the Claude Code plugin, `$rumo-setup` in Codex). Choose a CLI with a bundled adapter (Codex, Claude Code, qwen, grok, pi, and others), a model, and a reasoning effort for each use. Before saving, each lane gets one tiny read-only probe that sends a fixed sentence and no repository content.
+**What it is for.** The agent can call other AI coding tools installed on this machine (Codex, Claude Code, qwen, grok, pi, and others) to re-check a change independently, draft a competing design, or take over work. `rumo-setup` tells the agent whom it may call, with which model, and how hard that model should think.
+
+**Do you need it.** No. Every skill works without it; you only lose the second pair of eyes. With a single AI tool on the machine there is nothing to configure. Once configured, another tool spends its quota only when it is actually called.
+
+**A sensible configuration.** This covers most people, and it is what `rumo-setup` recommends on a first run:
+
+| Use | Recommendation | Why |
+| --- | --- | --- |
+| Review: re-check a change | One tool from a provider other than the current agent's, effort high | Different model families miss different things; one is enough, a second mostly adds cost |
+| Design: draft a competing option | Same as review | Same as review |
+| Delegate: hand work off | The same tool, effort medium | Routine work rarely needs the deepest effort, and it saves quota |
+| You have not asked, but the agent finds a change or design risky | Ask you first whether to bring in the other agents (`ask`) | You decide each time extra quota is spent |
+
+For example, if you work in Claude Code and also have Codex installed: review and design use Codex at high, and delegation uses Codex at medium.
+
+**Terms.** These words appear in the configuration file and script output:
+
+| Term | Meaning |
+| --- | --- |
+| lane | One tool, model, and effort, written `codex:gpt-6.1-sol@high`; leaving out the model or effort uses that tool's own default |
+| review / design / delegate | The three uses, each with one or more lanes |
+| effort | How hard the model thinks: higher is more careful, slower, and spends more quota |
+| `auto_panel` | Whether, when you have not asked but the agent judges a change or design risky, it also brings in the configured agents to look: ask you first (`ask`, default), say which agents and start (`allow`), or never offer and wait for you (`off`) |
+| probe | One fixed sentence sent to each new lane before saving, to prove it answers; it spends a little quota and sends no repository content |
+
+**How to run it.** After installing, open a new session and run `/rumo-setup` (`/rumo-engineering-skills:rumo-setup` with the Claude Code plugin, `$rumo-setup` in Codex). It explains what it is for, lists the tools it finds, and shows a recommended table with reasons that you accept as a whole or change item by item. It writes only after the probes pass, then asks separately whether to add the [always-on baseline](#always-on-baseline).
 
 - Rerun `/rumo-setup` at any time, or say "make review use grok at high"; only the items you name change.
 - The configuration lives in `~/.rumo-engineering-skills/agents.json`. Only scripts read it, so it costs no session context. Until it exists, features that need another agent tell you to run `rumo-setup`.
@@ -153,7 +178,7 @@ Multi-model review, multi-design comparison, and handing work to another agent u
 - There is one configuration per machine and no per-repository override. To use other lanes once, name them in the request, such as "review this with codex". For a repository that should always use other lanes, point `RUMO_AGENTS_CONFIG` at a separate file while working there (direnv or a similar tool can switch it per directory), then run `rumo-setup`.
 - CLIs come in three groups:
   - **Supported**: codex, claude, grok, pi, and qwen, each with a completed real run.
-  - **Experimental**: aider, cline, copilot, cursor, and goose, whose adapters are written from each CLI's documentation; `rumo-setup` marks them untested. After installing one, run `check` and one real read-only turn as [adapters.md](skills/rumo-agent-collaboration/references/adapters.md) describes, and record the result in `verified` to make it supported.
+  - **Experimental**: aider, cline, copilot, cursor, and goose, whose adapters are written from each CLI's documentation; `rumo-setup` warns that they have not completed a real run and may fail. After installing one, run `check` and one real read-only turn as [adapters.md](skills/rumo-agent-collaboration/references/adapters.md) describes, and record the result in `verified` to make it supported.
   - **Disabled**: gemini and opencode, whose read-only settings can be bypassed (see adapters.md), so the scripts refuse to start them. Enabling one needs that permission gap fixed first, never just removing `disabled_reason`.
 
 ### Troubleshooting
