@@ -16,7 +16,7 @@ Verify the child's tools, permissions, model, and provider separately from the p
 
 When child read-only access cannot be established, use an already authorized read-only route or report the blocker. Do not enable shell tools, extensions, or wider approvals to make a route available.
 
-Distinguish turn completion, session switching, and parent process exit. Confirm whether background work survives each event and whether completion can trigger a new parent turn. When cross-turn survival and notification are confirmed, finish the current turn and let the client notify you; do not block on result collection merely to keep the turn open. Otherwise report the missing capability rather than promise an automatic return. Delegate to a child tied to the parent process; transfer only to a session whose independent lifetime has been established.
+Distinguish turn completion, session switching, and parent process exit. Confirm whether background work survives each event and whether completion can trigger a new parent turn. When cross-turn survival and notification are confirmed, name the lane to the user, finish the current turn, and let the client notify you; do not block on result collection merely to keep the turn open. Otherwise report the missing capability rather than promise an automatic return. Delegate to a child tied to the parent process; transfer only to a session whose independent lifetime has been established.
 
 ## Claude Code
 

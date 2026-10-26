@@ -18,9 +18,15 @@ python <skill-dir>/scripts/agent_run.py status <run-id>
 python <skill-dir>/scripts/agent_run.py record <run-id> --outcome accepted|rejected|note --note "<text>"
 ```
 
-- `start` and `open` check the CLI and the adapter's flags themselves, so do not run `list`, `check`, or `show` first for a verified adapter. Only before the first launch through an unverified adapter or one written in this task, run `agent_run.py show` and show the user the full command and known limits. Unverified status alone does not require repeated approval. Official documentation may establish a write mode while `verified` stays null: call it untested, not locally verified.
-- In a client that runs background commands and reports their exit, run `start` that way without `--detach`; elsewhere add `--detach`. `--window` also opens a terminal window running `watch`.
+- `start` checks the CLI itself and runs without a window; `watch` shows its progress. `start` and `open` check the CLI and the adapter's flags themselves, so do not run `list`, `check`, or `show` first for a verified adapter. Only before the first launch through an unverified adapter or one written in this task, run `agent_run.py show` and show the user the full command and known limits. Unverified status alone does not require repeated approval. Official documentation may establish a write mode while `verified` stays null: call it untested, not locally verified.
+- `--window` also opens a terminal window running `watch`.
 - Write the brief to a file outside the repository. Use `py -3` instead of `python` on Windows when that is the configured launcher.
+
+## After Launch
+
+- For `start`, give the user the exact `watch` command it prints at launch, or `agent_run.py watch` with no run ID, which follows every active run. When `survives_caller` is not true, say that closing this session may also stop the receiver.
+- When this client runs background commands and reports their exit, run `start`, or `agent_run.py wait` after `open`, that way and rely on that report, not on the user; `open` returns once the window opens, not when the work is done. Otherwise add `--detach` to `start`, or after `open` wait for the user.
+- Client-specific (Claude Code): when both sides are Claude Code, you may instead subscribe once to the receiver's idle notice through cross-session messaging, using the run ID as its session name.
 
 Read on only when a command refuses, a run looks wrong, or the work needs more than this:
 
@@ -97,7 +103,7 @@ python <skill-dir>/scripts/agent_run.py record <run-id> --outcome accepted|rejec
 - `wait` prints nothing until the turn ends, then the summary, and exits with the turn's code. Use it only as a background command in a client that reports its exit; do not loop on it.
 - `runs` lists recorded runs newest first with their mode, state, and the command to watch an active headless run or reopen a finished session; `--active` keeps only runs still running. An unreadable record appears as an error row.
 - `open` starts the CLI interactively, through the adapter's `interactive_start`, in a terminal window the user can type into; the window opens the same way as the watch window. The brief stays in `turns/1/prompt.md`; only a one-line pointer to it travels on the command line. A host process inside the window records the turn as `interactive` while the CLI runs and `closed` when it exits or, best effort, when the window is closed; a host killed before it records leaves a turn to reconcile with `cancel`. The access flags are the adapter's for that level, and the CLI asks the user in the window for anything those flags do not pre-approve. There is no timeout. Only adapters with a preassigned session offer `interactive_start`, so that after the window closes `resume` can ask the same session for its final report. The bundled claude, qwen, pi, and grok adapters have one; codex reports its session only in headless events and has none.
-- Long turns: in a client that runs background commands and notifies on completion, run `start` or `resume` that way; otherwise use `--detach`. A turn runs until it ends or is cancelled; with `--timeout`, the recorder stops it at that limit.
+- A turn runs until it ends or is cancelled; with `--timeout`, the recorder stops it at that limit. `resume` follows the same background or `--detach` rule as `start` in [After Launch](#after-launch).
 - `resume` refuses disabled adapters, a previous turn still running or without a recorded end, and an adapter whose session source is `none`. For a turn with no recorded end, inspect the backend session first. `cancel` can mark it `abandoned` only when the process is confirmed gone or its PID has a different strong identity. Unknown identity, including an old POSIX timestamp, blocks automatic cancellation and recovery; see [records.md](records.md).
 
 ## Brief Contents
