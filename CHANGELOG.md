@@ -7,6 +7,7 @@
 - 删除行为评测、回归集和 pi 运行器（`run_codex_behavior.py`、`codex_behavior_cases.py`、`run_pi_behavior.py`、`run_regression.py`、`run_pi_trigger.py`、`pi_workspace_guard.mjs` 及其测试）：规则好不好用改看实际开发反馈，不再做有无技能的对照。`run_codex_trigger.py` 原来借用的辅助函数和对应测试并入它自己；推送前验收、`evals/` 用例和 Claude 行为用例保留。PR 模板、CONTRIBUTING 和 README 同步去掉对照组与回归集的要求。
 - README 去掉三处与别处重复的内容：任务路线表改为链接到 `task-flows.md`，“第一次配置 agent”缩成几行（细节由 `rumo-setup` 运行时讲解），项目 Profile 的用法只留在新手指南。
 - `rumo-agent-collaboration` 第 3、4 步只留判断规则，各路线的操作细节移到对应参考：`--detach`、`watch`、`survives_caller` 和 Claude Code 跨会话订阅放进 `external-cli.md` 新增的 “After Launch” 一节，原生子 agent 的完成通知放进 `native.md`；路线不可用和不确定是否送达两条改为停止条件。只是挪位置，没有删改规则。
+- `rumo-verify` 的验证配方按首次真实使用（为一个静态导出博客生成并跑通配方）补齐：调查阶段先看仓库的 e2e 或部署实际怎么启动，不再默认指向 dev server；新增“本地没有的依赖、仓库测试怎么替身”一问，替身只限应用之外的依赖、没有现成替身先问用户，并在功能文件里写明替身范围和线上未验证的部分；隔离考虑构建产物；新增前提条件一节；启动时记下真实进程 ID 和占用端口的证据，健康检查和清理以此为准；没有版本标记时每次重新构建并比对产物；证据放在项目构建、测试和清理删不到的地方，且不进版本库；命令要在项目用到的每种 shell 里都能跑；仓库内的配方先过项目的格式和 lint 检查；配方或辅助脚本改动后要重新跑通。
 - `rumo-prose` 的写作指南不再要求精简技能前后跑行为评测，改为跑仓库贡献指南规定的检查，并确认钉住的规则仍在。
 - 风险关卡改由 `rumo-coding-guidelines` 直接承载，不再要求另外加载 `rumo-test`。原来的写法是 guidelines 只说一句“去加载 rumo-test”，Claude 改权限时常常不去加载。关卡分两档：钱、登录权限与密钥、数据库迁移、不可撤销操作直接按高风险处理；持久数据、并发、别的程序会读的接口和格式、外部不可信输入、个人隐私数据、部署与依赖先判断。后三类参照 Google 代码评审指南、OWASP 和业界对 AI agent 的管控做法补齐。高风险时要先写改前会失败的测试，说出这次改动安全所依赖的那一个事实并用运行代码证明，改完再跑一遍。`high-assurance.md` 随之移到 guidelines 的 references；`rumo-test` 只保留证据规划和测试先行。
 - 常驻基线块改写成路由表：核心规则加风险关卡摘要，再用一张表写明“什么情况用哪个技能”，不靠模型自己挑选也能接上各个技能。仍然不用 SessionStart hook，写进用户自己的 `CLAUDE.md` 或 `AGENTS.md` 之前照旧先征得同意。

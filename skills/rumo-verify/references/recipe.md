@@ -7,10 +7,11 @@ A recipe records, once and proven, how to verify a project's real behavior: star
 Answer these from the code, configuration, and documentation; ask the user only what you cannot observe:
 
 - **Surface:** what a user touches, such as a web UI, CLI, service API, desktop or mobile app, or library. When there are several, pick the primary one and list the rest.
-- **Launch:** the repository's own start commands, ports, environment variables, seed data, migrations, and sign-in. Use `rumo-frontend`'s dev-server reference for frontend start-up and `rumo-project-profile` for runtime facts the repository does not hold.
+- **Launch:** how the repository's own end-to-end tests or deployment start it, such as a dev server, a built artifact behind a static server, or a container, plus ports, environment variables, seed data, migrations, and sign-in. For a frontend dev server, use `rumo-frontend`'s dev-server reference; use `rumo-project-profile` for runtime facts the repository does not hold.
+- **Dependencies:** what the feature calls that does not exist locally, such as a backend only on the real target, and how the repository's own tests replace it.
 - **Drive:** existing automation first, such as browser test specs, CLI scripts, or plain HTTP requests, then a generic harness.
 - **Observe:** what can serve as proof: screenshots, terminal transcripts, response bodies, logs, exit codes, stored data.
-- **Isolate:** whether two instances can run side by side through separate ports, data directories, or profiles. If they cannot, the recipe says so and forbids driving an instance it did not start.
+- **Isolate:** whether two instances can run side by side through separate ports, data directories, profiles, or build output; one checkout has one build output, so another run's build replaces what this one serves. If they cannot, the recipe says so and forbids driving an instance it did not start.
 
 If the checkout does not build or start, fix that within the task's scope or report the exact failure before writing anything; a recipe written against a broken start teaches wrong steps.
 
@@ -31,20 +32,21 @@ Client-specific paths: Claude Code reads project skills from `.claude/skills/` a
 
 `SKILL.md` holds frontmatter with `name: verify-<app>` and a `description` naming the application, its surface, and when to use the recipe, followed by these sections, each filled from what the investigation found:
 
-- **Launch:** the exact commands, and the sign that the application is usable rather than merely running, such as a page that renders after sign-in or an API call that returns data. Start from an empty data directory, including migrations and seed data, and include teardown. A short-lived CLI is built once and then run in a fresh isolated session for each drive.
-- **Doctor:** one read-only check that this instance is worth driving: the process is up, the build or version is the expected one, the port belongs to this run, and sign-in is valid. Run it first and again whenever something looks wrong.
+- **Prerequisites:** what the machine must already have: runtimes and versions, browsers, accounts, and ports to keep free.
+- **Launch:** the exact commands, and the sign that the application is usable rather than merely running, such as a page that renders after sign-in or an API call that returns data. Start from an empty data directory, including migrations and seed data, and include teardown. When the surface is a short-lived CLI, build it once and run each drive in a fresh isolated session. Record what proves this run owns the instance: the real process ID it started and evidence that it holds the port, such as the server's own startup line. Doctor and Cleanup use that record, never a name or a port alone.
+- **Doctor:** one read-only check that this instance is worth driving: the process is up, the build or version is the expected one, the port belongs to this run, and sign-in is valid. When the build carries no version marker, rebuild on every launch and compare what is served with the build on disk. Run it first and again whenever something looks wrong.
 - **Drive:** commands and selectors that exist in this repository. Prefer stable handles such as accessible names, data attributes, routes, and prompt strings over coordinates or element order.
-- **Evidence:** what to capture and where it goes. Drive the real user path, never internal setters or test-only endpoints; capture the action and the resulting state, and check side effects such as written files, stored rows, or sent messages. When a dry-run or test mode is the safe path, observe what it really skips instead of trusting its name.
+- **Evidence:** what to capture and where it goes. Drive the real user path, never internal setters or test-only endpoints; capture the action and the resulting state, and check side effects such as written files, stored rows, or sent messages. When a dry-run or test mode is the safe path, observe what it really skips instead of trusting its name. A dependency outside the application may be replaced the way the repository's own tests replace it; when they have no replacement, ask the user before writing one. The feature file names what was replaced and what that leaves unverified on the real target. Keep evidence where the project's own build, test, and clean steps cannot delete it, and out of version control.
 - **Cleanup:** remove instances and scratch state this run created. Stop only processes this run started; never stop a process by name. Cleanup never deletes the evidence.
-- **Helpers:** any script the recipe ships is runnable as shown in the recipe body.
+- **Helpers:** any script the recipe ships is runnable as shown in the recipe body. A recipe inside the repository falls under the project's formatters and linters; run them before proving it.
 
-Write every command relative to the repository root so it works in any checkout or worktree; never write one checkout's absolute path.
+Write every command relative to the repository root so it works in any checkout or worktree; never write one checkout's absolute path. Commands must run in every shell the project is driven from; give each form where they differ.
 
 Add a feature map: `features/README.md` with baseline preconditions, driving conventions, and an index, plus one file per user-facing feature, starting with the three to five most important. Each feature file covers its sub-behaviors, every way a user reaches it, the drive steps with each action's exact command and observable result, and the traps that can waste or invalidate a run. When seed data lacks a precondition, the feature reports the failure and the trap is recorded; never weaken the steps to make them pass.
 
 ## Prove It Once
 
-Run the recipe as written: launch, doctor, drive one mapped feature, capture evidence, clean up, then confirm the evidence still exists where the recipe says. Fix whatever fails and run cleanup after every failed attempt so no process or port is left behind. Until the recipe has run end to end, it is a draft. When you proved it in a stand-in environment, such as a local stack instead of a remote one, list each step the stand-in performed that the real target will not; those steps stay unverified.
+Run the recipe as written: launch, doctor, drive one mapped feature, capture evidence, clean up, then confirm the evidence still exists where the recipe says. Fix whatever fails and run cleanup after every failed attempt so no process or port is left behind. Until the recipe has run end to end, it is a draft. Any later edit to the recipe or its helpers needs a fresh end-to-end run. When you proved it in a stand-in environment, such as a local stack instead of a remote one or a replaced dependency, list each step the stand-in performed that the real target will not, in the feature file and in the report; those steps stay unverified.
 
 ## Maintain It
 

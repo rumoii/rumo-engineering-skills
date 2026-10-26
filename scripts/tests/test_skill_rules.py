@@ -277,6 +277,8 @@ REFERENCE_RULES = {
         "Do not share a recipe between clients through a symbolic link",
         "Write every command relative to the repository root",
         "Until the recipe has run end to end, it is a draft.",
+        "Any later edit to the recipe or its helpers needs a fresh end-to-end run.",
+        "when they have no replacement, ask the user before writing one.",
         "Stop only processes this run started; never stop a process by name.",
         "Cleanup never deletes the evidence.",
         "A product defect found during maintenance is reported, never written around in the recipe.",
