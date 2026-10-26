@@ -31,7 +31,7 @@ You do not need to learn engineering conventions first. Once installed, the agen
 ## Highlights
 
 - **Proven on a real team.** Since June 2026, dozens of engineers in the R&D department at my company have used these skills daily, in a customized edition with company-specific business content; this repository is the general edition without it. The skills carry no company, product, host, or deployment specifics; private facts live in a local [project profile](#advanced). Documentation is Chinese-first, with a complete English edition.
-- **Evals, not claims.** Model-run evals in Claude Code and Codex check two things: whether a plain-language request picks the right skill, and whether the agent then does the right thing, against a baseline arm without the skills. Adding, removing, or renaming a skill, or changing a description, is [accepted in a real client](CONTRIBUTING.md#acceptance-before-push) on the affected selection cases before push; how well the body rules work is judged from real development. The cases live in [`evals/`](evals/).
+- **Evals, not claims.** Model-run evals in Claude Code and Codex check whether a plain-language request picks the right skill; in Claude Code they also check whether the agent then does the right thing. Adding, removing, or renaming a skill, or changing a description, is [accepted in a real client](CONTRIBUTING.md#acceptance-before-push) on the affected selection cases before push; how well the body rules work is judged from real development. The cases live in [`evals/`](evals/).
 - **Brakes on risky operations.** Before dropping data, deleting files, changing a server, or touching production, the agent confirms the target and blast radius read-only and writes only after backup, rollback, and your explicit approval. These are rules for the agent, not an enforcement mechanism; use your client's own permission settings for hard limits.
 - **Small tasks stay small.** A one-line copy change gets no plan and no review, just the most relevant check before handoff. Every skill description stays within 100 words, enforced by the validator, so the always-loaded context stays cheap.
 - **Verify once, reuse every time.** A project verification recipe records how to start the application, what to click, and what proves success, and is run end to end once. The next agent follows it to check real features instead of rediscovering them.
@@ -191,7 +191,7 @@ For example, if you work in Claude Code and also have Codex installed: review us
 | Client | Install method | Verified |
 | --- | --- | --- |
 | Claude Code | Plugin or installer | Install, loading, trigger evals, behavior evals (including cross-skill cases) |
-| Codex | Installer | Install, loading, trigger evals, behavior evals (including cases that run tests) |
+| Codex | Installer | Install, loading, trigger evals |
 | Other clients that read `~/.agents/skills` | Installer plus the shared directory | Install and loading only |
 
 A successful call by name shows that the client loaded the skill, not that it will pick the skill from a plain-language request. [GETTING_STARTED.md](GETTING_STARTED.md#其他客户端) (Chinese) shows how to connect other clients. External-agent `start` and `resume` currently require Windows or Linux/WSL. Other platforms, including macOS, can inspect existing run records only; installing the skills does not enable those external-run features.
@@ -334,7 +334,7 @@ These commands check the repository, not an installation. [GETTING_STARTED.md](G
 <details>
 <summary>Eval coverage</summary>
 
-Model-run evals cover automatic selection in Claude Code and the Codex CLI; the pi runners screen changes cheaply with any model but do not replace those results. Behavior evals cover single-skill cases, cross-skill `chain-*` cases, and Codex cases that run tests. Other clients are verified for install and loading only. For what each eval proves, see [CONTRIBUTING.md](CONTRIBUTING.md#trigger-evals).
+Model-run evals cover automatic selection in Claude Code and the Codex CLI. Behavior evals run in Claude Code and cover single-skill cases and cross-skill `chain-*` cases. Other clients are verified for install and loading only. For what each eval proves, see [CONTRIBUTING.md](CONTRIBUTING.md#trigger-evals).
 
 </details>
 

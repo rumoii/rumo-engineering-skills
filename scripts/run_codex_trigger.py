@@ -10,12 +10,163 @@ import os
 from pathlib import Path
 import re
 import shutil
+import signal
 import subprocess
+import time
+import tomllib
+import uuid
 
-try:
-    from .run_codex_behavior import SAMPLE_AUTHOR, blind_workspace, evidence, file_state, git, leaked_words, read_events, run_turn, skill_overrides, toml_overrides, write_json
-except ImportError:
-    from run_codex_behavior import SAMPLE_AUTHOR, blind_workspace, evidence, file_state, git, leaked_words, read_events, run_turn, skill_overrides, toml_overrides, write_json
+
+def write_json(path: Path, value: object) -> None:
+    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def file_state(root: Path) -> dict[str, str]:
+    return {
+        p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in sorted(root.rglob("*"))
+        if p.is_file() and not any(part in {".git", ".agents", "__pycache__"} for part in p.relative_to(root).parts)
+        and p.suffix != ".pyc"
+    }
+
+
+def git(root: Path, *args: str) -> str:
+    return subprocess.check_output(["git", "-C", str(root), *args], text=True, encoding="utf-8").strip()
+
+
+# A model that can tell it is being graded behaves unlike one doing real work, so
+# the path it works in names neither the case nor the evaluation.
+BLIND_WORDS = {"baseline", "benchmark", "candidate", "eval", "evals", "evaluation", "fixture", "fixtures",
+               "grader", "graders", "judge", "rubric", "test", "tests", "testing"}
+SAMPLE_AUTHOR = ("-c", "user.name=Sam Lee", "-c", "user.email=sam@example.invalid")
+
+
+def leaked_words(path: Path, case_names: object = ()) -> list[str]:
+    """Evaluation words and case names that appear in a path the model can see."""
+    tokens = {token for part in path.parts for token in re.split(r"[^a-z0-9]+", part.lower())}
+    text = path.as_posix().lower()
+    return sorted((tokens & BLIND_WORDS) | {name for name in case_names if name.lower() in text})
+
+
+def blind_workspace(workspace_root: Path) -> Path:
+    """Working copy under the workspace root, apart from the case's logs, named only by a random token."""
+    return workspace_root / "w" / uuid.uuid4().hex[:8] / "project"
+
+
+def skill_overrides() -> tuple[list[dict], dict]:
+    """Preserve other overrides and auth; disable installed Rumo copies for this process only."""
+    home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+    config_path = home / "config.toml"
+    config = tomllib.loads(config_path.read_text(encoding="utf-8")) if config_path.exists() else {}
+    overrides = list(config.get("skills", {}).get("config", []))
+    paths: set[str] = set()
+    for root in (home / "skills", Path.home() / ".agents/skills", Path.home() / ".codex/skills"):
+        for skill in root.glob("rumo-*/SKILL.md"):
+            for path in (skill, skill.parent, skill.resolve(), skill.parent.resolve()):
+                paths.add(str(path))
+    overrides.extend({"path": path, "enabled": False} for path in sorted(paths))
+    settings = {k: config[k] for k in ("model", "model_reasoning_effort", "model_provider") if k in config}
+    return overrides, settings
+
+
+def toml_overrides(entries: list[dict]) -> str:
+    return "skills.config=[" + ",".join(
+        "{path=" + json.dumps(entry["path"]) + ",enabled=" + str(entry.get("enabled", True)).lower() + "}"
+        for entry in entries
+    ) + "]"
+
+
+def stop_owned_process(proc: subprocess.Popen) -> None:
+    if proc.poll() is not None:
+        return
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True, timeout=20, check=False)
+    else:
+        os.killpg(proc.pid, signal.SIGTERM)
+    try:
+        proc.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        if os.name == "nt":
+            proc.kill()
+        else:
+            os.killpg(proc.pid, signal.SIGKILL)
+        proc.wait(timeout=10)
+
+
+def run_turn(command: list[str], prompt: str, root: Path, prefix: Path, timeout: float, env: dict | None = None) -> tuple[int, bool]:
+    """env replaces the child environment when given; it is never written to disk."""
+    kwargs = {"creationflags": subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
+    if env is not None:
+        kwargs["env"] = env
+    (prefix.with_suffix(".prompt.txt")).write_text(prompt, encoding="utf-8")
+    write_json(prefix.with_suffix(".command.json"), command)
+    with prefix.with_suffix(".jsonl").open("wb") as out, prefix.with_suffix(".stderr.txt").open("wb") as err:
+        proc = subprocess.Popen(command, cwd=root, stdin=subprocess.PIPE, stdout=out, stderr=err, **kwargs)
+        started = time.monotonic()
+        timed_out = False
+        try:
+            proc.stdin.write(prompt.encode("utf-8"))
+            proc.stdin.close()
+            while proc.poll() is None:
+                if time.monotonic() - started >= timeout:
+                    timed_out = True
+                    break
+                try:
+                    proc.wait(timeout=min(30, max(0.01, timeout - (time.monotonic() - started))))
+                except subprocess.TimeoutExpired:
+                    print(f"  waiting {int(time.monotonic() - started)}s: {root.name}", flush=True)
+        finally:
+            stop_owned_process(proc)
+        return proc.returncode, timed_out
+
+
+def read_events(path: Path) -> list[dict]:
+    events = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            value = json.loads(line)
+            if not isinstance(value, dict):
+                raise ValueError("Expected a JSON event object")
+            events.append(value)
+    return events
+
+
+def normalized_path_text(text: str) -> str:
+    return re.sub(r"/+", "/", text.replace("\\", "/")).lower()
+
+
+def reads_sample_skill(command: str, root: Path, name: str) -> bool:
+    """Accept the skill path relative to the sample or absolute under it, never a same-named copy elsewhere."""
+    text = normalized_path_text(command)
+    sample = normalized_path_text(str(root)).rstrip("/") + "/"
+    for match in re.finditer(re.escape(f".agents/skills/{name}/skill.md"), text):
+        before = text[:match.start()]
+        if before.endswith(sample) or re.search(r"(?:^|[\s\"'=])(?:\./)?$", before):
+            return True
+    return False
+
+
+def evidence(events: list[dict], root: Path, skills: list[str]) -> dict:
+    completed = [e["item"] for e in events if e.get("type") == "item.completed" and isinstance(e.get("item"), dict)]
+    commands = [item for item in completed if item.get("type") == "command_execution"]
+    messages = [item.get("text", "") for item in completed if item.get("type") == "agent_message"]
+    loaded = {
+        name: any(
+            item.get("status") == "completed" and item.get("exit_code") == 0
+            and reads_sample_skill(item.get("command", ""), root, name)
+            and f"name: {name}" in item.get("aggregated_output", "")
+            for item in commands
+        ) for name in skills
+    }
+    return {
+        "turn_completed": any(e.get("type") == "turn.completed" for e in events),
+        "errors": [e for e in events if e.get("type") in {"error", "turn.failed"}],
+        "loaded_skill_paths": loaded,
+        "commands": commands,
+        "file_changes": [item for item in completed if item.get("type") == "file_change"],
+        "messages": messages,
+        "thread_id": next((e.get("thread_id") for e in events if e.get("type") == "thread.started"), None),
+    }
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts.run_codex_trigger import REPO_ROOT, load_cases, main, run_case
+from scripts.run_codex_trigger import REPO_ROOT, SAMPLE_AUTHOR, blind_workspace, evidence, leaked_words, load_cases, main, read_events, run_case, run_turn, toml_overrides
 
 
 def read_skill(name: str, command: str | None = None) -> dict:
@@ -89,6 +89,102 @@ class ArgumentTest(unittest.TestCase):
                 main(["--snapshot", temp, "--output-dir", str(REPO_ROOT / "trigger-evidence")])
             self.assertEqual(raised.exception.code, 2)
             self.assertFalse((REPO_ROOT / "trigger-evidence").exists())
+
+
+class TraceTest(unittest.TestCase):
+    def test_started_command_does_not_count_as_completed(self) -> None:
+        events = [{"type": "item.started", "item": {"type": "command_execution", "command": "python -m unittest", "status": "in_progress"}}]
+        self.assertEqual(evidence(events, Path("."), ["rumo-verify"])["commands"], [])
+
+    def test_skill_read_and_runtime_completion_are_separate(self) -> None:
+        events = [
+            {"type": "thread.started", "thread_id": "fixture-thread"},
+            {"type": "item.completed", "item": {"type": "command_execution", "command": r"Get-Content C:\sample\.agents\skills\rumo-verify\SKILL.md", "exit_code": 0, "status": "completed", "aggregated_output": "---\nname: rumo-verify\n---"}},
+            {"type": "item.completed", "item": {"type": "agent_message", "text": "All tests passed; ready to merge."}},
+        ]
+        result = evidence(events, Path("C:/sample"), ["rumo-verify"])
+        self.assertTrue(result["loaded_skill_paths"]["rumo-verify"])
+        self.assertFalse(result["turn_completed"])
+        self.assertEqual(result["messages"], ["All tests passed; ready to merge."])
+
+    def test_same_named_skill_outside_sample_is_not_loaded(self) -> None:
+        for root, command in (
+            ("C:/sample", r"Get-Content C:\unrelated\.agents\skills\rumo-verify\SKILL.md"),
+            ("/other/sample", "cat /other/sample-copy/.agents/skills/rumo-verify/SKILL.md"),
+        ):
+            item = {"type": "command_execution", "command": command, "status": "completed", "exit_code": 0, "aggregated_output": "name: rumo-verify\n"}
+            with self.subTest(command=command):
+                result = evidence([{"type": "item.completed", "item": item}], Path(root), ["rumo-verify"])
+                self.assertFalse(result["loaded_skill_paths"]["rumo-verify"])
+
+    def test_relative_skill_read_is_loaded(self) -> None:
+        for command in ("cat .agents/skills/rumo-verify/SKILL.md", "cat ./.agents/skills/rumo-verify/SKILL.md"):
+            item = {"type": "command_execution", "command": command, "status": "completed", "exit_code": 0, "aggregated_output": "name: rumo-verify\n"}
+            with self.subTest(command=command):
+                result = evidence([{"type": "item.completed", "item": item}], Path("C:/sample"), ["rumo-verify"])
+                self.assertTrue(result["loaded_skill_paths"]["rumo-verify"])
+
+    def test_failed_skill_read_is_not_loaded(self) -> None:
+        item = {"type": "command_execution", "command": "cat .agents/skills/rumo-verify/SKILL.md", "status": "failed", "exit_code": -1}
+        result = evidence([{"type": "item.completed", "item": item}], Path("."), ["rumo-verify"])
+        self.assertFalse(result["loaded_skill_paths"]["rumo-verify"])
+
+    def test_escaped_windows_skill_path_is_read_evidence(self) -> None:
+        item = {"type": "command_execution", "command": r"Get-Content '.agents\\skills\\rumo-clarify\\SKILL.md'", "status": "completed", "exit_code": 0, "aggregated_output": "name: rumo-clarify\n"}
+        result = evidence([{"type": "item.completed", "item": item}], Path("."), ["rumo-clarify"])
+        self.assertTrue(result["loaded_skill_paths"]["rumo-clarify"])
+
+    def test_malformed_or_non_object_event_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "events.jsonl"
+            for text in ("not-json", "[]"):
+                with self.subTest(text=text):
+                    path.write_text(text, encoding="utf-8")
+                    with self.assertRaises((ValueError, json.JSONDecodeError)):
+                        read_events(path)
+
+    def test_skill_disable_arguments_are_toml(self) -> None:
+        import tomllib
+        text = toml_overrides([{"path": r"C:\skills\has space\SKILL.md", "enabled": False}])
+        self.assertEqual(tomllib.loads(text)["skills"]["config"][0]["enabled"], False)
+
+
+class RunTurnTest(unittest.TestCase):
+    def test_timeout_preserves_partial_output_and_finishes_cleanup(self) -> None:
+        import sys
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            prefix = root / "turn-1"
+            command = [sys.executable, "-u", "-c", "import sys,time; sys.stdin.read(); print('partial output',flush=True); time.sleep(60)"]
+            code, timed_out = run_turn(command, "local fixture", root, prefix, 2)
+            self.assertTrue(timed_out)
+            self.assertIsInstance(code, int)
+            self.assertIn("partial output", prefix.with_suffix(".jsonl").read_text(encoding="utf-8"))
+
+    def test_completed_process_is_not_reported_as_timeout(self) -> None:
+        import sys
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            code, timed_out = run_turn([sys.executable, "-c", "import sys; sys.stdin.read(); sys.exit(3)"], "local fixture", root, root / "turn-1", 10)
+            self.assertEqual(code, 3)
+            self.assertFalse(timed_out)
+
+
+class BlindingTest(unittest.TestCase):
+    def test_output_paths_that_name_an_evaluation_are_flagged(self) -> None:
+        self.assertEqual(leaked_words(Path("D:/work/skill-evals/run-1")), ["evals"])
+        self.assertEqual(leaked_words(Path("/tmp/judge_test")), ["judge", "test"])
+        self.assertEqual(leaked_words(Path("C:/Users/x/AppData/Local/Temp/latest-runs")), [])
+        self.assertEqual(leaked_words(Path("D:/evidence/run/codex-candidate-1-withdraw-existing"), ("withdraw-existing",)), ["candidate", "withdraw-existing"])
+
+    def test_workspace_path_names_no_case_and_sits_apart_from_logs(self) -> None:
+        output = Path("/evidence/run")
+        workspace = blind_workspace(output)
+        self.assertEqual(leaked_words(workspace.relative_to(output)), [])
+        self.assertNotEqual(workspace.parent.parent, output / "verify-honest")
+        self.assertNotIn(output / "verify-honest", workspace.parents)
+        self.assertNotEqual(workspace, blind_workspace(output))
+        self.assertEqual(leaked_words(Path(" ".join(SAMPLE_AUTHOR))), [])
 
 
 if __name__ == "__main__":

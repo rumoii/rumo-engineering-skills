@@ -24,7 +24,6 @@
 - [ ] `python -m unittest discover -s scripts/tests -p "test_*.py"`
 - [ ] `python scripts/run_auxiliary_tests.py`
 - [ ] 改了某个 `description`：跑过 trigger evals，下面写明客户端、版本和结果 / changed a `description`: ran trigger evals
-- [ ] 改写或删减了技能正文：跑过 behavior evals 或 `scripts/run_regression.py`，下面写明结果 / rewrote or trimmed skill text: ran behavior evals or the regression set
 
 ## AI 使用说明 / AI disclosure
 

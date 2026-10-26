@@ -78,13 +78,12 @@ skill's `description`, run the affected trigger cases (see
 [Trigger evals](#trigger-evals)) once against a snapshot of the candidate in
 one real client: Claude through `claude plugin eval`, or Codex through
 `scripts/run_codex_trigger.py`. Wording, typo, and link fixes do not need it,
-and neither every client nor the full suite is required. A pi run only screens
-the change.
+and neither every client nor the full suite is required.
 
 Rules in a skill body are judged in real development: the maintainer's
-feedback and `rumo-reflect` sessions show where a rule misfires. Behavior cases
-(see [Behavior evals](#behavior-evals)) and with-and-without comparisons are
-optional; run them when the maintainer asks.
+feedback and `rumo-reflect` sessions show where a rule misfires. The Claude
+behavior cases (see [Behavior evals](#behavior-evals)) are optional; run them
+when the maintainer asks.
 
 For each run, record the candidate commit, client and version, model, cases,
 results, and evidence directory, keeping the evidence outside the checkout.
@@ -149,29 +148,12 @@ Results describe only the recorded Codex CLI version and model settings.
 Other clients remain untested, and neither client's result stands in for the
 other's.
 
-`scripts/run_pi_trigger.py` runs the same cases through pi with any model it
-can reach, to screen a description change cheaply. It turns off pi's own
-skill discovery and loads each sample skill with `--skill`, so pi lists them
-the way it lists installed skills. It also turns off context files, because
-pi reads the user's and parent directories' `AGENTS.md`, and MCP, because the
-tool allowlist does not remove MCP tools. Pass `--workspace-root` when the
-evidence directory's path would hint at the task:
-
-```powershell
-python scripts/run_pi_trigger.py --snapshot <snapshot-root> --output-dir <task-evidence-dir> --workspace-root <neutral-dir> --model <provider/id> [--case debug-readonly] [--runs 3]
-```
-
-It shares the Codex runner's grading and invalid-run rules. A result from
-another model only screens a change; confirm it with Codex or Claude before
-reporting it.
-
 ## Behavior evals
 
 Cases tagged `behavior` check what an agent does once a skill fires, such as
 not editing code during a review or not running a DELETE before the target
 database is confirmed. Each one seeds a small git repository with a scaffold
-script and grades only from the transcript, never with a judge model. Run
-them before and after merging, rewriting, or substantially trimming a skill:
+script and grades only from the transcript, never with a judge model:
 
 ```bash
 claude plugin eval . --tag behavior --scaffold --allow-tools Edit Write Bash --runs 1
@@ -187,75 +169,9 @@ The `chain-*` cases cover requests that cross skills: a small edit that must
 stay light, a fully specified interface change, an authorization change, and
 diagnosis followed by a fix. They need only `Edit Write` and grade the
 resulting files and the final reply, so they show whether the skills keep a
-task proportionate and honest but not whether tests ran. The Codex
-`auth-change-verify` and `debug-then-fix` checks below cover execution for the
-same scenarios. Regex graders compile as JavaScript: pass flags such as `i` in
-the grader's `flags` field, never as a leading `(?i)`.
-
-### Codex behavior checks
-
-`scripts/run_codex_behavior.py` runs the local cases in
-`scripts/codex_behavior_cases.py` through the existing Codex CLI. It calls a
-model, so it is opt-in and stays out of CI. Unit tests for its evidence
-parser and fixtures run in the ordinary test suite without model calls.
-
-Create a snapshot containing `skills/`, then run in a new evidence directory
-outside the checkout:
-
-```powershell
-python scripts/run_codex_behavior.py --snapshot <snapshot-root> --output-dir <task-evidence-dir>
-```
-
-Use `--case verify-honest` for one case. Compare old and new skill snapshots
-with the same fixtures, model, reasoning settings, and grader version. Add
-`--without-skills` for a baseline arm with no skills in the sample or the
-prompt; its `no_rumo_skill_read` check must hold for the run to count. Keep
-both snapshots and their source revisions with the evidence. The runner
-disables installed Rumo copies for its child process only and explicitly
-loads each sample's snapshot paths; it reuses existing authentication and
-provider settings. On Windows it uses the unelevated workspace-write sandbox.
-It never falls back to unsandboxed execution. Runtime or skill-read failure
-invalidates the run; inspect it before spending another model call.
-
-Results separate mechanical checks from a pending review verdict. Inspect the
-JSONL commands, completed outputs, final replies, and changed files against
-each saved acceptance criterion before assigning a verdict, and state whether
-the reviewer was a person or an agent. A known failed
-test must have a completed command, exit code 1, and the expected assertion;
-reading a file, mentioning a command, or merely avoiding readiness phrases
-does not prove it ran. Claude's `tool_used` grader checks a test attempt only;
-its failure-report phrase graders do not establish arbitrary semantic truth.
-Neither client result establishes behavior in the other client.
-
-The timeout bounds one case's runtime across turns; it is not a debugging
-attempt limit. Preserve partial evidence on timeout, terminate only the
-runner-owned process tree, and report the case as unverified. Fresh paired
-runs are scenario evidence, not a statistical claim of overall improvement.
-
-`scripts/run_pi_behavior.py` runs the same read-only cases through the pi CLI
-with any model pi can reach, to screen skill changes without spending the
-Codex budget. pi has no sandbox, so the runner allows only `read`, `grep`,
-`find`, and `ls`, refuses cases that edit files, and turns off installed
-skills, extensions, and prompt templates. Those tools still reach any path, so
-both pi runners load `scripts/pi_workspace_guard.mjs`, an extension that blocks
-calls outside the sample before they run; a run in which such a call still
-succeeds is invalid. Its arguments, `--without-skills`
-arm, and result layout match the Codex runner. A result from another model
-only screens a change; confirm it with Codex or Claude before reporting it.
-`--manifest <file>` adds replay cases from local repositories: each names a
-repository, a commit, an optional `dirty_commit` whose changes become
-uncommitted edits, the turns, the skills, and the acceptance criterion. Keep
-manifests and their evidence outside this checkout when the repositories are
-private.
-
-`scripts/run_regression.py` reruns `REGRESSION` in
-`scripts/codex_behavior_cases.py`: the cases where skills measurably changed
-the outcome, each with the outcome already observed. It runs both arms of
-every case `--reps` times through one runner (`codex` by default, or `pi`,
-which skips cases that edit files), compares the candidate snapshot against
-`--baseline` (another snapshot, or `without`), and writes `summary.md` with
-validity counts, mechanical checks, and each final reply for grading. Options after `--` go to the runner. Run it
-before and after any change that removes or rewrites skill text.
+task proportionate and honest but not whether tests ran. Regex graders
+compile as JavaScript: pass flags such as `i` in the grader's `flags` field,
+never as a leading `(?i)`.
 
 ## Keep cases blind
 
@@ -263,15 +179,11 @@ A model that can tell it is being graded behaves differently from one doing
 real work. Keep evaluation words and case names out of everything the model
 sees: prompts, the git identity and commit messages in scaffold scripts, and
 the path it works in. `scripts/tests/test_trigger_evals.py` checks prompts and
-scaffold git metadata. The Codex and pi runners seed each working copy at
-`<workspace-root>/w/<random>/project`, away from the case's logs, and record
-that path as `workspace` in `result.json`. `--workspace-root` defaults to
-`--output-dir`; `run_regression.py` passes its own top-level output directory,
-so per-arm log directories named after the case stay out of the path. Each
-runner refuses a workspace root whose path contains evaluation words, the
-words `candidate` or `baseline`, or a case name. Decide whether a step
-happened from the transcript or event stream, never from the agent's own
-account of it.
+scaffold git metadata. The Codex trigger runner seeds each working copy at
+`<output-dir>/w/<random>/project`, away from the case's logs, and refuses an
+output directory whose path contains evaluation words, the words `candidate`
+or `baseline`, or a case name. Decide whether a step happened from the
+transcript or event stream, never from the agent's own account of it.
 
 ## Releases
 
