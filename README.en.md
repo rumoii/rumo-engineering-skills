@@ -58,24 +58,7 @@ Take "The orders page returns 500, fix it":
 5. `rumo-verify` lists the commands actually run and their results before handoff, and names any check that did not run instead of saying "should be fine".
 6. Only when you ask does `rumo-git-commit` commit by the repository's conventions; pushing needs your explicit request too.
 
-Other tasks have their own default route, chosen by `rumo-coding-guidelines`:
-
-| Task | Route |
-| --- | --- |
-| Small edit | Read the code → edit → run the most relevant check → verify; no plan, no review |
-| Defect fix | Reproduce and prove the cause → failing test → fix → verification recipe → verify |
-| Feature | Clarify an unclear goal → plan multi-step work → risk gate → thin slices → verification recipe → verify |
-| Investigation | Read-only; answer with evidence |
-| Resume | Read the handoff document and the decisions and dead ends → check the repository's actual state → continue |
-| Refactor | Confirm test coverage → change the structure → rerun the same tests unchanged |
-| Performance problem | Baseline under fixed conditions → find the hot path → fix → measure the same way; report both numbers |
-| Metric improvement | Fix the measurement → log each attempt with before and after values → keep or revert; never loosen the target |
-| Runtime diagnosis | Capture the live signal or trace → narrow to one mechanism → confirm → map to source; diagnosis only |
-| Prototype | Name the decision → throwaway build outside the product → switchable variants → recommend |
-| Visual parity | Baseline screenshots of every state → one component at a time → image comparison |
-| Skill or prompt change | Write by the prose rules → run the validators → run eval cases when behavior changes |
-| Pull request follow-up | On request: conflicts → review comments → checks; never merge |
-| Pause | Stop at a safe boundary, nothing irreversible, resume note; commit only when you ask |
+Small edits, features, refactors, performance problems, prototypes, pauses, and other tasks also have default routes, chosen by `rumo-coding-guidelines`; the full list is in [task-flows.md](skills/rumo-coding-guidelines/references/task-flows.md).
 
 To pick a skill yourself, call it by name:
 
@@ -145,40 +128,9 @@ The installer validates the repository, then links the default skills into every
 
 ### Configure Agents The First Time (Optional)
 
-**What it is for.** The agent can call other AI coding tools installed on this machine (Codex, Claude Code, qwen, grok, pi, and others) to re-check a change independently or take over work. `rumo-setup` tells the agent whom it may call, with which model, and how hard that model should think.
+The agent can call other AI coding tools installed on this machine to re-check a change independently or take over work. You do not need it: every skill works without it, and with a single AI tool on the machine there is nothing to configure. To use it, open a new session after installing and run `/rumo-setup` (`/rumo-engineering-skills:rumo-setup` with the plugin, `$rumo-setup` in Codex). It explains each setting, recommends a configuration with reasons, and writes `~/.rumo-engineering-skills/agents.json` only after each choice passes a probe. Another tool spends its quota only when it is called, and unless you name one, the agent asks you first. To change the configuration later, rerun it or just say "make review use grok at high".
 
-**Do you need it.** No. Every skill works without it; you only lose the second pair of eyes. With a single AI tool on the machine there is nothing to configure. Once configured, another tool spends its quota only when it is actually called.
-
-**A sensible configuration.** This covers most people, and it is what `rumo-setup` recommends on a first run:
-
-| Use | Recommendation | Why |
-| --- | --- | --- |
-| Review: re-check a change | One tool from a provider other than the current agent's, effort high | Different model families miss different things; one is enough, a second mostly adds cost |
-| Delegate: hand work off | The same tool, effort medium; routine work can also go to the current client's own cheaper model, such as sonnet in Claude Code | Routine work rarely needs the deepest effort, and it saves quota; a same-provider model runs as the client's own subagent, with no second CLI |
-| You have not asked, but the agent finds a change risky | Ask you first whether to bring in the other agents (`ask`) | You decide each time extra quota is spent |
-
-For example, if you work in Claude Code and also have Codex installed: review uses Codex at high, delegation uses Codex at medium, and routine work goes to sonnet in Claude Code at medium.
-
-**Terms.** These words appear in the configuration file and script output:
-
-| Term | Meaning |
-| --- | --- |
-| lane | One tool, model, and effort, written `codex:gpt-6.1-sol@high`; leaving out the model or effort uses that tool's own default |
-| review / delegate | The two uses, each with one or more lanes |
-| effort | How hard the model thinks: higher is more careful, slower, and spends more quota |
-| `auto_panel` | Whether, when you have not asked but the agent judges a change risky, it also brings in the configured agents to look: ask you first (`ask`, default), say which agents and start (`allow`), or never offer and wait for you (`off`) |
-| probe | One fixed sentence sent to each new lane before saving, to prove it answers; it spends a little quota and sends no repository content |
-
-**How to run it.** After installing, open a new session and run `/rumo-setup` (`/rumo-engineering-skills:rumo-setup` with the Claude Code plugin, `$rumo-setup` in Codex). It explains what it is for, lists the tools it finds, and shows a recommended table with reasons that you accept as a whole or change item by item. It writes only after the probes pass, then asks separately whether to add the [always-on baseline](#always-on-baseline).
-
-- Rerun `/rumo-setup` at any time, or say "make review use grok at high"; only the items you name change.
-- The configuration lives in `~/.rumo-engineering-skills/agents.json`. Only scripts read it, so it costs no session context. Until it exists, features that need another agent tell you to run `rumo-setup`.
-- By default only the current agent works. A multi-model panel opens when you ask, when a change is rated high risk, or when the agent judges it worthwhile; `auto_panel` in the configuration decides whether the last two ask you first.
-- There is one configuration per machine and no per-repository override. To use other lanes once, name them in the request, such as "review this with codex". For a repository that should always use other lanes, point `RUMO_AGENTS_CONFIG` at a separate file while working there (direnv or a similar tool can switch it per directory), then run `rumo-setup`.
-- CLIs come in three groups:
-  - **Supported**: codex, claude, grok, pi, and qwen, each with a completed real run.
-  - **Experimental**: aider, cline, copilot, cursor, and goose, whose adapters are written from each CLI's documentation; `rumo-setup` warns that they have not completed a real run and may fail. After installing one, run `check` and one real read-only turn as [adapters.md](skills/rumo-agent-collaboration/references/adapters.md) describes, and record the result in `verified` to make it supported.
-  - **Disabled**: gemini and opencode, whose read-only settings can be bypassed (see adapters.md), so the scripts refuse to start them. Enabling one needs that permission gap fixed first, never just removing `disabled_reason`.
+The CLIs with a completed real run are codex, claude, grok, pi, and qwen; aider, cline, copilot, cursor, and goose are experimental, and gemini and opencode are disabled. [adapters.md](skills/rumo-agent-collaboration/references/adapters.md) explains why and how a CLI becomes supported.
 
 ### Troubleshooting
 
@@ -284,17 +236,9 @@ Do not delete `rumo-*` links in File Explorer or with `Remove-Item -Recurse`: th
 ## Advanced
 
 <details>
-<summary>Project profiles</summary>
+<summary>Project profiles and environment variables</summary>
 
-Profiles are optional; the skills work without them. Repository names, component inventories, hosts, service names, install paths, and credentials belong in a local profile or a private profiles repository, never in this repository. [GETTING_STARTED.md](GETTING_STARTED.md#4-项目-profile可选) (Chinese) shows how to create and fill one.
-
-```powershell
-py -3 skills\rumo-project-profile\scripts\init_profile.py --profile my-project
-```
-
-```bash
-python3 skills/rumo-project-profile/scripts/init_profile.py --profile my-project
-```
+Profiles are optional; the skills work without them. Repository names, component inventories, hosts, service names, install paths, and credentials belong in a local profile or a private profiles repository, never in this repository. [GETTING_STARTED.md](GETTING_STARTED.md#4-项目-profile可选) (Chinese) shows how to create, fill, and check one.
 
 Environment variables:
 
@@ -302,6 +246,7 @@ Environment variables:
 - `RUMO_SKILLS_REMOTE`: clone URL
 - `RUMO_SKILL_PROFILES_REPO`: private profiles checkout
 - `RUMO_PROJECT_PROFILE`: explicit profile ID
+- `RUMO_AGENTS_CONFIG`: a separate agent configuration, such as for a repository that should always use other lanes
 - `CODEX_HOME`, `CLAUDE_HOME`, `AGENTS_HOME`: custom client homes
 
 Pass `-ProfilesRepo <path>` or `--profiles-repo <path>` to persist a profiles checkout in `~/.rumo-engineering-skills/config.json`.

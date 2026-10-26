@@ -58,24 +58,7 @@
 5. `rumo-verify` 交付前列出实际跑过的命令和结果；没跑的检查直接说明，不说“应该没问题”。
 6. 你说提交，`rumo-git-commit` 才会按仓库约定提交；推送同样要你明确要求。
 
-其他任务各有默认路线，由 `rumo-coding-guidelines` 选择：
-
-| 任务 | 路线 |
-| --- | --- |
-| 小改动 | 读代码 → 改 → 跑最相关的检查 → 验证；不写计划、不做评审 |
-| 修缺陷 | 复现并证明原因 → 失败测试 → 修复 → 验证配方 → 验证 |
-| 新功能 | 目标不清先澄清 → 多步骤先计划 → 风险判断 → 分小段实现 → 验证配方 → 验证 |
-| 只调查 | 只读，回答问题并附证据 |
-| 接续工作 | 读交接文档、决策与弃案记录 → 核对仓库实际状态 → 继续 |
-| 重构 | 确认测试覆盖 → 改结构 → 同一批测试仍然通过 |
-| 性能问题 | 同样条件测基线 → 定位 → 修复 → 同样条件再测，报告前后数字 |
-| 指标优化 | 固定测量方法 → 每次尝试记一行前后数值 → 有效保留、无效回退；不放宽目标 |
-| 运行时诊断 | 采集现场信号或 trace → 缩小到具体机制 → 确认 → 对应到源码；只诊断不修 |
-| 原型 | 说清要定的决定 → 产品之外做一次性实现 → 多方案可切换 → 给推荐 |
-| 视觉对齐 | 先截各状态基线 → 一次迁移一个组件 → 逐个图像对比 |
-| 改技能或提示词 | 按写作规范改 → 跑仓库校验 → 行为有变化时跑评测用例 |
-| 跟进 PR | 你要求时：冲突 → 评审意见 → CI；不合并 |
-| 暂停 | 停在安全边界，不做不可逆操作，写续做说明；你不说就不提交 |
+小改动、新功能、重构、性能问题、原型、暂停等其他任务也各有默认路线，由 `rumo-coding-guidelines` 选择，完整列表见 [task-flows.md](skills/rumo-coding-guidelines/references/task-flows.md)。
 
 想指定技能时可以点名调用（用插件安装时，Claude Code 的技能名要带前缀，例如 `/rumo-engineering-skills:rumo-clarify`）：
 
@@ -145,40 +128,9 @@ cd rumo-engineering-skills
 
 ### 第一次配置 agent（可选）
 
-**这是做什么的。** agent 可以调用你本机装的其他 AI 编程工具（Codex、Claude Code、qwen、grok、pi 等），请它们独立复查改动，或者把活交给它们做。`rumo-setup` 用来告诉 agent：可以找谁、用哪个模型、想多深。
+agent 可以调用你本机装的其他 AI 编程工具，请它们独立复查改动，或者把活交给它们做。不配也完全能用；本机只有当前这一个 AI 工具时不用配。想用时，装好后开新会话运行 `/rumo-setup`（插件里是 `/rumo-engineering-skills:rumo-setup`，Codex 里是 `$rumo-setup`）：它会逐项解释每个配置、给出带理由的推荐，探测通过后才写入 `~/.rumo-engineering-skills/agents.json`。别的工具只在被调用时才花额度；你没点名时，agent 默认先问你再请它们。以后重跑它，或直接说“把评审换成 grok，思考强度 high”即可修改。
 
-**要不要配。** 不配也完全能用，所有技能照常工作，只是少了“第二双眼睛”。本机只装了当前这一个 AI 工具时不用配。配了之后，别的工具只在真正被调用时才花它的额度。
-
-**怎样配比较合理。** 大多数人这样配就够了，`rumo-setup` 第一次运行也会这样推荐：
-
-| 用途 | 推荐 | 理由 |
-| --- | --- | --- |
-| 评审：复查改动 | 一个和当前 agent 不同厂商的工具，思考强度 high | 不同厂商的模型盲点不同；配一个就够，多加一个主要是多花额度 |
-| 委派：把活交出去 | 同一个工具，思考强度 medium；常规活也可以交给当前客户端自己的便宜模型，例如 Claude Code 的 sonnet | 常规活不需要最深的思考，也更省额度；同一家的模型由客户端自带的子 agent 运行，不用再启动一个 CLI |
-| 你没开口、agent 觉得改动有风险时 | 先问你要不要请其他 agent 一起看（`ask`） | 每次多花额度都由你决定 |
-
-例如平时用 Claude Code、本机还装了 Codex：评审用 Codex（high），委派用 Codex（medium），常规活交给 Claude Code 的 sonnet（medium）。
-
-**术语对照。** 配置文件和脚本输出里会出现这些词：
-
-| 词 | 意思 |
-| --- | --- |
-| lane（线） | 一个“工具 + 模型 + 思考强度”的组合，写作 `codex:gpt-6.1-sol@high`；省略模型或强度就用该工具自己的默认值 |
-| review / delegate | 评审、委派两个用途，各配一条或几条线 |
-| effort（思考强度） | 模型想得多深：越高越仔细，也越慢、越费额度 |
-| `auto_panel` | 你没开口、agent 判断某个改动有风险时，要不要再请配置的其他 agent 一起看：先问你（`ask`，默认）、说明请谁后直接开始（`allow`），还是不主动请、等你开口（`off`） |
-| 探测 | 保存前给每条新线发一句固定的话，确认它能用；只花一点额度，不发仓库内容 |
-
-**怎么运行。** 装好后开新会话，运行 `/rumo-setup`（Claude Code 插件里是 `/rumo-engineering-skills:rumo-setup`，Codex 里是 `$rumo-setup`）。它先说明用途，列出本机检测到的工具，给一张带理由的推荐表，你可以整体接受或只改其中几项；探测通过后才写入，最后单独问一次要不要写入[常驻基线](#常驻基线)。
-
-- 以后随时重跑 `/rumo-setup`，或直接说“把评审换成 grok，思考强度 high”；只改你点名的项。
-- 配置在 `~/.rumo-engineering-skills/agents.json`，只有脚本读它，不占会话上下文。没配置时，用到多模型功能的地方会提示你先运行 `rumo-setup`。
-- 默认只用当前 agent 一条线；多模型只在你点名、改动被评为高风险，或 agent 判断值得时才开，后两种是否先问你由配置里的 `auto_panel` 决定。
-- 一台机器只有这一份配置，不支持按仓库覆盖。某次想换线，直接在请求里点名，例如“用 codex 评审”；某个仓库要长期用另一套，在那个目录里把 `RUMO_AGENTS_CONFIG` 指向另一份配置（可以用 direnv 之类的工具自动切换），再运行 `rumo-setup`。
-- 支持的 CLI 分三组：
-  - **支持**：codex、claude、grok、pi、qwen，都实际跑通过。
-  - **实验性**：aider、cline、copilot、cursor、goose，适配器是按各自文档写的，`rumo-setup` 会提示它还没在真实环境跑通过、可能用不了。装上其中某个后，按 [adapters.md](skills/rumo-agent-collaboration/references/adapters.md) 跑 `check`，再跑一轮真实的只读调用，把结果写进 `verified`，它就升为支持。
-  - **已停用**：gemini、opencode。它们的只读设置可能被绕过（原因见 adapters.md），脚本拒绝启动。要启用，得先把权限问题解决；不能靠删掉 `disabled_reason` 来启用。
+实际跑通过的 CLI 是 codex、claude、grok、pi、qwen；aider、cline、copilot、cursor、goose 是实验性的，gemini、opencode 已停用，原因和升级为支持的方法见 [adapters.md](skills/rumo-agent-collaboration/references/adapters.md)。
 
 ### 遇到问题
 
@@ -284,17 +236,9 @@ cd rumo-engineering-skills
 ## 进阶
 
 <details>
-<summary>项目 Profile</summary>
+<summary>项目 Profile 与环境变量</summary>
 
-Profile 是可选的，不是使用技能的前提。仓库名称、组件清单、主机、服务名、安装目录和凭据应放在本地 Profile 或私有 Profile 仓库中，绝不放进本仓库。创建和填写方法见[新手指南](GETTING_STARTED.md#4-项目-profile可选)。
-
-```powershell
-py -3 skills\rumo-project-profile\scripts\init_profile.py --profile my-project
-```
-
-```bash
-python3 skills/rumo-project-profile/scripts/init_profile.py --profile my-project
-```
+Profile 是可选的，不是使用技能的前提。仓库名称、组件清单、主机、服务名、安装目录和凭据应放在本地 Profile 或私有 Profile 仓库中，绝不放进本仓库。创建、填写和检查方法见[新手指南](GETTING_STARTED.md#4-项目-profile可选)。
 
 环境变量：
 
@@ -302,6 +246,7 @@ python3 skills/rumo-project-profile/scripts/init_profile.py --profile my-project
 - `RUMO_SKILLS_REMOTE`：克隆地址
 - `RUMO_SKILL_PROFILES_REPO`：私有 Profile 仓库
 - `RUMO_PROJECT_PROFILE`：显式指定 Profile
+- `RUMO_AGENTS_CONFIG`：另一份 agent 配置，例如某个仓库长期用另一套线路时
 - `CODEX_HOME`、`CLAUDE_HOME`、`AGENTS_HOME`：自定义客户端目录
 
 安装时加 `-ProfilesRepo <path>` 或 `--profiles-repo <path>` 可把 Profile 仓库路径保存到 `~/.rumo-engineering-skills/config.json`。
