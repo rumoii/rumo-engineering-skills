@@ -31,7 +31,7 @@ If the user explicitly wants an unattended run without the approval pause, write
 
 ## 2. Failing Test, Passing Test, Refactor
 
-Follow the test-first steps in SKILL.md for every behavior in the spec, and keep a note of each failing command and why it failed. These notes are development history; the pass counts in the evidence come only from the final run.
+Follow the Test-First steps of `rumo-test` for every behavior in the spec: a test that fails because the behavior is missing, the smallest change that turns it green, refactoring only while green. Keep a note of each failing command and why it failed. These notes are development history; the pass counts in the evidence come only from the final run.
 
 ## 3. Check Suite
 

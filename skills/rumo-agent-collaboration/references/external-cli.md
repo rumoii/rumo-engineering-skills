@@ -5,7 +5,7 @@ Read when the route is another installed agent CLI. `scripts/agent_run.py` runs 
 ## Quick Start
 
 ```text
-# The user's configured lanes for a role (review, design, delegate); exit 3 means not configured
+# The user's configured lanes for a role (review or delegate); exit 3 means not configured
 python <skill-dir>/scripts/agent_config.py lanes delegate
 # The models a CLI offers, with per-model efforts when it reports them
 python <skill-dir>/scripts/agent_config.py models <cli>

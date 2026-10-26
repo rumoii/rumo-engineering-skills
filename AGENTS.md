@@ -6,7 +6,7 @@ This repository distributes reusable agent skills for Codex, Claude Code, and ot
 - Put private project facts in a local profile or optional private profiles checkout and access them through `rumo-project-profile`.
 - Resolve bundled scripts relative to the installed skill directory.
 - Preserve unrelated working-tree changes and installed skills from other sources.
-- Validate frontmatter, metadata, relative links, helper scripts, installers, and the catalog before push. Before pushing a change to a skill's description or behavioral rules, run the acceptance in `CONTRIBUTING.md`.
+- Validate frontmatter, metadata, relative links, helper scripts, installers, and the catalog before push. Before pushing a change that adds, removes, merges, or renames a skill, or alters a description, run the acceptance in `CONTRIBUTING.md`.
 - Never commit or print passwords, tokens, private keys, or private certificate material.
 - State explicit stop conditions for ambiguous or state-changing workflows.
 - Write every skill in your own words. Do not copy text from other projects, and do not add attribution notes or separate license files inside skill directories.

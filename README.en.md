@@ -31,7 +31,7 @@ You do not need to learn engineering conventions first. Once installed, the agen
 ## Highlights
 
 - **Proven on a real team.** Since June 2026, dozens of engineers in the R&D department at my company have used these skills daily, in a customized edition with company-specific business content; this repository is the general edition without it. The skills carry no company, product, host, or deployment specifics; private facts live in a local [project profile](#advanced). Documentation is Chinese-first, with a complete English edition.
-- **Evals, not claims.** Model-run evals in Claude Code and Codex check two things: whether a plain-language request picks the right skill, and whether the agent then does the right thing, against a baseline arm without the skills. Any change to a skill's description or behavioral rules is [accepted in a real client](CONTRIBUTING.md#acceptance-before-push) before push. The cases live in [`evals/`](evals/).
+- **Evals, not claims.** Model-run evals in Claude Code and Codex check two things: whether a plain-language request picks the right skill, and whether the agent then does the right thing, against a baseline arm without the skills. Adding, removing, or renaming a skill, or changing a description, is [accepted in a real client](CONTRIBUTING.md#acceptance-before-push) on the affected selection cases before push; how well the body rules work is judged from real development. The cases live in [`evals/`](evals/).
 - **Brakes on risky operations.** Before dropping data, deleting files, changing a server, or touching production, the agent confirms the target and blast radius read-only and writes only after backup, rollback, and your explicit approval. These are rules for the agent, not an enforcement mechanism; use your client's own permission settings for hard limits.
 - **Small tasks stay small.** A one-line copy change gets no plan and no review, just the most relevant check before handoff. Every skill description stays within 100 words, enforced by the validator, so the always-loaded context stays cheap.
 - **Verify once, reuse every time.** A project verification recipe records how to start the application, what to click, and what proves success, and is run end to end once. The next agent follows it to check real features instead of rediscovering them.
@@ -145,7 +145,7 @@ The installer validates the repository, then links the default skills into every
 
 ### Configure Agents The First Time (Optional)
 
-**What it is for.** The agent can call other AI coding tools installed on this machine (Codex, Claude Code, qwen, grok, pi, and others) to re-check a change independently, draft a competing design, or take over work. `rumo-setup` tells the agent whom it may call, with which model, and how hard that model should think.
+**What it is for.** The agent can call other AI coding tools installed on this machine (Codex, Claude Code, qwen, grok, pi, and others) to re-check a change independently or take over work. `rumo-setup` tells the agent whom it may call, with which model, and how hard that model should think.
 
 **Do you need it.** No. Every skill works without it; you only lose the second pair of eyes. With a single AI tool on the machine there is nothing to configure. Once configured, another tool spends its quota only when it is actually called.
 
@@ -154,20 +154,19 @@ The installer validates the repository, then links the default skills into every
 | Use | Recommendation | Why |
 | --- | --- | --- |
 | Review: re-check a change | One tool from a provider other than the current agent's, effort high | Different model families miss different things; one is enough, a second mostly adds cost |
-| Design: draft a competing option | Same as review | Same as review |
-| Delegate: hand work off | The same tool, effort medium | Routine work rarely needs the deepest effort, and it saves quota |
-| You have not asked, but the agent finds a change or design risky | Ask you first whether to bring in the other agents (`ask`) | You decide each time extra quota is spent |
+| Delegate: hand work off | The same tool, effort medium; routine work can also go to the current client's own cheaper model, such as sonnet in Claude Code | Routine work rarely needs the deepest effort, and it saves quota; a same-provider model runs as the client's own subagent, with no second CLI |
+| You have not asked, but the agent finds a change risky | Ask you first whether to bring in the other agents (`ask`) | You decide each time extra quota is spent |
 
-For example, if you work in Claude Code and also have Codex installed: review and design use Codex at high, and delegation uses Codex at medium.
+For example, if you work in Claude Code and also have Codex installed: review uses Codex at high, delegation uses Codex at medium, and routine work goes to sonnet in Claude Code at medium.
 
 **Terms.** These words appear in the configuration file and script output:
 
 | Term | Meaning |
 | --- | --- |
 | lane | One tool, model, and effort, written `codex:gpt-6.1-sol@high`; leaving out the model or effort uses that tool's own default |
-| review / design / delegate | The three uses, each with one or more lanes |
+| review / delegate | The two uses, each with one or more lanes |
 | effort | How hard the model thinks: higher is more careful, slower, and spends more quota |
-| `auto_panel` | Whether, when you have not asked but the agent judges a change or design risky, it also brings in the configured agents to look: ask you first (`ask`, default), say which agents and start (`allow`), or never offer and wait for you (`off`) |
+| `auto_panel` | Whether, when you have not asked but the agent judges a change risky, it also brings in the configured agents to look: ask you first (`ask`, default), say which agents and start (`allow`), or never offer and wait for you (`off`) |
 | probe | One fixed sentence sent to each new lane before saving, to prove it answers; it spends a little quota and sends no repository content |
 
 **How to run it.** After installing, open a new session and run `/rumo-setup` (`/rumo-engineering-skills:rumo-setup` with the Claude Code plugin, `$rumo-setup` in Codex). It explains what it is for, lists the tools it finds, and shows a recommended table with reasons that you accept as a whole or change item by item. It writes only after the probes pass, then asks separately whether to add the [always-on baseline](#always-on-baseline).
@@ -204,9 +203,9 @@ Installed by default.
 | Skill | Purpose |
 | --- | --- |
 | `rumo-clarify` | Group answerable questions with recommendations; follow up on newly exposed key decisions and never default critical ones |
-| `rumo-plan` | Short spec and verifiable task breakdown, task-by-task execution of an agreed plan, competing designs from the models you configured with a recommendation, or a durable engineering decision record |
-| `rumo-coding-guidelines` | Baseline discipline: real code paths, only requested and necessary work, verified results |
-| `rumo-test` | Evidence planning, test-first implementation, and high-assurance spec-and-evidence work |
+| `rumo-plan` | Short spec and verifiable task breakdown, task-by-task execution of an agreed plan, or a durable engineering decision record |
+| `rumo-coding-guidelines` | Baseline discipline: real code paths, only requested and necessary work, a risk gate for high-risk changes, verified results |
+| `rumo-test` | Evidence planning and test-first implementation |
 | `rumo-debug` | Reproduce, localize, and prove a root cause; read-only unless the fix is requested |
 | `rumo-verify` | Exact change scope and the smallest sufficient checks before claiming done; building repository gates; project verification recipes |
 | `rumo-review` | Read-only diff review or named-scope audit, an explicit review-fix loop, a simplification audit, addressing review feedback, or, with your consent, a review panel of the models you configured, merged and checked |
@@ -221,8 +220,8 @@ Installed by default.
 | `rumo-handoff` | In a new session, asked for the current progress or the next step, condense this project's recent Claude Code, Codex, and Kimi Code sessions and check them against the repository; on request, write a self-contained handoff and link it into existing navigation so the recipient can discover it |
 | `rumo-project-profile` | Resolve and validate private project profiles for other skills |
 | `rumo-reflect` | Session retrospective: recurring mistakes and corrections, each fix discussed and applied only with your approval |
-| `rumo-setup` | Choose, once or at any time, the CLI, model, and reasoning effort for multi-model review, multi-design comparison, and default delegation; probes each lane read-only before saving |
-| `rumo-agent-collaboration` | Delegate, transfer, or relay work to another agent CLI or model, or collaborate through Orca, leaving native subagents alone. See [Configure Agents The First Time](#configure-agents-the-first-time-optional) for which CLIs are supported |
+| `rumo-setup` | Choose, once or at any time, the CLI, model, and reasoning effort for multi-model review and default delegation; probes each lane read-only before saving |
+| `rumo-agent-collaboration` | Delegate, transfer, or relay work to another agent CLI or model, or collaborate through Orca; a same-provider model runs as the client's own subagent, any other through its CLI, with the lane matched to the work. See [Configure Agents The First Time](#configure-agents-the-first-time-optional) for which CLIs are supported |
 
 ## Optional Extras
 
@@ -253,7 +252,7 @@ Installed extras stay installed when you rerun the installer without options.
 
 ## Always-On Baseline
 
-Clients load a skill only when its description matches the request, so a small edit can skip the baseline rules in `rumo-coding-guidelines`. The installer can keep a short index of those rules in the user-level instruction file of each detected client: `CLAUDE.md` in the Claude Code home and `AGENTS.md` in the Codex home. The block sits between `rumo-engineering-skills:baseline` markers, and nothing outside them changes.
+Clients load a skill only when its description matches the request, so a small edit can skip the baseline rules in `rumo-coding-guidelines`, and one skill may not bring in the next. The installer can keep the core rules, the risk gate, and a table of which skill fits which situation in the user-level instruction file of each detected client: `CLAUDE.md` in the Claude Code home and `AGENTS.md` in the Codex home. The block sits between `rumo-engineering-skills:baseline` markers, and nothing outside them changes.
 
 <details>
 <summary>Add, update, and remove</summary>

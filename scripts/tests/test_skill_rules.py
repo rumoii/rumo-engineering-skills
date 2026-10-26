@@ -158,7 +158,8 @@ RULES = {
         "report the drift instead of following stale steps",
     ),
     "rumo-agent-collaboration": (
-        "This skill governs only the agents it starts;",
+        "This skill picks the route for the agents it starts.",
+        "never drop or change the model.",
         "Before declaring native subagents available or unavailable, read [references/native.md](references/native.md).",
         "Never start an agent through this skill unless the user asked for it.",
         "state in one line before launching which CLI, model, and effort will run and what content you will send",
@@ -195,7 +196,9 @@ RULES = {
         "rely on that report, not on the user;",
         "where the receiver runs, where the result will be, and what to tell you when it finishes",
         "do not read its events, logs, or session files and do not post progress updates.",
-        "When the user reports that the receiver finished, read its result and check the working tree before accepting it.",
+        "When the receiver finishes, read its result and check the working tree before accepting it.",
+        "Rerun the brief's done check yourself.",
+        "switch lanes only with their agreement.",
         "then stop changing that task.",
         "Cancel only runs this task started; never stop a process the record cannot prove is yours.",
     ),
@@ -215,7 +218,7 @@ RULES = {
 PINNED_ELSEWHERE = {"rumo-clarify"}
 
 # The same kind of rule, where it lives in a reference file the skill loads on
-# demand. rumo-test/references/high-assurance.md and rumo-review/references/loop.md
+# demand. rumo-coding-guidelines/references/high-assurance.md and rumo-review/references/loop.md
 # are pinned in test_skill_boundaries.py.
 REFERENCE_RULES = {
     "rumo-remote-ops/references/access-changes-and-recovery.md": (
@@ -291,13 +294,6 @@ REFERENCE_RULES = {
         "One agreement covers later cycles on the same lane and content scope",
         "Withhold the fix history and earlier findings",
         "never substitute another provider or start a panel to keep the loop going",
-    ),
-    "rumo-plan/references/design-panel.md": (
-        "The panel produces designs only, never code, and the plan is not broken into tasks until the user picks one.",
-        "save it before reading any lane's draft.",
-        "Withhold your own leaning and any option you already prefer.",
-        "Do not propose one for a choice with one obvious shape or a local change.",
-        "break the work down only after the user picks.",
     ),
     "rumo-review/references/panel.md": (
         "Never start another CLI on your own.",
@@ -398,12 +394,13 @@ SNIPPET_SOURCES = {
     "Read the real entry point and call chain": ("rumo-coding-guidelines", "Find the real entry point, call chain"),
     "repository instructions override these defaults": ("rumo-coding-guidelines", "follow them over these defaults"),
     "report unrelated problems instead of fixing them": ("rumo-coding-guidelines", "Report unrelated problems you notice instead of fixing them."),
+    "every changed line traces to the request": ("rumo-coding-guidelines", "Every changed file and hunk belongs to this task."),
     "No speculative abstractions, drive-by refactors": ("rumo-coding-guidelines", "Do not reformat, rename, reorder, or refactor neighboring code."),
-    "load rumo-test and apply its risk gate": ("rumo-coding-guidelines", "load the `rumo-test` skill and apply its high-assurance risk gate before editing"),
+    "Risk gate before editing": ("rumo-coding-guidelines", "Apply this gate on your own whenever you implement a change"),
     "use rumo-verify before handing back": ("rumo-coding-guidelines", "Use `rumo-verify` before claiming the change is ready."),
     "offer once to review the session": ("rumo-coding-guidelines", "end with a one-line offer to review the session for lessons, at most once per session"),
 }
-SNIPPET_INDEX_PREFIXES = ("- Flow:", "- Full rules:")
+SNIPPET_INDEX_PREFIXES = ("- Full rules:",)
 
 
 def normalized_body(skill: str) -> str:
@@ -445,9 +442,11 @@ class SkillRulesTest(unittest.TestCase):
 
 
 class AlwaysOnSnippetTest(unittest.TestCase):
+    def block(self) -> str:
+        return SNIPPET.read_text(encoding="utf-8").split("```markdown\n", 1)[1].split("```", 1)[0]
+
     def bullets(self) -> list[str]:
-        block = SNIPPET.read_text(encoding="utf-8").split("```markdown\n", 1)[1].split("```", 1)[0]
-        return [line for line in block.splitlines() if line.startswith("- ")]
+        return [line for line in self.block().splitlines() if line.startswith("- ")]
 
     def test_every_bullet_restates_an_owned_rule(self) -> None:
         for bullet in self.bullets():
@@ -459,6 +458,12 @@ class AlwaysOnSnippetTest(unittest.TestCase):
                 for skill, phrase in sources:
                     self.assertTrue(phrase in normalized_body(skill), f"{skill}: snippet source phrase missing")
 
+    def test_routing_preamble_is_owned_by_the_baseline_skill(self) -> None:
+        # The preamble sits outside the bullets, so pin its one rule explicitly.
+        rule = "A subagent dispatched for a specific task follows its brief"
+        self.assertIn(rule, self.block())
+        self.assertIn(rule, normalized_body("rumo-coding-guidelines"))
+
     def test_every_source_is_used(self) -> None:
         text = " ".join(self.bullets())
         for key in SNIPPET_SOURCES:
@@ -466,7 +471,7 @@ class AlwaysOnSnippetTest(unittest.TestCase):
                 self.assertIn(key, text)
 
     def test_index_names_existing_default_skills(self) -> None:
-        names = set(re.findall(r"rumo-[a-z-]+[a-z]", " ".join(self.bullets())))
+        names = set(re.findall(r"rumo-[a-z-]+[a-z]", self.block()))
         self.assertTrue(names)
         for name in sorted(names):
             with self.subTest(skill=name):
@@ -498,12 +503,12 @@ class ReadmeInstallRulesTest(unittest.TestCase):
                     self.assertTrue(rule in text, f"{name}: agent install rule missing")
 
 
-# A skill change that alters triggering or behavior is accepted in a real client
-# before push; validators only prove the files are well formed.
+# A skill change that alters triggering is accepted in a real client before
+# push; validators only prove the files are well formed.
 ACCEPTANCE_RULES = {
     "CONTRIBUTING.md": (
         "### Acceptance before push",
-        "alters a skill's `description` or a rule that decides what the agent does",
+        "adds, removes, merges, or renames a skill, or alters a skill's `description`",
         "record the candidate commit, client and version, model, cases, results, and evidence directory",
         "Never report such a change ready to push without this run",
     ),
@@ -514,7 +519,7 @@ ACCEPTANCE_RULES = {
 
 
 class AcceptanceRulesTest(unittest.TestCase):
-    def test_skill_changes_need_real_client_acceptance(self) -> None:
+    def test_trigger_changes_need_real_client_acceptance(self) -> None:
         for name, rules in ACCEPTANCE_RULES.items():
             text = " ".join((REPO_ROOT / name).read_text(encoding="utf-8").split())
             for rule in rules:

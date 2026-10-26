@@ -29,7 +29,7 @@ No claim of "done", "fixed", or "passing" without fresh evidence from this state
 
 ### 2. Choose Checks
 
-Pick the narrowest command that would fail for the regression, then widen only for a real dependency or shared contract. Match the evidence to the risk: a file copy or documentation change is confirmed with a file list and a diff, not a custom verification harness, unless the user asks for one or `rumo-test` rates the change high. Read [references/surfaces.md](references/surfaces.md) for the minimum evidence per changed surface. Use `rumo-test` when the behavioral claims themselves are unclear.
+Pick the narrowest command that would fail for the regression, then widen only for a real dependency or shared contract. Match the evidence to the risk: a file copy or documentation change is confirmed with a file list and a diff, not a custom verification harness, unless the user asks for one or the risk gate in `rumo-coding-guidelines` rates the change high. Read [references/surfaces.md](references/surfaces.md) for the minimum evidence per changed surface. Use `rumo-test` when the behavioral claims themselves are unclear.
 
 ### 3. Run And Read
 

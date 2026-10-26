@@ -6,8 +6,10 @@ The configuration lives in $RUMO_AGENTS_CONFIG, else
 context until a skill asks for a role's lanes. Roles:
 
   review    extra reviewers in a multi-model review; the current agent also reviews
-  design    extra designers in a multi-design comparison; the current agent also designs
   delegate  the lanes used when the user hands work off without naming a CLI
+
+A file that still has the retired design role loads without it, and the next
+write drops it.
 
 A lane is written cli[:model][@effort], for example codex:gpt-6.1-sol@high or
 claude@max; a lane with no model or effort uses the CLI's own default. A
@@ -15,7 +17,7 @@ delegate lane may start with a use label, such as tests=pi:deepseek/v4@high;
 several delegate lanes need distinct labels, and work that matches none goes
 to the first.
 auto_panel says what the agent may do when it judges, on its own, that a
-multi-model review or design is worth it: ask (default), allow, or off.
+multi-model review is worth it: ask (default), allow, or off.
 
 Subcommands: show, lanes, models (what a CLI offers), check (with --probe,
 one tiny read-only turn per lane), set-role, set-auto-panel. Exit codes: 0 ok;
@@ -39,7 +41,8 @@ from pathlib import Path
 
 
 CONFIG_ENV = "RUMO_AGENTS_CONFIG"
-ROLES = ("review", "design", "delegate")
+ROLES = ("review", "delegate")
+RETIRED_ROLES = ("design",)
 USE_ROLES = ("delegate",)
 AUTO_PANEL = ("ask", "allow", "off")
 # Raising VERSION when the file's shape changes requires adding, in load(), an in-memory
@@ -160,6 +163,9 @@ def load(runs_dir: str | None = None, roles_to_check: tuple[str, ...] | None = N
         config = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise Refused(f"cannot read {path}: {exc}") from exc
+    if isinstance(config, dict) and isinstance(config.get("roles"), dict):
+        for role in RETIRED_ROLES:
+            config["roles"].pop(role, None)
     if problems := validate(config, runs_dir, roles_to_check):
         raise Refused(f"{path} is invalid: " + "; ".join(problems))
     return config

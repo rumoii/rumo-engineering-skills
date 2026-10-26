@@ -9,9 +9,9 @@ Every skill uses the `rumo-` namespace and stays independent of any company, pro
 | Skill | Purpose |
 | --- | --- |
 | `rumo-clarify` | Group answerable questions with recommendations and follow up only on newly exposed key decisions |
-| `rumo-plan` | Short spec and verifiable task breakdown, task-by-task execution, competing designs from configured models, or a durable engineering decision record |
-| `rumo-coding-guidelines` | Baseline discipline for grounded, minimal, verified code changes |
-| `rumo-test` | Evidence planning, test-first implementation, and high-assurance spec and evidence |
+| `rumo-plan` | Short spec and verifiable task breakdown, task-by-task execution, or a durable engineering decision record |
+| `rumo-coding-guidelines` | Baseline discipline for grounded, minimal, verified code changes, with the risk gate for high-risk changes |
+| `rumo-test` | Evidence planning and test-first implementation |
 | `rumo-debug` | Reproduce, localize, and prove a root cause; read-only by default |
 | `rumo-verify` | Exact change scope and smallest sufficient checks; repository gates; project verification recipes |
 | `rumo-review` | Read-only diff review or named-scope audit, explicit review-fix loop, simplification audit, responding to feedback, or a consented review through another CLI |
@@ -26,7 +26,7 @@ Every skill uses the `rumo-` namespace and stays independent of any company, pro
 | `rumo-handoff` | Pick up earlier sessions' work from their records, or write a handoff document on request |
 | `rumo-project-profile` | Private project profile resolution and validation |
 | `rumo-reflect` | Session retrospective that proposes where to fix recurring mistakes and applies only approved items |
-| `rumo-setup` | Configure the CLI, model, and reasoning effort for multi-model review, multi-design comparison, and default delegation, with a read-only probe per lane |
+| `rumo-setup` | Configure the CLI, model, and reasoning effort for multi-model review and default delegation, with a read-only probe per lane |
 | `rumo-agent-collaboration` | Delegate, transfer, or relay work to Codex, Claude Code, pi, qwen, grok, Cursor, Copilot CLI, Aider, Cline CLI, Goose, or Orca; supports read-only and development access on Windows and Linux/WSL, with one owner and records. Named, bounded requests supply authorization. Gemini CLI and OpenCode declarations remain inspectable; the runner blocks their new turns and old-record recovery |
 
 ## Extras

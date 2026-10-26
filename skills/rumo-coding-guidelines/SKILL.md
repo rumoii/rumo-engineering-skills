@@ -1,6 +1,6 @@
 ---
 name: rumo-coding-guidelines
-description: Use when writing, fixing, or refactoring code in a software repository, as the baseline discipline alongside more specific skills. Ground every edit in the real code path, do only the requested work and what it necessarily implies, avoid speculative abstraction and drive-by edits, and close with verification. Do not use alone for review-only, diagnosis-only, or question-answering requests.
+description: Use when writing, fixing, or refactoring code in a software repository, as the baseline discipline alongside more specific skills. Ground every edit in the real code path, do only the requested work and what it necessarily implies, avoid speculative abstraction and drive-by edits, apply the risk gate to changes touching money, auth, data, interfaces, or other high-risk areas, and close with verification. Do not use alone for review-only, diagnosis-only, or question-answering requests.
 ---
 
 # Rumo Coding Guidelines
@@ -16,7 +16,16 @@ When the user wants these rules active even when this skill is not loaded, offer
 - Check the dependencies, types, and documentation already in the project before writing replacement code or adding a package. Do not assume a library lacks a feature without checking its API.
 - When the request has several reasonable readings, state the trade-off. Resolve high-risk ambiguity first; `rumo-clarify` covers how.
 - When several repositories are involved, keep track of which ones were read, changed, and verified.
-- When the change touches money, authentication, authorization, durable data, concurrency, migrations, public interfaces, or irreversible effects, load the `rumo-test` skill and apply its high-assurance risk gate before editing; knowing that the gate exists does not apply it.
+- Apply the Risk Gate below before editing.
+
+## Risk Gate
+
+Apply this gate on your own whenever you implement a change; the user does not need to name it.
+
+- **High at once:** money (amounts, charges, refunds); authentication, authorization, secrets, and credentials; database migrations; irreversible effects such as deleting data, sending messages, or paying out.
+- **Rate first:** durable data (writes, storage formats, bulk updates); concurrency; interfaces and formats other programs read (APIs, messages, configuration fields, exported files); untrusted input (uploads, SQL or shell commands built from input, deserialization, cryptography); personal data in storage, logs, or exports; deployment and infrastructure (CI, deploy scripts, permission policies, new or upgraded dependencies); and anything whose risk is unclear. Judge the consequence of a failure, how far it spreads, and whether it can be undone. Only a high rating enters the gate; explain a non-obvious rating in one line. A wording change in these areas does not qualify by location alone.
+- **When high:** write a test that would catch this kind of failure and watch it fail before the change, such as an outsider being refused, a boundary amount, or an old reader loading the new format. Name the one fact the change is safe because of, and prove it by running code rather than by argument. After the last edit, run the checks once more and report that run. Read [references/high-assurance.md](references/high-assurance.md) in full before starting; it adds the spec, check selection, and evidence report.
+- Review-only, read-only diagnosis, and test-planning requests keep their own boundaries: the rating informs the advice and authorizes no edit. Spec approval authorizes implementation and local checks only; commits, pushes, deployments, database writes, deletions, credential changes, dependency installs, and paid services keep their own approvals.
 
 ## Scope Test
 
@@ -47,6 +56,7 @@ Treat review, explanation, and monitoring requests as read-only until the user a
 ## Working With Other Skills
 
 - The user's task picks the main workflow; specialist skills add their checks to it rather than starting a workflow of their own.
+- A subagent dispatched for a specific task follows its brief: it does not start another workflow or delegate further.
 - Share one reading of the repository state, call chain, risk, and evidence across them, and close with one report that covers each skill's checks.
 - Reuse a check result while the code, configuration, and target version it ran against are unchanged; after any of them changes, rerun the checks it affects.
 - A high-assurance final run is always a fresh run after the last edit; earlier passes never replace it.
@@ -59,7 +69,7 @@ Match the task to one of these routes. For any route except a small edit or an i
 | --- | --- |
 | Small edit | Read, edit, most relevant check, `rumo-verify`; no plan, no review |
 | Defect fix | `rumo-debug` proves the cause, failing test, fix, verification recipe, `rumo-verify` |
-| Feature | `rumo-clarify` if unclear, `rumo-plan` if multi-step, `rumo-test` risk gate, thin slices, recipe, `rumo-verify` |
+| Feature | `rumo-clarify` if unclear, `rumo-plan` if multi-step, risk gate, thin slices, recipe, `rumo-verify` |
 | Investigation | Read-only answer with evidence |
 | Resume | Read the handoff or decision record, check the actual repository state, continue |
 | Refactor | Cover the behavior with tests, move in green steps, rerun the same tests |

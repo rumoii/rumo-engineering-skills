@@ -73,18 +73,22 @@ git diff --check
 ### Acceptance before push
 
 These checks prove the files are well formed, not that a client still picks
-the skill or follows it. When a change alters a skill's `description` or a
-rule that decides what the agent does, run the affected trigger and behavior
-cases (see [Trigger evals](#trigger-evals) and [Behavior evals](#behavior-evals))
-against a snapshot of the candidate in at least one real client: Claude
-through `claude plugin eval`, or Codex through `scripts/run_codex_trigger.py`
-and `scripts/run_codex_behavior.py`. Wording, typo, and link fixes do not need
-it, and neither every client nor the full suite is required. A pi run only
-screens the change.
+the skill. When a change adds, removes, merges, or renames a skill, or alters a
+skill's `description`, run the affected trigger cases (see
+[Trigger evals](#trigger-evals)) once against a snapshot of the candidate in
+one real client: Claude through `claude plugin eval`, or Codex through
+`scripts/run_codex_trigger.py`. Wording, typo, and link fixes do not need it,
+and neither every client nor the full suite is required. A pi run only screens
+the change.
+
+Rules in a skill body are judged in real development: the maintainer's
+feedback and `rumo-reflect` sessions show where a rule misfires. Behavior cases
+(see [Behavior evals](#behavior-evals)) and with-and-without comparisons are
+optional; run them when the maintainer asks.
 
 For each run, record the candidate commit, client and version, model, cases,
 results, and evidence directory, keeping the evidence outside the checkout.
-Any later edit to the skill text needs a fresh run. These cases call a model,
+Any later edit to a description needs a fresh run. These cases call a model,
 so when this session has no approval for model calls, ask once with the exact
 cases. Never report such a change ready to push without this run; when it did
 not happen, report it as a gap.

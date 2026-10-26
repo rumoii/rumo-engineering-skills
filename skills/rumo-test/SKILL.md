@@ -1,6 +1,6 @@
 ---
 name: rumo-test
-description: Use when planning, writing, or assessing tests for a behavior change, including whether existing tests are enough, which evidence layers (unit, integration, browser, artifact, deployment, field) to use, and test-driven development. Also use unprompted when implementing a change that touches money, auth, durable data, concurrency, migrations, public interfaces, or irreversible effects, to rate its risk and enter high-assurance spec-and-evidence mode when it is high. Do not use to find the root cause of an existing defect (use rumo-debug) or to check an already finished diff before handoff (use rumo-verify).
+description: Use when planning, writing, or assessing tests for a behavior change, including whether existing tests are enough, which evidence layers (unit, integration, browser, artifact, deployment, field) to use, and test-driven development. Do not use to find the root cause of an existing defect (use rumo-debug) or to check an already finished diff before handoff (use rumo-verify).
 ---
 
 # Rumo Test
@@ -13,7 +13,8 @@ Tests are evidence for claims. A large suite, a coverage number, an HTTP 200, or
 | --- | --- |
 | Evidence plan (default) | Deciding what to test, or whether existing tests are enough; works without writing code |
 | Test-first | Implementing a behavior change or bug fix |
-| High assurance | The risk gate below rates the change high, or the user explicitly requests this mode |
+
+The risk gate for money, authentication, data, interfaces, and other high-risk changes, with its spec-and-evidence flow, lives in `rumo-coding-guidelines`.
 
 ## Evidence Plan
 
@@ -35,16 +36,6 @@ Example, for a bug where an order placed just before local midnight lands in the
 
 - Strong: `daily_report_keeps_order_placed_at_2359_local` stores an order through the real service at 23:59 in the shop's time zone, then asserts it appears in that day's report and not in the next. It failed before the fix, which grouped orders by UTC date.
 - Weak: a test that mocks `to_local_date` and asserts it was called. It passed before the fix, so it proves nothing about the bug.
-
-## High Assurance
-
-Apply this risk gate on your own whenever you implement a change; the user does not need to name the mode.
-
-- **Enter directly** when the change alters monetary calculations, authentication or authorization decisions, database migrations, or irreversible behavior, or the user explicitly requests high assurance. A wording change in those areas does not qualify by location alone; asking for a plan or reliable verification does not select this mode.
-- **Rate first** when it touches durable data, concurrency, or public interfaces, or when the risk is unclear. Judge the changed behavior, failure consequences, blast radius, compatibility, and reversibility. Low means no meaningful behavior change; normal means a bounded, reversible behavior change; high means serious data loss, isolation failure, incompatible durable state, or a broad failure that cannot be safely contained or reversed. Only high enters this mode; explain a non-obvious rating briefly.
-- Review-only, read-only diagnosis, and evidence-plan requests keep their own boundaries. The rating informs the advice; it does not authorize edits.
-
-For high assurance, read [references/high-assurance.md](references/high-assurance.md) in full before starting: reuse a covering approved spec, implement test-first, reuse sufficient check commands, and report one fresh final run after the last edit. Low-risk wording or file-copy work needs proportionate inspection, not new tests or checkers. Spec approval authorizes implementation and local checks only; commits, tags, pushes, deployments, database writes, deletions, credential changes, dependency installs, paid services, and any other separately controlled action keep their own approvals.
 
 ## Rules For Every Mode
 

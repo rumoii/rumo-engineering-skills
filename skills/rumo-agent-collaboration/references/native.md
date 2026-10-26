@@ -20,12 +20,12 @@ Distinguish turn completion, session switching, and parent process exit. Confirm
 
 ## Claude Code
 
-- **Delegate**: when the Agent tool is exposed and allowed, it starts a subagent with its own context. Check the agent type's tools and permission policy before read-only exploration or review; pass the brief as the prompt. Use completion notifications when the current runtime supports them, without polling.
+- **Delegate**: when the Agent tool is exposed and allowed, it starts a subagent with its own context. Check the agent type's tools and permission policy before read-only exploration or review; pass the brief as the prompt. For a configured `claude` lane, pass the lane's model as `model` when the tool's list offers it (aliases such as `opus`, `sonnet`, `haiku`) and its effort as `effort`; a lane whose model the list does not offer runs through `agent_run.py`. Use completion notifications when the current runtime supports them, without polling.
 - **Transfer**: `claude --bg` starts a background session that outlives this one and prints its ID. `claude agents` lists them, `claude logs <id>` shows recent output, `claude attach <id>` opens one, and `claude stop <id>` stops it. Pass the brief on stdin or as the prompt, and start it with a permission mode no wider than the current session's.
 
 ## Codex
 
-Codex may expose a subagent or multi-agent tool depending on version and configured features. Use it only when it appears in the current tool list and is allowed; do not enable features on the user's behalf. If native delegation is unavailable, use an authorized `codex exec` route in [external-cli.md](external-cli.md) or report the blocker.
+Codex may expose a subagent or multi-agent tool depending on version and configured features. Use it only when it appears in the current tool list and is allowed; do not enable features on the user's behalf. For a configured `codex` lane, pass the lane's model and effort when the tool accepts them; otherwise run the lane through `agent_run.py`. If native delegation is unavailable, use an authorized `codex exec` route in [external-cli.md](external-cli.md) or report the blocker.
 
 ## pi
 

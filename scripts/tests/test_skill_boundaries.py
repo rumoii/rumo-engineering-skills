@@ -56,8 +56,8 @@ BOUNDARIES = (
 # Each merged skill keeps one trigger phrase per mode in its description,
 # because clients pick skills from the description alone.
 MODE_TRIGGERS = {
-    "rumo-plan": (r"task breakdown", r"decision record|ADR", r"executing an agreed plan", r"competing designs"),
-    "rumo-test": (r"existing tests are enough", r"test-driven", r"high-assurance"),
+    "rumo-plan": (r"task breakdown", r"decision record|ADR", r"executing an agreed plan"),
+    "rumo-test": (r"existing tests are enough", r"test-driven"),
     "rumo-verify": (r"before claiming work is done", r"CI check|static verifier"),
     "rumo-review": (r"read-only code review", r"review-fix", r"simplification audit", r"review feedback from someone else"),
     "rumo-interface": (r"HTTP", r"event|queue message", r"configuration field"),
@@ -86,12 +86,15 @@ CLARIFY_BODY_RULES = (
     r"Answers to clarifying questions do not widen what the agent may do",
 )
 
-# The high-assurance gate fires without being named, but never widens authorization.
+# The high-assurance gate lives in the baseline skill so it fires without a
+# second skill load, and it never widens authorization.
 HIGH_ASSURANCE_BODY_RULES = (
-    r"Apply this risk gate on your own",
-    r"\*\*Enter directly\*\* when the change alters monetary calculations, authentication or authorization decisions, database migrations, or irreversible behavior",
-    r"\*\*Rate first\*\* when it touches durable data, concurrency, or public interfaces, or when the risk is unclear",
-    r"Review-only, read-only diagnosis, and evidence-plan requests keep their own boundaries",
+    r"Apply this gate on your own whenever you implement a change",
+    r"\*\*High at once:\*\* money .*authentication, authorization, secrets, and credentials; database migrations; irreversible effects",
+    r"\*\*Rate first:\*\* durable data .*concurrency; interfaces and formats other programs read .*untrusted input .*personal data .*deployment and infrastructure .*anything whose risk is unclear",
+    r"watch it fail before the change",
+    r"Name the one fact the change is safe because of, and prove it by running code",
+    r"Review-only, read-only diagnosis, and test-planning requests keep their own boundaries",
     r"Spec approval authorizes implementation and local checks only",
 )
 HIGH_ASSURANCE_REFERENCE_RULES = (
@@ -101,7 +104,6 @@ HIGH_ASSURANCE_REFERENCE_RULES = (
     r"Do not let this workflow widen the user's authorization",
 )
 RISK_GATE_ENTRIES = (
-    "rumo-coding-guidelines",
     "rumo-interface",
     "rumo-lifecycle-safety",
     "rumo-database-change-safety",
@@ -171,15 +173,16 @@ class SkillBoundariesTest(unittest.TestCase):
                 self.assertRegex(body, re.compile(pattern, re.I))
 
     def test_high_assurance_gate_is_automatic_but_bounded(self) -> None:
-        skill = REPO_ROOT / "skills" / "rumo-test" / "SKILL.md"
+        skill = REPO_ROOT / "skills" / "rumo-coding-guidelines" / "SKILL.md"
         description = read_description(skill)
-        self.assertRegex(description, r"unprompted")
+        self.assertRegex(description, r"risk gate")
+        self.assertNotRegex(read_description(REPO_ROOT / "skills" / "rumo-test" / "SKILL.md"), r"unprompted|high-assurance")
         self.assertNotRegex(description, r"with an approved spec")
         body = skill.read_text(encoding="utf-8").split("\n---\n", 1)[1]
         for pattern in HIGH_ASSURANCE_BODY_RULES:
             with self.subTest(body_rule=pattern):
                 self.assertRegex(body, pattern)
-        reference = (REPO_ROOT / "skills" / "rumo-test" / "references" / "high-assurance.md").read_text(encoding="utf-8")
+        reference = (REPO_ROOT / "skills" / "rumo-coding-guidelines" / "references" / "high-assurance.md").read_text(encoding="utf-8")
         for pattern in HIGH_ASSURANCE_REFERENCE_RULES:
             with self.subTest(reference_rule=pattern):
                 self.assertRegex(reference, pattern)
@@ -189,13 +192,13 @@ class SkillBoundariesTest(unittest.TestCase):
         for skill_name in RISK_GATE_ENTRIES:
             with self.subTest(entry=skill_name):
                 text = (REPO_ROOT / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")
-                self.assertRegex(text, r"high-assurance risk gate[^.]*`rumo-test`|`rumo-test`[^.]*high-assurance risk gate")
+                self.assertRegex(text, r"high-assurance risk gate[^.]*`rumo-coding-guidelines`")
 
     def test_reasoning_loops_have_no_default_round_limit(self) -> None:
         paths = (
             "skills/rumo-debug/SKILL.md",
             "skills/rumo-review/references/loop.md",
-            "skills/rumo-test/references/high-assurance.md",
+            "skills/rumo-coding-guidelines/references/high-assurance.md",
         )
         for relative in paths:
             with self.subTest(path=relative):

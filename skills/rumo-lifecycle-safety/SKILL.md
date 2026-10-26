@@ -69,7 +69,7 @@ Cover the production mechanism, not only direct method calls:
 
 Assert eventual state, released resources, durable side effects, and absence of orphan work. Use deterministic barriers, latches, fake clocks, or owned events instead of timing-dependent sleeps.
 
-Use `rumo-test` to choose the required evidence layers and to apply its high-assurance risk gate, and `rumo-verify` before claiming the change ready. Record a material lifecycle policy with `rumo-plan`.
+Use `rumo-test` to choose the required evidence layers, the high-assurance risk gate in `rumo-coding-guidelines` before implementation, and `rumo-verify` before claiming the change ready. Record a material lifecycle policy with `rumo-plan`.
 
 ## Report
 

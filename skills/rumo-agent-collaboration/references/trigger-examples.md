@@ -10,6 +10,7 @@ Read when checking whether collaboration and neighboring skills have distinct re
 | Write a handoff document for the next engineer. | `rumo-handoff`; producing a document does not authorize launching a receiver. |
 | Split the agreed migration plan into parallel tasks. | `rumo-plan`; decomposition alone does not authorize external execution. |
 | Start three native subagents in this client. | The client handles its native subagents; this skill is not needed. |
+| Hand the test writing to the cheap lane I configured. | `rumo-agent-collaboration` picks the route: a lane on this client's CLI runs as its own subagent with the lane's model and effort. |
 | Continue the external CLI run recorded under this run ID. | `rumo-agent-collaboration` reconciles the record before resuming; disabled routes remain blocked. |
 
 Do not count a static wording check as proof that a model selects these skills. Real trigger evaluation spends quota and requires separate authorization.

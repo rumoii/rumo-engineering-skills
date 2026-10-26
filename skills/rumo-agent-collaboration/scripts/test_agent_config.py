@@ -99,8 +99,7 @@ class AgentConfigTest(unittest.TestCase):
 
     def test_a_stale_lane_never_blocks_repairing_the_configuration(self) -> None:
         # An adapter update can drop an effort that a saved lane still names.
-        stale = {"version": 1, "auto_panel": "ask", "roles": {"review": [{"cli": "claude", "effort": "gone"}],
-                                                              "design": [{"cli": "codex"}]}}
+        stale = {"version": 1, "auto_panel": "ask", "roles": {"review": [{"cli": "claude", "effort": "gone"}]}}
         self.config.write_text(json.dumps(stale), encoding="utf-8")
         self.assertEqual(self.run_config("set-auto-panel", "off").returncode, 0)
         self.assertEqual(self.run_config("set-role", "delegate", "--lane", "claude@high").returncode, 0)
@@ -112,7 +111,16 @@ class AgentConfigTest(unittest.TestCase):
         self.assertEqual(self.run_config("show").returncode, 0)
         saved = json.loads(self.config.read_text(encoding="utf-8"))
         self.assertEqual(saved["auto_panel"], "off")
-        self.assertEqual(saved["roles"]["design"], [{"cli": "codex"}])
+
+    def test_the_retired_design_role_is_dropped_on_the_next_write(self) -> None:
+        old = {"version": 1, "auto_panel": "ask", "roles": {"design": [{"cli": "codex"}], "review": [{"cli": "codex"}]}}
+        self.config.write_text(json.dumps(old), encoding="utf-8")
+        shown = json.loads(self.run_config("show").stdout)
+        self.assertNotIn("design", shown["roles"])
+        self.assertEqual(self.run_config("set-auto-panel", "off").returncode, 0)
+        saved = json.loads(self.config.read_text(encoding="utf-8"))
+        self.assertEqual(saved["roles"], {"review": [{"cli": "codex"}]})
+        self.assertEqual(self.run_config("set-role", "design", "--lane", "codex").returncode, 2)
 
     def test_check_without_lanes_reports_not_configured(self) -> None:
         self.assertEqual(self.run_config("set-auto-panel", "allow").returncode, 0)
@@ -146,12 +154,12 @@ class AgentConfigTest(unittest.TestCase):
     def test_probe_runs_one_read_only_turn_per_distinct_lane(self) -> None:
         exe = f"codex={self.fake}"
         self.assertEqual(self.run_config("set-role", "review", "--lane", "codex@high", "--executable", exe).returncode, 0)
-        self.assertEqual(self.run_config("set-role", "design", "--lane", "codex@high", "--executable", exe).returncode, 0)
+        self.assertEqual(self.run_config("set-role", "delegate", "--lane", "codex@high", "--executable", exe).returncode, 0)
         result = self.run_config("check", "--probe")
         self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace") + result.stdout.decode())
         report = json.loads(result.stdout)
         self.assertEqual(len(report["lanes"]), 1)
-        self.assertEqual(report["lanes"][0]["roles"], ["review", "design"])
+        self.assertEqual(report["lanes"][0]["roles"], ["review", "delegate"])
         self.assertTrue(report["lanes"][0]["probe"]["ok"])
         calls = [json.loads(line) for line in self.log.read_text(encoding="utf-8").splitlines()]
         self.assertEqual(len(calls), 1)
