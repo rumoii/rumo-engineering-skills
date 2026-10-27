@@ -15,7 +15,7 @@ import os
 import re
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 CODEX_SCAN_LIMIT = 500
@@ -350,14 +350,43 @@ def short(text: str, limit: int) -> str:
     return text if len(text) <= limit else text[:limit].rstrip() + f" …[+{len(text) - limit} chars]"
 
 
+def grep_hits(session: dict, pattern: re.Pattern[str]) -> list[str]:
+    """Snippets around each match in the user's words, compaction summaries, and the title; agent replies are not searched."""
+    fields = [session["title"] or ""] + [entry["text"] for entry in session["entries"] if entry["kind"] in ("user", "summary")]
+    hits = []
+    for text in fields:
+        found = pattern.search(text)
+        if found:
+            start = max(0, found.start() - 60)
+            hits.append(("…" if start else "") + short(text[start:], 160))
+    return hits
+
+
 def cmd_list(args: argparse.Namespace) -> int:
+    try:
+        pattern = re.compile(args.grep, re.IGNORECASE) if args.grep else None
+    except re.error as exc:
+        raise DigestError(f"invalid --grep pattern {args.grep!r}: {exc}") from exc
+    filtered = pattern is not None or args.since is not None
     rows = []
-    found, truncated = sessions(Path(args.cwd), needed=args.limit)
-    for session in found[:args.limit]:
+    # A filter may reject the newest sessions, so stopping the scan at --limit matches would miss older ones.
+    found, truncated = sessions(Path(args.cwd), needed=None if filtered else args.limit)
+    if args.since is not None:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=args.since)
+        found = [session for session in found if datetime.fromisoformat(session["updated"]) >= cutoff]
+    for session in found:
+        if len(rows) >= args.limit:
+            break
+        hits = grep_hits(session, pattern) if pattern else []
+        if pattern and not hits:
+            continue
         users = [entry for entry in session["entries"] if entry["kind"] == "user"]
-        rows.append({"client": session["client"], "id": session["id"], "title": session["title"], "headless": session["headless"],
-                     "started": session["started"], "updated": session["updated"], "user_turns": session["user_turns"],
-                     "first_user": short(users[0]["text"], 160), "last_user": short(users[-1]["text"], 160)})
+        row = {"client": session["client"], "id": session["id"], "title": session["title"], "headless": session["headless"],
+               "started": session["started"], "updated": session["updated"], "user_turns": session["user_turns"],
+               "first_user": short(users[0]["text"], 160), "last_user": short(users[-1]["text"], 160)}
+        if pattern:
+            row.update(matched=len(hits), match=hits[0])
+        rows.append(row)
     print(json.dumps(rows, ensure_ascii=False, indent=2))
     if truncated:
         print(f"truncated: true; scanned at most {CODEX_SCAN_LIMIT} recent Codex sessions without finding enough from this project", file=sys.stderr)
@@ -394,6 +423,8 @@ def main() -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     listing = sub.add_parser("list", help="recent sessions of this project, newest first")
     listing.add_argument("--limit", type=int, default=5)
+    listing.add_argument("--since", type=float, help="only sessions updated within this many days")
+    listing.add_argument("--grep", help="case-insensitive regex matched against the user's messages, compaction summaries, and titles")
     showing = sub.add_parser("show", help="condensed timeline of one session")
     showing.add_argument("session", help="session ID or a unique prefix from list")
     showing.add_argument("--max-chars", type=int, default=1500, help="cap per message (summaries get four times this)")

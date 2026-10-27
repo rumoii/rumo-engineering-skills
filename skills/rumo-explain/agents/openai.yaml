@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Explain"
+  short_description: "用大白话讲清本仓库某块代码怎么工作、为什么这么设计，只读，结论注明来自代码、历史还是推断"
+  default_prompt: "Use $rumo-explain to explain how this part of the repository works and why it was built this way, read-only."

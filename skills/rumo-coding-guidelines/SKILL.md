@@ -70,7 +70,7 @@ Match the task to one of these routes. For any route except a small edit or an i
 | Small edit | Read, edit, most relevant check, `rumo-verify`; no plan, no review |
 | Defect fix | `rumo-debug` proves the cause, failing test, fix, verification recipe, `rumo-verify` |
 | Feature | `rumo-clarify` if unclear, `rumo-plan` if multi-step, risk gate, thin slices, recipe, `rumo-verify` |
-| Investigation | Read-only answer with evidence |
+| Investigation | Read-only answer with evidence; how or why code works goes to `rumo-explain` |
 | Resume | Read the handoff or decision record, check the actual repository state, continue |
 | Refactor | Cover the behavior with tests, move in green steps, rerun the same tests |
 | Performance problem | Baseline measurement, profile, fix, same measurement again; report both numbers |
@@ -87,6 +87,7 @@ Match the task to one of these routes. For any route except a small edit or an i
 - Turn the task into a checkable goal, for example: reproduce, fix, run the focused test.
 - Prefer focused tests, builds, linters, script self-tests, `git diff --check`, or a real request or page check. Use `rumo-verify` before claiming the change is ready.
 - When a check fails, report the command, the reason, and the remaining risk. When a check cannot run, say so; never substitute "should work".
+- In answers, explanations, and reports, say where each factual claim comes from: a run you made, code you read (`file:line`), or inference. Never state an inference as fact.
 
 ## Before Handing Back
 

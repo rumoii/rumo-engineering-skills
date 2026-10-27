@@ -17,11 +17,17 @@ RULES = {
         "Report unrelated problems you notice instead of fixing them.",
         "Treat review, explanation, and monitoring requests as read-only until the user asks for a change.",
         'never substitute "should work"',
+        "Never state an inference as fact.",
         "A high-assurance final run is always a fresh run after the last edit",
         "Only after the user agrees, add it to their `AGENTS.md` or `CLAUDE.md`",
         "Do not start the review or edit any skill or instruction file unless the user accepts.",
         "A flow is a default route, not a checklist to copy",
         "read [references/task-flows.md](references/task-flows.md)",
+    ),
+    "rumo-explain": (
+        "Explaining is read-only.",
+        "Never invent a history, an author's intent, or a past incident.",
+        "do not start changing code.",
     ),
     "rumo-database-change-safety": (
         "Start read-only.",
@@ -216,6 +222,10 @@ PINNED_ELSEWHERE = {"rumo-clarify"}
 # demand. rumo-coding-guidelines/references/high-assurance.md and rumo-review/references/loop.md
 # are pinned in test_skill_boundaries.py.
 REFERENCE_RULES = {
+    "rumo-coding-guidelines/references/measurement.md": (
+        "A difference smaller than the spread between runs is no measurable difference.",
+        "Call the verdict inconclusive when you cannot name the limit",
+    ),
     "rumo-remote-ops/references/access-changes-and-recovery.md": (
         "preserving the old route until independent validation succeeds",
         "Close the old route only after the new route is verified",
@@ -400,7 +410,8 @@ SNIPPET_SOURCES = {
     "No speculative abstractions, drive-by refactors": ("rumo-coding-guidelines", "Do not reformat, rename, reorder, or refactor neighboring code."),
     "Risk gate before editing": ("rumo-coding-guidelines", "Apply this gate on your own whenever you implement a change"),
     "use rumo-verify before handing back": ("rumo-coding-guidelines", "Use `rumo-verify` before claiming the change is ready."),
-    "offer once to review the session": ("rumo-coding-guidelines", "end with a one-line offer to review the session for lessons, at most once per session"),
+    "Never state an inference as fact.": ("rumo-coding-guidelines", "Never state an inference as fact."),
+    "offer once to review the session":("rumo-coding-guidelines", "end with a one-line offer to review the session for lessons, at most once per session"),
 }
 SNIPPET_INDEX_PREFIXES = ("- Full rules:",)
 

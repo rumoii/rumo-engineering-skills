@@ -10,7 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -281,6 +281,42 @@ class SessionDigestTest(unittest.TestCase):
         self.assertEqual(listed.returncode, 0, listed.stderr)
         self.assertIn("truncated: true", listed.stderr)
         self.assertNotIn("Other project private text", listed.stdout + listed.stderr)
+
+    def listing_with(self, *args: str) -> list[dict]:
+        result = self.run_digest("list", *args)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout)
+
+    def test_since_drops_sessions_not_updated_in_the_window(self) -> None:
+        cwd = str(self.project)
+        now = datetime.now(timezone.utc)
+        for name, days in (("recent11", 1), ("stale222", 20)):
+            stamp = (now - timedelta(days=days)).isoformat().replace("+00:00", "Z")
+            write_jsonl(self.claude_dir(self.project) / f"{name}.jsonl", [claude_line("user", f"work {name}", stamp, cwd)])
+        self.assertEqual([row["id"] for row in self.listing_with("--since", "7")], ["recent11"])
+        self.assertEqual(len(self.listing_with("--since", "30")), 2)
+
+    def test_grep_matches_user_words_summaries_and_titles_but_not_agent_replies(self) -> None:
+        self.seed_claude()
+        self.seed_codex()
+        self.seed_kimi()
+        rows = self.listing_with("--grep", "csv|kimi DOCS")
+        self.assertEqual([row["id"] for row in rows], ["session_gggg7777", "aaaa1111"])
+        self.assertEqual(rows[1]["match"], "Add a CSV export.")
+        self.assertEqual(rows[1]["matched"], 1)
+        self.assertEqual([row["id"] for row in self.listing_with("--grep", "docs pending")], ["session_gggg7777", "aaaa1111"])
+        self.assertEqual([row["id"] for row in self.listing_with("--grep", "add-export")], ["aaaa1111"])
+        self.assertEqual(self.listing_with("--grep", "P2 finding"), [])
+        self.assertNotIn("matched", self.listing()[0])
+
+    def test_grep_searches_past_sessions_that_an_unfiltered_limit_would_stop_at(self) -> None:
+        self.seed_codex()
+        self.assertEqual([row["id"] for row in self.listing_with("--limit", "1", "--grep", "review the export")], ["cccc3333"])
+
+    def test_invalid_grep_pattern_fails_with_exit_2(self) -> None:
+        result = self.run_digest("list", "--grep", "(")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("invalid --grep pattern", result.stderr)
 
     def test_missing_client_homes_give_an_empty_list(self) -> None:
         self.assertEqual(self.listing(), [])

@@ -23,6 +23,7 @@ Every skill uses the `rumo-` namespace and stays independent of any company, pro
 | `rumo-remote-ops` | Remote Linux queries and changes, service deployment, backup and restore, artifact deployment |
 | `rumo-prose` | Prose quality for code, diagnostics, docs, UI strings, and agent-facing files |
 | `rumo-frontend` | Frontend page work, new interface design, accessibility checks, dev-server troubleshooting, and requested browser evidence |
+| `rumo-explain` | Read-only, plain-words explanation of how repository code works and why, with reasons traced to history |
 | `rumo-handoff` | Pick up earlier sessions' work from their records, or write a handoff document on request |
 | `rumo-project-profile` | Private project profile resolution and validation |
 | `rumo-reflect` | Session retrospective that proposes where to fix recurring mistakes and applies only approved items |

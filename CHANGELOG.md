@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+- 新增默认技能 `rumo-explain`：问“本仓库某块代码怎么工作、为什么这么设计”时，只读地讲清楚。先用一两句大白话给出最短的完整答案，再按需往深讲（怎么运行、代码在哪、为什么是这个形状、改它会踩的坑）；“为什么”从 `git log`、`git blame`、提交说明、PR 和决策记录里找证据，找不到就如实说，不编历史。不开子 agent。通用概念问题仍然不加载技能，出了故障交给 `rumo-debug`。常驻基线的路由表和任务路线里的“调查”一行都指向它；新增选用用例 `explain-how`。
+- `rumo-handoff` 的接续支持按主题回忆：几天没碰一个项目，或者同时开着几条线时，先用 `session_digest.py list --since 14 --limit 30` 列出这段时间的会话，有主题再加 `--grep`（只匹配你说过的话、压缩摘要和会话标题，不匹配 agent 的回复），按线归类后每条线只读最新的会话。汇报时每条线一行，开头标明与 git 核对过的状态（已推送、已提交未推送、未提交已验证、在分支上进行中、已回滚、计划未开始等），再列反复出现的问题和下一步。带筛选时脚本不再凑够 `--limit` 个会话就停止扫描。新增选用用例 `handoff-recall`。
+- 常驻基线和 `rumo-coding-guidelines` 新增一条：回答、讲解和报告里的事实性结论，写明来自实际运行、读到的代码（`file:line`）还是推断，不把推断说成事实。
+- `rumo-coding-guidelines` 新增参考 `measurement.md`：报告性能数字之前要过的几问，包括瓶颈在哪、两边配置是否一致、结果是否超出硬件上限、错误是否被计入、交替多跑几次后差距是否大于波动、端到端占比多少、被计时的工作是否真的执行了。报告先给结论，再给数字、次数、范围和瓶颈。性能问题和指标改进两条路线在报告数字前会读它。
+
 - 删除行为评测、回归集和 pi 运行器（`run_codex_behavior.py`、`codex_behavior_cases.py`、`run_pi_behavior.py`、`run_regression.py`、`run_pi_trigger.py`、`pi_workspace_guard.mjs` 及其测试）：规则好不好用改看实际开发反馈，不再做有无技能的对照。`run_codex_trigger.py` 原来借用的辅助函数和对应测试并入它自己；推送前验收、`evals/` 用例和 Claude 行为用例保留。PR 模板、CONTRIBUTING 和 README 同步去掉对照组与回归集的要求。
 - README 去掉三处与别处重复的内容：任务路线表改为链接到 `task-flows.md`，“第一次配置 agent”缩成几行（细节由 `rumo-setup` 运行时讲解），项目 Profile 的用法只留在新手指南。
 - `rumo-agent-collaboration` 第 3、4 步只留判断规则，各路线的操作细节移到对应参考：`--detach`、`watch`、`survives_caller` 和 Claude Code 跨会话订阅放进 `external-cli.md` 新增的 “After Launch” 一节，原生子 agent 的完成通知放进 `native.md`；路线不可用和不确定是否送达两条改为停止条件。只是挪位置，没有删改规则。

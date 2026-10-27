@@ -1,4 +1,4 @@
 interface:
   display_name: "Rumo Handoff"
-  short_description: "跨会话交接：按要求写交接文档，或在新会话里读取本项目最近的会话记录接续进度"
+  short_description: "跨会话交接：按要求写交接文档，或在新会话里读取本项目最近的会话记录接续进度、按主题回忆各条工作做到哪了"
   default_prompt: "Use $rumo-handoff to report where this project's work stands and what to do next."
