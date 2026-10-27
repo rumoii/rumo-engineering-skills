@@ -729,7 +729,7 @@ class DetachWatchTest(Harness):
         out, err = (stream.decode("utf-8", "replace") for stream in watcher.communicate(timeout=120))
         self.assertIn("watching 2 active runs", out, err)
         for info in runs:
-            self.assertIn(f"[pi {info['run_id'][-6:]}] turn 1 cancelled", out)
+            self.assertIn(f"[pi {info['run_id'][-6:]}] ══ pi cancelled · 已取消 ══  turn 1 cancelled", out)
             self.wait_for_recorder(info, 1)
 
     def test_watch_without_a_run_id_reports_when_nothing_runs(self) -> None:
@@ -896,15 +896,15 @@ class WindowTest(Harness):
             if not opened:
                 self.assertIn("exited with code 1", result["reason"])
 
-    def test_start_and_resume_open_a_window_only_when_asked(self) -> None:
+    def test_start_and_resume_open_a_window_unless_told_not_to(self) -> None:
         seen = []
         with patch.object(agent_run, "cmd_start", side_effect=lambda a: seen.append(a.window) or 0), \
                 patch.object(agent_run, "cmd_resume", side_effect=lambda a: seen.append(a.window) or 0):
             agent_run.main(["start", "pi", "--cwd", ".", "--prompt-file", "p.md", "--access", "read-only"])
-            agent_run.main(["start", "pi", "--cwd", ".", "--prompt-file", "p.md", "--access", "read-only", "--window"])
+            agent_run.main(["start", "pi", "--cwd", ".", "--prompt-file", "p.md", "--access", "read-only", "--no-window"])
             agent_run.main(["resume", "run-1", "--prompt-file", "p.md"])
-            agent_run.main(["resume", "run-1", "--prompt-file", "p.md", "--window"])
-        self.assertEqual(seen, [False, True, False, True])
+            agent_run.main(["resume", "run-1", "--prompt-file", "p.md", "--no-window"])
+        self.assertEqual(seen, [True, False, True, False])
 
     def test_turns_have_no_time_limit_unless_one_is_given(self) -> None:
         seen = []
@@ -919,17 +919,69 @@ class WindowTest(Harness):
     def test_start_window_opens_a_held_watch_of_the_new_turn(self) -> None:
         args = argparse.Namespace(cli="claude", cwd=str(self.cwd), prompt_file=str(self.prompt), access="read-only", model=None, effort=None,
                                   timeout=60, executable=str(self.fake), runs_dir=str(self.runs), detach=False, window=True)
-        out = io.StringIO()
+        out, err = io.StringIO(), io.StringIO()
         opened = {"opened": True, "via": "test", "reason": None}
         with patch.dict(os.environ, {**self.env("claude"), "FAKE_CLI": "claude"}), \
-                patch.object(agent_run, "open_window", return_value=opened) as window, contextlib.redirect_stdout(out):
+                patch.object(agent_run, "open_window", return_value=opened) as window, contextlib.redirect_stdout(out), \
+                contextlib.redirect_stderr(err):
             code = agent_run.cmd_start(args)
         self.assertEqual(code, 0)
+        self.assertIn("turn 1 started; a progress window shows it in rumo-agents; follow it with: ", err.getvalue())
         argv = window.call_args.args[0]
         self.assertEqual(argv[2], "watch")
         self.assertEqual(argv[argv.index("--turn") + 1], "1")
         self.assertIn("--hold", argv)
         self.assertEqual(json.loads(out.getvalue())["window"], opened)
+
+    def watched(self, run_id: str, *, terminal: bool = False) -> str:
+        out = io.StringIO()
+        args = argparse.Namespace(run_id=run_id, turn=None, hold=False, runs_dir=str(self.runs))
+        with patch.object(agent_run, "enable_terminal_sequences", return_value=terminal), \
+                patch.object(agent_run.shutil, "get_terminal_size", return_value=os.terminal_size((60, 20))), \
+                contextlib.redirect_stdout(out):
+            agent_run.cmd_watch(args)
+        return out.getvalue()
+
+    def test_watch_ends_with_a_bilingual_verdict_elapsed_time_and_the_result(self) -> None:
+        summary = json.loads(self.start("codex").stdout)
+        view = agent_run.TurnView(Path(summary["run_dir"]), 1)
+        times = {"started_at": "2026-10-27T01:48:28+00:00", "ended_at": "2026-10-27T01:56:43+00:00"}
+        for state, code, verdict in (("exited", 0, "══ codex finished · 跑完了 ══  turn 1 exited · exit 0 · 用时 took 8:15"),
+                                     ("failed", 1, "══ codex failed · 失败了 ══  turn 1 failed · exit 1 · 用时 took 8:15"),
+                                     ("timed-out", None, "══ codex timed out · 超时了 ══  turn 1 timed-out · 用时 took 8:15")):
+            with self.subTest(state=state):
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    result = view.finish({"state": state, "exit_code": code, **times}, None)
+                lines = out.getvalue().splitlines()
+                self.assertEqual(result, agent_run.turn_code(state))
+                self.assertEqual(lines[-3], verdict)
+                self.assertEqual(lines[-2], f"result 结果: {Path(summary['run_dir']) / 'turns' / '1' / 'final.md'}")
+                self.assertEqual(lines[-1], "Tell the agent that started this run · 去告诉发起它的 agent")
+
+    def test_watch_output_without_a_terminal_has_no_control_sequences(self) -> None:
+        summary = json.loads(self.start("codex").stdout)
+        out = self.watched(summary["run_id"])
+        self.assertNotIn("\x1b", out)
+        self.assertIn("══ codex finished · 跑完了 ══  turn 1 exited · exit 0", out)
+
+    def test_watch_on_a_terminal_scrolls_above_a_fixed_status_area_and_restores_it(self) -> None:
+        summary = json.loads(self.start("codex").stdout)
+        out = self.watched(summary["run_id"], terminal=True)
+        self.assertIn("\x1b[1;18r", out)
+        self.assertIn("\x1b[19;1H", out)
+        self.assertIn("codex finished 跑完了", out)
+        self.assertTrue(out.endswith("\x1b[r\x1b[18;1H\n"), repr(out[-80:]))
+
+    def test_status_text_is_cut_to_the_terminal_width_counting_wide_characters(self) -> None:
+        text = "当前目标：读取 crates/dayumap-core/src/engine.rs，分析汇总逻辑与冲突判定"
+        for columns in (10, 21, 40):
+            with self.subTest(columns=columns):
+                cut = agent_run.fit_width(text, columns)
+                self.assertLessEqual(agent_run.cell_width(cut), columns)
+                self.assertTrue(cut.endswith("…"))
+        self.assertEqual(agent_run.fit_width("short", 40), "short")
+        self.assertEqual(agent_run.clock(3725), "1:02:05")
 
     def test_watch_hold_waits_for_enter_only_on_a_terminal(self) -> None:
         summary = json.loads(self.start("codex").stdout)

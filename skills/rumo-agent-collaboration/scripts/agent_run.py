@@ -34,6 +34,7 @@ import signal
 import subprocess
 import sys
 import time
+import unicodedata
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -989,7 +990,7 @@ def cmd_start(args: argparse.Namespace) -> int:
     extra = {"window": open_watch_window(run_dir, 1)} if args.window else {}
     if args.detach:
         return run_detached(run_dir, "start", args.prompt_file, args.timeout, extra)
-    announce(run_dir, 1)
+    announce(run_dir, 1, extra.get("window"))
     code = run_turn(run_dir, meta, "start", prompt, args.timeout)
     print(json.dumps({**summary(run_dir), **extra}, ensure_ascii=False, indent=2))
     return code
@@ -1022,17 +1023,19 @@ def cmd_resume(args: argparse.Namespace) -> int:
     extra = {"window": open_watch_window(run_dir, len(meta["turns"]) + 1)} if args.window else {}
     if args.detach:
         return run_detached(run_dir, "resume", args.prompt_file, args.timeout, extra)
-    announce(run_dir, len(meta["turns"]) + 1)
+    announce(run_dir, len(meta["turns"]) + 1, extra.get("window"))
     code = run_turn(run_dir, meta, "resume", prompt, args.timeout)
     print(json.dumps({**summary(run_dir), **extra}, ensure_ascii=False, indent=2))
     return code
 
 
-def announce(run_dir: Path, number: int) -> None:
+def announce(run_dir: Path, number: int, window: dict | None) -> None:
     """Before the turn runs, tell a caller that runs it in the background how to follow it; stdout keeps only the summary."""
     argv = watch_argv(run_dir)
     command = subprocess.list2cmdline(argv) if os.name == "nt" else shlex.join(argv)
-    print(f"run {run_dir.name} turn {number} started; follow it with: {command}", file=sys.stderr, flush=True)
+    note = "" if window is None else (f"; a progress window shows it in {WINDOW_GROUP}" if window["opened"]
+                                      else f"; no progress window opened ({window['reason']})")
+    print(f"run {run_dir.name} turn {number} started{note}; follow it with: {command}", file=sys.stderr, flush=True)
 
 
 def run_detached(run_dir: Path, kind: str, prompt_file: str, timeout: float | None, extra: dict) -> int:
@@ -1157,6 +1160,100 @@ def follow_turn(run_dir: Path, number: int, stream: Path | None, consume=None) -
     return result
 
 
+TURN_ENDINGS = {
+    "exited": ("finished", "跑完了"), "closed": ("closed", "已关闭"), "failed": ("failed", "失败了"),
+    "timed-out": ("timed out", "超时了"), "cancelled": ("cancelled", "已取消"), "launch-failed": ("failed to launch", "没能启动"),
+    "interrupted": ("interrupted", "被中断"), "abandoned": ("abandoned", "已放弃"),
+}
+
+
+def cell_width(text: str) -> int:
+    return sum(2 if unicodedata.east_asian_width(ch) in "WF" else 1 for ch in text)
+
+
+def fit_width(text: str, columns: int) -> str:
+    """One line no wider than `columns` terminal cells, counting wide CJK characters as two."""
+    text = " ".join(text.split())
+    if cell_width(text) <= columns:
+        return text
+    kept, used = [], 0
+    for ch in text:
+        used += 2 if unicodedata.east_asian_width(ch) in "WF" else 1
+        if used > columns - 1:
+            break
+        kept.append(ch)
+    return "".join(kept) + "…"
+
+
+def clock(seconds: float) -> str:
+    seconds = max(0, int(seconds))
+    hours, rest = divmod(seconds, 3600)
+    return f"{hours}:{rest // 60:02d}:{rest % 60:02d}" if hours else f"{rest // 60}:{rest % 60:02d}"
+
+
+def turn_elapsed(turn: dict) -> float | None:
+    begun = utc_time(turn.get("started_at") or turn.get("created_at"))
+    if begun is None:
+        return None
+    ended = utc_time(turn.get("ended_at")) or datetime.now(timezone.utc)
+    return (ended - begun).total_seconds()
+
+
+def utc_time(stamp: object) -> datetime | None:
+    try:
+        return datetime.fromisoformat(str(stamp)) if stamp else None
+    except ValueError:
+        return None
+
+
+def enable_terminal_sequences() -> bool:
+    """True when stdout is a terminal that interprets cursor and scroll-region sequences."""
+    if not sys.stdout.isatty():
+        return False
+    if os.name != "nt":
+        return os.environ.get("TERM") != "dumb"
+    import ctypes
+    kernel = ctypes.windll.kernel32
+    handle = kernel.GetStdHandle(-11)
+    mode = ctypes.c_uint32()
+    return bool(kernel.GetConsoleMode(handle, ctypes.byref(mode)) and kernel.SetConsoleMode(handle, mode.value | 0x0004))
+
+
+class StatusArea:
+    """A few fixed lines at the bottom of the terminal; everything printed above them scrolls."""
+
+    def __init__(self, height: int) -> None:
+        self.height, self.size = height, None
+
+    def layout(self) -> os.terminal_size:
+        size = shutil.get_terminal_size()
+        if size != self.size:
+            self.size = size
+            sys.stdout.write(f"\x1b[1;{max(1, size.lines - self.height)}r")
+        return size
+
+    def scroll(self, text: str) -> None:
+        size = self.layout()
+        sys.stdout.write(f"\x1b7\x1b[{max(1, size.lines - self.height)};1H\n{text}\x1b8")
+        sys.stdout.flush()
+
+    def draw(self, lines: list[str]) -> None:
+        size = self.layout()
+        rows = ["─" * size.columns, *lines][:self.height]
+        out = "\x1b7"
+        for offset, line in enumerate(rows):
+            style = "\x1b[2m" if offset == 0 else "\x1b[1m" if offset == 1 else ""
+            out += f"\x1b[{size.lines - self.height + 1 + offset};1H\x1b[2K{style}{line if offset == 0 else fit_width(line, size.columns)}\x1b[0m"
+        sys.stdout.write(out + "\x1b8")
+        sys.stdout.flush()
+
+    def close(self) -> None:
+        size = shutil.get_terminal_size()
+        clear = "".join(f"\x1b[{row};1H\x1b[2K" for row in range(size.lines - self.height + 1, size.lines + 1))
+        sys.stdout.write(f"{clear}\x1b[r\x1b[{max(1, size.lines - self.height)};1H\n")
+        sys.stdout.flush()
+
+
 class TurnView:
     """Renders one turn's output as progress lines, each prefixed with `label` when several runs share a screen."""
 
@@ -1176,14 +1273,31 @@ class TurnView:
         stream = self.turn_dir / ("stdout.txt" if self.text_output else "events.jsonl")
         self.follower = TurnFollower(run_dir, number, stream, self.consume)
         self.pending, self.seen, self.heartbeat = b"", 0, time.monotonic()
+        self.area: StatusArea | None = None
+        self.latest, self.ended = "", None
 
     def say(self, text: str) -> None:
-        print(self.prefix + text, flush=True)
+        if self.area:
+            self.area.scroll(self.prefix + text)
+        else:
+            print(self.prefix + text, flush=True)
+
+    def status(self) -> str:
+        """One line for the status area: state, elapsed time, events, and what the turn is doing now."""
+        with record_lock(self.follower.run_dir):
+            turn = load_meta(self.follower.run_dir)["turns"][self.number - 1]
+        elapsed = turn_elapsed(turn)
+        if self.ended:
+            english, chinese = TURN_ENDINGS.get(self.ended, (self.ended, self.ended))
+            return f"{self.label or self.meta['cli']} {english} {chinese} · {clock(elapsed or 0)}"
+        now = re.split(r"。|\. |\n", re.sub(r"^\[[^\]]*\] ", "", self.latest), maxsplit=1)[0] if self.latest else "starting 启动中"
+        return f"{self.label or self.meta['cli']} · running 运行中 · {clock(elapsed or 0)} · {self.seen} events · 当前 now: {now}"
 
     def show(self, line: bytes) -> None:
         text = line.decode("utf-8", errors="replace").rstrip("\r")
         if self.text_output:
             self.say(text)
+            self.latest = text or self.latest
             return
         try:
             event = json.loads(text)
@@ -1193,6 +1307,7 @@ class TurnView:
             self.seen += 1
             for out in progress_lines(self.rules, event):
                 self.say(out)
+                self.latest = out
 
     def consume(self, chunk: bytes) -> None:
         *lines, self.pending = (self.pending + chunk).split(b"\n")
@@ -1212,8 +1327,21 @@ class TurnView:
         if not self.rules and not self.text_output and final.is_file():
             for line in final.read_text(encoding="utf-8", errors="replace").splitlines()[:20]:
                 self.say(line)
-        self.say(f"turn {self.number} {turn['state']}; final reply: {final if final.is_file() else 'none'}")
-        return turn_code(turn["state"])
+        state = turn["state"]
+        self.ended = state
+        english, chinese = TURN_ENDINGS.get(state, (state, state))
+        details = [f"turn {self.number} {state}"]
+        if turn.get("exit_code") is not None:
+            details.append(f"exit {turn['exit_code']}")
+        if (elapsed := turn_elapsed(turn)) is not None:
+            details.append(f"用时 took {clock(elapsed)}")
+        title = f"══ {self.meta['cli']} {english} · {chinese} ══"
+        if self.area:
+            title = f"\x1b[1;{32 if state in ('exited', 'closed') else 33 if state == 'timed-out' else 31}m{title}\x1b[0m"
+        self.say(f"{title}  {' · '.join(details)}")
+        self.say(f"result 结果: {final if final.is_file() else 'none'}")
+        self.say("Tell the agent that started this run · 去告诉发起它的 agent")
+        return turn_code(state)
 
 
 def active_headless_runs(root: Path) -> tuple[list[Path], list[str]]:
@@ -1247,16 +1375,42 @@ def cmd_watch(args: argparse.Namespace) -> int:
     else:
         code = watch_one(run_path(args), args.turn)
     if args.hold:
-        hold_window("press Enter to close")
+        hold_window("press Enter to close · 按回车关闭")
     return code
+
+
+def status_area(views: list[TurnView]) -> StatusArea | None:
+    """On a terminal that supports it, keep a status line per view below the scrolling output."""
+    if not enable_terminal_sequences() or shutil.get_terminal_size().lines < len(views) + 6:
+        return None
+    area = StatusArea(len(views) + 1)
+    for view in views:
+        view.area = area
+    return area
+
+
+def follow_views(views: list[TurnView], area: StatusArea | None) -> list[int]:
+    codes: dict[int, int] = {}
+    try:
+        while len(codes) < len(views):
+            for index, view in enumerate(views):
+                if index not in codes and (result := view.follower.step()) is not None:
+                    codes[index] = view.finish(*result)
+            if area:
+                area.draw([view.status() for view in views])
+            if len(codes) < len(views):
+                time.sleep(0.5)
+    finally:
+        if area:
+            area.close()
+    return [codes[index] for index in range(len(views))]
 
 
 def watch_one(run_dir: Path, turn: int | None = None) -> int:
     view = TurnView(run_dir, select_turn(run_dir, turn))
+    area = status_area([view])
     view.say(f"watching {view.meta['cli']} run {view.meta['run_id']} turn {view.number}; Ctrl+C stops watching, not the run")
-    while (result := view.follower.step()) is None:
-        time.sleep(0.5)
-    return view.finish(*result)
+    return follow_views([view], area)[0]
 
 
 def watch_many(run_dirs: list[Path]) -> int:
@@ -1265,16 +1419,14 @@ def watch_many(run_dirs: list[Path]) -> int:
         with record_lock(run_dir):
             cli = load_meta(run_dir)["cli"]
         views.append(TurnView(run_dir, select_turn(run_dir, None), f"{cli} {run_dir.name[-6:]}"))
-    print(f"watching {len(views)} active runs: " + ", ".join(f"[{view.label}] {view.meta['run_id']}" for view in views)
-          + "; Ctrl+C stops watching, not the runs", flush=True)
-    codes: dict[int, int] = {}
-    while len(codes) < len(views):
-        for index, view in enumerate(views):
-            if index not in codes and (result := view.follower.step()) is not None:
-                codes[index] = view.finish(*result)
-        if len(codes) < len(views):
-            time.sleep(0.5)
-    return max(codes.values())
+    area = status_area(views)
+    message = (f"watching {len(views)} active runs: " + ", ".join(f"[{view.label}] {view.meta['run_id']}" for view in views)
+               + "; Ctrl+C stops watching, not the runs")
+    if area:
+        area.scroll(message)
+    else:
+        print(message, flush=True)
+    return max(follow_views(views, area))
 
 
 def cmd_wait(args: argparse.Namespace) -> int:
@@ -1592,8 +1744,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--timeout", type=float, help="Stop the turn after this many seconds; by default there is no limit.")
     p.add_argument("--executable")
     p.add_argument("--detach", action="store_true", help="Return once the turn launches; a detached recorder finishes it.")
-    p.add_argument("--window", action=argparse.BooleanOptionalAction, default=False,
-                   help="Also open a terminal window that watches the turn; by default only `watch` shows progress.")
+    p.add_argument("--window", action=argparse.BooleanOptionalAction, default=True,
+                   help="Open a terminal window that watches the turn (default); --no-window leaves progress to `watch`.")
     p.add_argument("--runs-dir")
 
     p = sub.add_parser("open", help="Start the CLI interactively in a terminal window the user can see and type into.")
@@ -1611,8 +1763,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--prompt-file", required=True)
     p.add_argument("--timeout", type=float, help="Stop the turn after this many seconds; by default there is no limit.")
     p.add_argument("--detach", action="store_true", help="Return once the turn launches; a detached recorder finishes it.")
-    p.add_argument("--window", action=argparse.BooleanOptionalAction, default=False,
-                   help="Also open a terminal window that watches the turn; by default only `watch` shows progress.")
+    p.add_argument("--window", action=argparse.BooleanOptionalAction, default=True,
+                   help="Open a terminal window that watches the turn (default); --no-window leaves progress to `watch`.")
     p.add_argument("--runs-dir")
 
     p = sub.add_parser("watch", help="Follow a turn's progress until it ends; exits with the turn's code. "
