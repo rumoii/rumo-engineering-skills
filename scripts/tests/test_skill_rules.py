@@ -105,6 +105,7 @@ RULES = {
         "Do not mark a record implemented because code was drafted or unit tests passed",
         "never start the next task on top of a failing one",
         "never run two tasks in parallel when they touch the same files",
+        "Run tasks in parallel or in separate worktrees only after the user agrees",
         "A decision record never authorizes database writes, deployments, or other controlled actions.",
         "append one line for each fork, failure, or change of direction",
         "never edit or delete an earlier line",

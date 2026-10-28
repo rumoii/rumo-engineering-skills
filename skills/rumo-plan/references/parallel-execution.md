@@ -1,6 +1,6 @@
 # Parallel And Isolated Execution
 
-Read this only when the user asks to run plan tasks in parallel or in isolation. Dispatching helpers is client-specific: it needs a client that can start a helper agent with a fresh context, such as a subagent. Without one, dispatch to another installed agent CLI through `rumo-agent-collaboration` when the user approves that CLI; if the skill or route is unavailable, run the tasks one at a time in Execute mode.
+Read this before offering or running plan tasks in parallel or in isolation. Dispatching helpers is client-specific: it needs a client that can start a helper agent with a fresh context, such as a subagent. Without one, dispatch to another installed agent CLI through `rumo-agent-collaboration` when the user approves that CLI; if the skill or route is unavailable, run the tasks one at a time in Execute mode.
 
 ## Choose What Can Run Together
 
