@@ -31,6 +31,11 @@ def failure(code: str) -> dict:
     return {"ok": False, "error": {"code": code, "message": code}}
 
 
+def moving_screen() -> list:
+    """A screen that changes on every read, so screen idle never fires."""
+    return [screen(str(i)) for i in range(100)]
+
+
 def ps(state: str | None, started: int = 5, pane: str = "tab:leaf", tool: str = "WebFetch") -> dict:
     """A `worktree ps` reply; state None leaves the pane out."""
     agents = [] if state is None else [{"paneKey": pane, "state": state, "toolName": tool,
@@ -48,23 +53,25 @@ class Clock:
 
     def sleep(self, seconds: float) -> None:
         self.now += seconds
+        if self.now - 1000.0 > 100_000:
+            raise AssertionError("the wait never ended")
 
 
 class Orca:
     """Answers each `terminal read` and `worktree ps` with the next scripted reply and records every call."""
 
     def __init__(self, reads: list, waits: list | None = None, on_read=None, states: list | None = None,
-                 show: dict | None = None) -> None:
+                 show: list | None = None) -> None:
         self.reads, self.waits, self.on_read, self.calls = list(reads), list(waits or []), on_read, []
         self.states = list(states or [ps(None)])
-        self.show = show or {"ok": True, "result": {"terminal": {"tabId": "tab", "leafId": "leaf"}}}
+        self.shows = list(show or [{"ok": True, "result": {"terminal": {"tabId": "tab", "leafId": "leaf"}}}])
 
     def __call__(self, args: list[str]) -> dict | None:
         self.calls.append(args)
         if args[:2] == ["terminal", "wait"]:
             return self.waits.pop(0)
         if args[:2] == ["terminal", "show"]:
-            return self.show
+            return self.shows.pop(0) if len(self.shows) > 1 else self.shows[0]
         if args[:2] == ["worktree", "ps"]:
             return self.states.pop(0) if len(self.states) > 1 else self.states[0]
         if self.on_read:
@@ -84,11 +91,10 @@ class WaitTest(unittest.TestCase):
     def run_wait(self, orca: Orca, report: Path | None = None, marker: str | None = None,
                  idle: float = 200, lost: float = 600, since: float | None = None,
                  seen: str | None = None) -> tuple[int, str]:
-        pane = orca_wait.pane_key(orca, "term_x")
         return orca_wait.wait(lambda: orca_wait.observe(orca, "term_x"), report, marker, idle=idle, interval=30,
                               lost=lost, since=time.time() if since is None else since,
-                              agent=(lambda: orca_wait.agent_state(orca, pane)) if pane else None,
-                              attention=60, seen=seen, clock=self.clock, sleep=self.clock.sleep)
+                              agent=orca_wait.agent_probe(orca, "term_x"), attention=60, seen=seen,
+                              clock=self.clock, sleep=self.clock.sleep)
 
     def write_report(self, mtime: float | None = None) -> None:
         self.report.write_text("# report\n", encoding="utf-8")
@@ -186,20 +192,45 @@ class WaitTest(unittest.TestCase):
             code, _ = self.run_wait(Orca([screen("x")], states=states), lost=100)
             self.assertEqual(code, orca_wait.EXIT_IDLE, states)
 
-    def test_failed_terminal_show_disables_state_checks(self) -> None:
+    def test_unresolved_terminal_show_skips_state_checks(self) -> None:
         for show in (failure("terminal_handle_stale"), {"ok": True, "result": {"terminal": {"tabId": "tab"}}}):
-            orca = Orca([screen("x")], states=[ps("blocked")], show=show)
+            orca = Orca([screen("x")], states=[ps("blocked")], show=[show])
             self.assertIsNone(orca_wait.pane_key(orca, "term_x"))
             code, _ = self.run_wait(orca)
             self.assertEqual(code, orca_wait.EXIT_IDLE)
             self.assertFalse([c for c in orca.calls if c[:2] == ["worktree", "ps"]])
 
-    def test_seen_prompt_is_not_reported_again_and_holds_off_idle(self) -> None:
-        states = [ps("blocked", started=5)] * 12 + [ps("working"), ps("blocked", started=7)]
-        code, line = self.run_wait(Orca([screen("Allow WebFetch?")], states=states), seen="5")
+    def test_terminal_show_is_retried_until_it_resolves(self) -> None:
+        orca = Orca(moving_screen(), states=[ps("blocked")], show=[None, failure("busy"), None])
+        orca.shows.append({"ok": True, "result": {"terminal": {"tabId": "tab", "leafId": "leaf"}}})
+        code, _ = self.run_wait(orca)
+        self.assertEqual(code, orca_wait.EXIT_ATTENTION)
+
+    def test_failed_ps_between_sightings_keeps_the_attention_timer(self) -> None:
+        # The screen keeps moving, so only attention can end this wait.
+        states = [ps("blocked", started=5), None, failure("busy"), ps(None)] * 10
+        code, line = self.run_wait(Orca(moving_screen(), states=states))
+        self.assertEqual(code, orca_wait.EXIT_ATTENTION)
+        self.assertIn("--seen 5", line)
+
+    def test_seen_prompt_is_not_reported_again(self) -> None:
+        states = [ps("blocked", started=5)] * 4 + [ps("working"), ps("blocked", started=7)]
+        code, line = self.run_wait(Orca(moving_screen(), states=states), seen="5")
         self.assertEqual(code, orca_wait.EXIT_ATTENTION)
         self.assertIn("--seen 7", line)
-        self.assertGreater(self.clock.now - 1000.0, 360)
+
+    def test_seen_prompt_left_unanswered_still_ends_in_idle(self) -> None:
+        code, _ = self.run_wait(Orca([screen("Allow WebFetch?")], states=[ps("blocked", started=5)]), seen="5")
+        self.assertEqual(code, orca_wait.EXIT_IDLE)
+        self.assertEqual(self.clock.now - 1000.0, 210)
+
+    def test_turn_ended_without_the_done_check_exits_idle_early(self) -> None:
+        # Orca marks the turn done while the screen still moves, e.g. a pause report without the marker.
+        states = [ps("working"), ps("done", started=9)]
+        code, line = self.run_wait(Orca(moving_screen(), states=states), self.report, "5A 完成")
+        self.assertEqual(code, orca_wait.EXIT_IDLE)
+        self.assertIn("turn ended", line)
+        self.assertEqual(self.clock.now - 1000.0, 90)
 
 
 FAKE_ORCA = textwrap.dedent(

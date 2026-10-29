@@ -7,17 +7,18 @@ Orca's hooks publish in `orca worktree ps`, and ends with one line:
 
   0 done       the report file changed after the wait began and the screen shows the marker
   6 attention  Orca has shown the agent blocked on an approval or waiting on a question for --attention seconds
-  3 idle       the screen has not changed for --idle seconds: finished, asking, or waiting for approval
+  3 idle       the screen has not changed for --idle seconds, or Orca has shown the turn ended for
+               --attention seconds without done: finished, asking, or waiting for approval
   4 stopped    the terminal exited, or its handle is stale (after an Orca restart, list terminals again)
   5 lost       every read failed for --lost seconds
   2 usage error
 
 Agents without Orca hooks, or with a lagging hook state, still end in idle.
 The attention line names the prompt's start; pass it back as --seen to wait
-again without reporting the same prompt, and that prompt holds off idle while
-it lasts. Without --marker the report alone means done, and without --report
-the marker alone; with neither, done never ends the wait. Interrupting the
-wait leaves the agent running.
+again without reporting the same prompt, which then ends in idle if nobody
+answers it. Without --marker the report alone means done, and without
+--report the marker alone; with neither, done never ends the wait.
+Interrupting the wait leaves the agent running.
 """
 
 from __future__ import annotations
@@ -35,8 +36,8 @@ from typing import Callable
 
 EXIT_DONE, EXIT_USAGE, EXIT_IDLE, EXIT_STOPPED, EXIT_LOST, EXIT_ATTENTION = 0, 2, 3, 4, 5, 6
 STALE = {"terminal_handle_stale"}
-# Orca's hook states for an approval prompt and for a question or other UI prompt.
-NEEDS_USER = {"blocked", "waiting"}
+# Orca's hook states for an approval prompt, a question or other UI prompt, and a finished turn.
+TIMED = {"blocked", "waiting", "done"}
 # A hung orca call counts as one failed read rather than blocking the wait.
 CALL_TIMEOUT = 30
 
@@ -105,6 +106,17 @@ def agent_state(orca: Orca, pane: str) -> dict | None:
     return None
 
 
+def agent_probe(orca: Orca, handle: str) -> Callable[[], "dict | None"]:
+    """Reads this terminal's agent state, resolving its pane key again until Orca answers."""
+    pane = None
+
+    def probe() -> dict | None:
+        nonlocal pane
+        pane = pane or pane_key(orca, handle)
+        return agent_state(orca, pane) if pane else None
+    return probe
+
+
 def summary(value: object, limit: int = 200) -> str:
     text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
     text = " ".join(text.split())
@@ -146,19 +158,20 @@ def wait(poll: Callable[[], tuple[str, str]], report: Path | None, marker: str |
             if finished(value, report, marker, since):
                 return EXIT_DONE, f"done / 已完成: {report if report else 'marker ' + repr(marker)}"
             state = agent() if agent else None
-            if state and state.get("state") in NEEDS_USER:
+            # No reply or no matching pane says nothing about the prompt, so it keeps the timer running.
+            if state and state.get("state") in TIMED:
                 started = str(state.get("stateStartedAt") or "")
-                if seen is not None and started == seen:
-                    changed_at = now  # the user already knows about this prompt
-                else:
-                    if prompt != (state["state"], started):
-                        prompt, prompt_since = (state["state"], started), now
-                    if now - prompt_since >= attention:
-                        tool = summary(state.get("toolName") or "")
-                        detail = summary(state.get("toolInput") or "")
-                        again = f"; after telling the user, wait again with --seen {started}" if started else ""
-                        return EXIT_ATTENTION, f"attention / 等你处理: {state['state']} {tool} {detail}{again}"
-            else:
+                if prompt != (state["state"], started):
+                    prompt, prompt_since = (state["state"], started), now
+                if now - prompt_since >= attention and not (seen is not None and started == seen):
+                    if state["state"] == "done":
+                        return EXIT_IDLE, (f"idle / 停住了: Orca has shown the turn ended for {attention:g}s without "
+                                           "the report and marker / 这一轮已结束，但报告或暗号没到")
+                    tool = summary(state.get("toolName") or "")
+                    detail = summary(state.get("toolInput") or "")
+                    again = f"; after telling the user, wait again with --seen {started}" if started else ""
+                    return EXIT_ATTENTION, f"attention / 等你处理: {state['state']} {tool} {detail}{again}"
+            elif state:
                 prompt = None
             if now - changed_at >= idle:
                 return EXIT_IDLE, (f"idle / 停住了: screen unchanged for {idle:g}s; it finished, asked a question, "
@@ -202,12 +215,10 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_USAGE
     sys.stdout.reconfigure(encoding="utf-8")
     orca = orca_caller(executable)
-    pane = pane_key(orca, args.terminal)
     try:
         code, line = wait(lambda: observe(orca, args.terminal), args.report, args.marker, idle=args.idle,
                           interval=args.interval, lost=args.lost, since=time.time(),
-                          agent=(lambda: agent_state(orca, pane)) if pane else None,
-                          attention=args.attention, seen=args.seen)
+                          agent=agent_probe(orca, args.terminal), attention=args.attention, seen=args.seen)
     except KeyboardInterrupt:
         return 130
     print(line)
