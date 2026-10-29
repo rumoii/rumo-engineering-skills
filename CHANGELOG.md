@@ -2,6 +2,10 @@
 
 每个版本的完整说明见 [GitHub Releases](https://github.com/rumoii/rumo-engineering-skills/releases)。插件用户只在 `.claude-plugin/plugin.json` 的 `version` 提升后才会收到更新，所以每次发版都要提升版本号，并在这里补一节。
 
+## Unreleased
+
+- `orca_wait.py` 新增 attention 退出（退出码 6）。在 Orca 里派出去的 agent 停在权限确认框或提问框时，主控以前要等屏幕 idle 才会知道；如果屏幕一直在动，就只能靠用户在侧边栏看到橙色问号。一次 qwen 调研在确认框前停了约 48 分钟，用的是 `--idle 600`。现在脚本每次轮询还会读 `orca worktree ps` 里 Orca 钩子给出的 agent 状态，按 `terminal show` 的 `tabId:leafId` 对上这个终端：状态为 blocked（权限）或 waiting（提问），并且持续 `--attention` 秒（默认 60 秒）就退出，输出里写明工具名和参数摘要。一闪而过的自动审批不报；没有钩子的 agent、钩子状态滞后，或者 ps 调用失败时，仍由屏幕 idle 兜底，ps 失败也不计入失联。输出带上这次确认框的开始标记，主控通知用户后用 `--seen` 传回去，重新等待时就不会因为同一个确认框反复叫醒，这期间也不报 idle。主控只通知用户，不替用户点确认。`references/orca.md` 去掉 tui-idle 分支，所有 agent 都用 `orca_wait.py`。已用模拟的 Orca 测试过，还没在真实 agent 停在确认框时跑过。
+
 ## 1.1.0 - 2026-10-28
 
 - `rumo-agent-collaboration` 的路线改为按会话所在环境选：会话在 Orca 里（终端设有 `ORCA_TERMINAL_HANDLE`）时，写入活走 Orca 工作树，一条命令建工作树并启动 agent，不需要 adapter；只读活仍走 `agent_run.py`，因为只有 adapter 能强制只读；不在 Orca 里一律走 `agent_run.py`，即使装了 Orca。之前只要装了 Orca 写入活就走它，对方跑完只能靠用户来报。现在能被后台命令叫醒的客户端，每个 agent 起一个后台等待：Orca 的 tui-idle 支持的 agent 用它，其他（例如 Kimi）用新增的只读脚本 `scripts/orca_wait.py`。脚本从不往终端发输入；报告文件在等待开始后写出、且屏幕上出现完成暗号才算完成，屏幕 200 秒不变算停住，只有 Orca 自己的退出等待确认或句柄失效才算已停止，读取失败就重试，600 秒后报失联。任务书写多细按“照做还是设计”定，并写明报告路径和完成暗号；对方中途停下时，经用户同意可以换一条 lane 在同一工作树接手。200 秒阈值和 tui-idle 对 Codex 是否可靠，还在实际使用中观察。

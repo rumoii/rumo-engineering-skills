@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 """Wait for an agent in an Orca terminal to finish or stall, without ever writing to that terminal.
 
-For agents that `orca terminal wait --for tui-idle` does not support, such as
-Kimi. Run it as a background command in a client that reports when a command
-exits; it polls `orca terminal read` and ends with one line:
+For any agent CLI. Run it as a background command in a client that reports
+when a command exits; it polls `orca terminal read` and the agent state that
+Orca's hooks publish in `orca worktree ps`, and ends with one line:
 
-  0 done     the report file changed after the wait began and the screen shows the marker
-  3 idle     the screen has not changed for --idle seconds: finished, asking, or waiting for approval
-  4 stopped  the terminal exited, or its handle is stale (after an Orca restart, list terminals again)
-  5 lost     every read failed for --lost seconds
+  0 done       the report file changed after the wait began and the screen shows the marker
+  6 attention  Orca has shown the agent blocked on an approval or waiting on a question for --attention seconds
+  3 idle       the screen has not changed for --idle seconds: finished, asking, or waiting for approval
+  4 stopped    the terminal exited, or its handle is stale (after an Orca restart, list terminals again)
+  5 lost       every read failed for --lost seconds
   2 usage error
 
-Without --marker the report alone means done, and without --report the marker
-alone; with neither, only idle, stopped, and lost end the wait. Interrupting
-the wait leaves the agent running.
+Agents without Orca hooks, or with a lagging hook state, still end in idle.
+The attention line names the prompt's start; pass it back as --seen to wait
+again without reporting the same prompt, and that prompt holds off idle while
+it lasts. Without --marker the report alone means done, and without --report
+the marker alone; with neither, done never ends the wait. Interrupting the
+wait leaves the agent running.
 """
 
 from __future__ import annotations
@@ -29,8 +33,10 @@ from pathlib import Path
 from typing import Callable
 
 
-EXIT_DONE, EXIT_USAGE, EXIT_IDLE, EXIT_STOPPED, EXIT_LOST = 0, 2, 3, 4, 5
+EXIT_DONE, EXIT_USAGE, EXIT_IDLE, EXIT_STOPPED, EXIT_LOST, EXIT_ATTENTION = 0, 2, 3, 4, 5, 6
 STALE = {"terminal_handle_stale"}
+# Orca's hook states for an approval prompt and for a question or other UI prompt.
+NEEDS_USER = {"blocked", "waiting"}
 # A hung orca call counts as one failed read rather than blocking the wait.
 CALL_TIMEOUT = 30
 
@@ -42,7 +48,8 @@ def orca_caller(executable: list[str]) -> Orca:
         try:
             proc = subprocess.run(executable + args + ["--json"], capture_output=True, text=True,
                                   encoding="utf-8", errors="replace", timeout=CALL_TIMEOUT)
-            data = json.loads(proc.stdout)
+            # Agent messages in `worktree ps` can carry raw control characters.
+            data = json.loads(proc.stdout, strict=False)
         except (OSError, subprocess.TimeoutExpired, ValueError):
             return None
         return data if isinstance(data, dict) else None
@@ -76,6 +83,34 @@ def observe(orca: Orca, handle: str) -> tuple[str, str]:
     return "screen", "\n".join(str(line) for line in tail)
 
 
+def pane_key(orca: Orca, handle: str) -> str | None:
+    """The key `worktree ps` uses for this terminal's agent, or None when Orca does not say."""
+    reply = orca(["terminal", "show", "--terminal", handle])
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return None
+    terminal = (reply.get("result") or {}).get("terminal") or {}
+    tab, leaf = terminal.get("tabId"), terminal.get("leafId")
+    return f"{tab}:{leaf}" if tab and leaf else None
+
+
+def agent_state(orca: Orca, pane: str) -> dict | None:
+    """This pane's entry in `worktree ps`, or None when the call fails or the pane has no agent."""
+    reply = orca(["worktree", "ps", "--limit", "1000"])
+    result = reply.get("result") if isinstance(reply, dict) and reply.get("ok") else None
+    rows = result.get("worktrees") if isinstance(result, dict) else None
+    for row in rows if isinstance(rows, list) else []:
+        for agent in (row.get("agents") or []) if isinstance(row, dict) else []:
+            if isinstance(agent, dict) and agent.get("paneKey") == pane:
+                return agent
+    return None
+
+
+def summary(value: object, limit: int = 200) -> str:
+    text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
+    text = " ".join(text.split())
+    return text if len(text) <= limit else text[:limit] + "…"
+
+
 def finished(screen: str, report: Path | None, marker: str | None, since: float) -> bool:
     if report is None and marker is None:
         return False
@@ -88,9 +123,12 @@ def finished(screen: str, report: Path | None, marker: str | None, since: float)
 
 
 def wait(poll: Callable[[], tuple[str, str]], report: Path | None, marker: str | None, *, idle: float,
-         interval: float, lost: float, since: float, clock: Callable[[], float] = time.monotonic,
+         interval: float, lost: float, since: float, agent: Callable[[], "dict | None"] | None = None,
+         attention: float = 60, seen: str | None = None, clock: Callable[[], float] = time.monotonic,
          sleep: Callable[[float], None] = time.sleep) -> tuple[int, str]:
     last_screen, changed_at, last_ok, last_error = None, clock(), clock(), ""
+    # The prompt being timed and when this script first saw it; Orca's own timestamps are only compared.
+    prompt, prompt_since = None, 0.0
     while True:
         kind, value = poll()
         now = clock()
@@ -107,6 +145,21 @@ def wait(poll: Callable[[], tuple[str, str]], report: Path | None, marker: str |
                 last_screen, changed_at = value, now
             if finished(value, report, marker, since):
                 return EXIT_DONE, f"done / 已完成: {report if report else 'marker ' + repr(marker)}"
+            state = agent() if agent else None
+            if state and state.get("state") in NEEDS_USER:
+                started = str(state.get("stateStartedAt") or "")
+                if seen is not None and started == seen:
+                    changed_at = now  # the user already knows about this prompt
+                else:
+                    if prompt != (state["state"], started):
+                        prompt, prompt_since = (state["state"], started), now
+                    if now - prompt_since >= attention:
+                        tool = summary(state.get("toolName") or "")
+                        detail = summary(state.get("toolInput") or "")
+                        again = f"; after telling the user, wait again with --seen {started}" if started else ""
+                        return EXIT_ATTENTION, f"attention / 等你处理: {state['state']} {tool} {detail}{again}"
+            else:
+                prompt = None
             if now - changed_at >= idle:
                 return EXIT_IDLE, (f"idle / 停住了: screen unchanged for {idle:g}s; it finished, asked a question, "
                                    "or waits for approval / 可能已做完、在提问或在等审批")
@@ -138,6 +191,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--idle", type=positive, default=200, help="seconds of unchanged screen before reporting idle")
     parser.add_argument("--interval", type=positive, default=30, help="seconds between reads")
     parser.add_argument("--lost", type=positive, default=600, help="seconds of failed reads before giving up")
+    parser.add_argument("--attention", type=positive, default=60,
+                        help="seconds an approval or question prompt must last before reporting attention")
+    parser.add_argument("--seen", help="the prompt start from an earlier attention line, so it is not reported again")
     parser.add_argument("--orca", help="orca executable to use instead of the one on PATH")
     args = parser.parse_args(argv)
     executable = resolve_orca(args.orca)
@@ -146,9 +202,12 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_USAGE
     sys.stdout.reconfigure(encoding="utf-8")
     orca = orca_caller(executable)
+    pane = pane_key(orca, args.terminal)
     try:
         code, line = wait(lambda: observe(orca, args.terminal), args.report, args.marker, idle=args.idle,
-                          interval=args.interval, lost=args.lost, since=time.time())
+                          interval=args.interval, lost=args.lost, since=time.time(),
+                          agent=(lambda: agent_state(orca, pane)) if pane else None,
+                          attention=args.attention, seen=args.seen)
     except KeyboardInterrupt:
         return 130
     print(line)

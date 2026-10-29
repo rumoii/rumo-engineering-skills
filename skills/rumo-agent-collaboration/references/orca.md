@@ -26,9 +26,17 @@ When a prompt you receive carries Orca's injected task and dispatch IDs, you are
 
 When this client runs background commands and reports their exit, as Claude Code does, start one background wait per agent and rely on its exit, not on the user. Otherwise, wait for the user as Workflow step 4 says.
 
-- For an agent that Orca's `terminal wait --for tui-idle` supports, as the orca-cli guide lists, run that with a timeout, and run it again when it times out.
-- For any other agent, run `scripts/orca_wait.py --terminal <handle> --report <report path> --marker <done line>`, resolved from this skill's directory. It only reads the terminal and exits with one line: done (the report changed after the wait began and the marker is on screen), idle (the screen unchanged for `--idle` seconds, 200 by default), stopped, or lost.
-- When a wait ends, read the terminal and the report to tell a finished agent from one asking a question or waiting for approval. After handling it, start a new wait if the agent continues.
+Run `scripts/orca_wait.py --terminal <handle> --report <report path> --marker <done line>`, resolved from this skill's directory, for every agent. It only reads Orca and exits with one line:
+
+- done: the report changed after the wait began and the marker is on screen.
+- attention: Orca has shown the agent at an approval or question prompt for `--attention` seconds, 60 by default.
+- idle: the screen has not changed for `--idle` seconds, 200 by default. This covers agents whose prompts Orca does not report.
+- stopped: the terminal exited or its handle went stale.
+- lost: every read failed for `--lost` seconds.
+
+On attention, read the terminal to see what the agent waits for, then tell the user which agent, which worktree, and what it asks; also send a push notification when the client has one. Do not answer the prompt yourself. Start the next wait with the `--seen` value from the attention line, so the same prompt is not reported again.
+
+On idle, read the terminal and the report to tell a finished agent from one asking a question or waiting for approval. After handling any exit, start a new wait if the agent continues.
 
 ## Rules That Still Apply
 
