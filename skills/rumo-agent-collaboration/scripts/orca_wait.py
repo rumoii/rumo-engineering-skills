@@ -5,7 +5,7 @@ For any agent CLI. Run it as a background command in a client that reports
 when a command exits; it polls `orca terminal read` and the agent state that
 Orca's hooks publish in `orca worktree ps`, and ends with one line:
 
-  0 done       the report file changed after the wait began and the screen shows the marker
+  0 done       the report file changed after the wait began and the screen shows one of the markers
   6 attention  Orca has shown the agent blocked on an approval or waiting on a question for --attention seconds
   3 idle       the screen has not changed for --idle seconds, or Orca has shown the turn ended for
                --attention seconds without done: finished, asking, or waiting for approval
@@ -123,18 +123,22 @@ def summary(value: object, limit: int = 200) -> str:
     return text if len(text) <= limit else text[:limit] + "…"
 
 
-def finished(screen: str, report: Path | None, marker: str | None, since: float) -> bool:
-    if report is None and marker is None:
-        return False
-    if marker is not None and marker not in screen:
-        return False
+def finished(screen: str, report: Path | None, markers: list[str] | None, since: float) -> str | None:
+    """What ended the work: the marker on screen, or the report when no marker is given; None while it runs."""
+    if report is None and not markers:
+        return None
+    shown = next((m for m in markers if m in screen), None) if markers else None
+    if markers and shown is None:
+        return None
     try:
-        return report is None or report.stat().st_mtime > since
+        if report is not None and report.stat().st_mtime <= since:
+            return None
     except OSError:
-        return False
+        return None
+    return "; ".join(([str(report)] if report else []) + ([f"marker {shown!r}"] if shown else []))
 
 
-def wait(poll: Callable[[], tuple[str, str]], report: Path | None, marker: str | None, *, idle: float,
+def wait(poll: Callable[[], tuple[str, str]], report: Path | None, markers: list[str] | None, *, idle: float,
          interval: float, lost: float, since: float, agent: Callable[[], "dict | None"] | None = None,
          attention: float = 60, seen: str | None = None, clock: Callable[[], float] = time.monotonic,
          sleep: Callable[[float], None] = time.sleep) -> tuple[int, str]:
@@ -155,8 +159,9 @@ def wait(poll: Callable[[], tuple[str, str]], report: Path | None, marker: str |
             last_ok = now
             if value != last_screen:
                 last_screen, changed_at = value, now
-            if finished(value, report, marker, since):
-                return EXIT_DONE, f"done / 已完成: {report if report else 'marker ' + repr(marker)}"
+            ended = finished(value, report, markers, since)
+            if ended:
+                return EXIT_DONE, f"done / 已结束: {ended}"
             state = agent() if agent else None
             # No reply or no matching pane says nothing about the prompt, so it keeps the timer running.
             if state and state.get("state") in TIMED:
@@ -200,7 +205,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--terminal", required=True, help="the agent's terminal handle from the Orca launch")
     parser.add_argument("--report", type=Path, help="the report file the brief tells the agent to write")
-    parser.add_argument("--marker", help="the line the brief tells the agent to print when done")
+    parser.add_argument("--marker", action="append",
+                        help="a line the brief tells the agent to print when it finishes or stops; repeat for each")
     parser.add_argument("--idle", type=positive, default=200, help="seconds of unchanged screen before reporting idle")
     parser.add_argument("--interval", type=positive, default=30, help="seconds between reads")
     parser.add_argument("--lost", type=positive, default=600, help="seconds of failed reads before giving up")

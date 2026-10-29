@@ -33,7 +33,7 @@ def failure(code: str) -> dict:
 
 def moving_screen() -> list:
     """A screen that changes on every read, so screen idle never fires."""
-    return [screen(str(i)) for i in range(100)]
+    return [screen("." * i) for i in range(1, 100)]
 
 
 def ps(state: str | None, started: int = 5, pane: str = "tab:leaf", tool: str = "WebFetch") -> dict:
@@ -88,10 +88,11 @@ class WaitTest(unittest.TestCase):
     def tearDown(self) -> None:
         self.tmp.cleanup()
 
-    def run_wait(self, orca: Orca, report: Path | None = None, marker: str | None = None,
+    def run_wait(self, orca: Orca, report: Path | None = None, marker: str | list[str] | None = None,
                  idle: float = 200, lost: float = 600, since: float | None = None,
                  seen: str | None = None) -> tuple[int, str]:
-        return orca_wait.wait(lambda: orca_wait.observe(orca, "term_x"), report, marker, idle=idle, interval=30,
+        markers = [marker] if isinstance(marker, str) else marker
+        return orca_wait.wait(lambda: orca_wait.observe(orca, "term_x"), report, markers, idle=idle, interval=30,
                               lost=lost, since=time.time() if since is None else since,
                               agent=orca_wait.agent_probe(orca, "term_x"), attention=60, seen=seen,
                               clock=self.clock, sleep=self.clock.sleep)
@@ -133,6 +134,13 @@ class WaitTest(unittest.TestCase):
         # "b" first appeared after 5 polls (150 s); idle fires 200 s after that, not 200 s after the start.
         self.assertGreaterEqual(self.clock.now - 1000.0, 150 + 200)
         self.assertIn("200", line)
+
+    def test_any_of_several_markers_ends_the_wait(self) -> None:
+        # The brief names one line for finishing and one for stopping to ask; either ends the wait.
+        self.write_report(time.time() + 5)
+        code, line = self.run_wait(Orca([screen("5A 暂停")]), self.report, ["5A 完成", "5A 暂停"])
+        self.assertEqual(code, orca_wait.EXIT_DONE)
+        self.assertIn("5A 暂停", line)
 
     def test_stale_handle_is_stopped(self) -> None:
         code, line = self.run_wait(Orca([failure("terminal_handle_stale")]))
@@ -178,7 +186,7 @@ class WaitTest(unittest.TestCase):
         self.assertIn("waiting", line)
 
     def test_brief_approval_that_clears_is_not_reported(self) -> None:
-        reads = [screen(str(i)) for i in range(6)] + [screen("end")]
+        reads = [screen("." * i) for i in range(1, 7)] + [screen("end")]
         code, _ = self.run_wait(Orca(reads, states=[ps("blocked"), ps("working")]))
         self.assertEqual(code, orca_wait.EXIT_IDLE)
 
@@ -283,7 +291,7 @@ class CommandLineTest(unittest.TestCase):
     def test_runs_the_orca_program_and_reports_done(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            proc = self.run_fake(root)
+            proc = self.run_fake(root, "--marker", "1B 暂停")
             self.assertEqual(proc.returncode, orca_wait.EXIT_DONE, proc.stdout + proc.stderr)
             self.assertIn("done", proc.stdout)
             self.assert_read_only(root)
