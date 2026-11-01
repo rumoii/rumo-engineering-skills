@@ -1,19 +1,21 @@
 ---
 name: rumo-review
-description: Use for a read-only code review of uncommitted changes, a branch diff, or a commit, or a named-scope audit of existing issues; for a multi-model review panel or a second opinion from another model through agent CLIs ("多模型评审"); for an explicitly requested review-fix-repeat loop until no blocking findings remain; for an explicitly requested simplification audit of removable complexity; or for addressing review feedback from someone else. Report correctness, security, lifecycle, compatibility, operations, and test risks with file-and-line evidence. Do not use to run pre-handoff checks; use rumo-verify instead.
+description: Use for a read-only code review of uncommitted changes, a branch diff, or a commit; named-scope implementation audits; multi-model code review panels or code second opinions through agent CLIs ("多模型评审"); an explicitly requested review-fix-repeat loop until no blocking findings remain; an explicitly requested simplification audit; or addressing review feedback from someone else. Report correctness, security, lifecycle, compatibility, operations, and test risks with file-and-line evidence. For delegating research, design, or open-ended product evaluation, use rumo-agent-collaboration. Do not use for pre-handoff checks; use rumo-verify instead.
 ---
 
 # Rumo Review
 
 Lead with actionable findings, not a tour of the diff.
 
+This skill reviews code changes and audits implementation. Delegating research, design, or open-ended product evaluation belongs to rumo-agent-collaboration, even when the user calls it a review or second opinion. Without a delegation request, answer such questions locally.
+
 ## Modes
 
 | Mode | Trigger | Edits code |
 | --- | --- | --- |
-| Review (default) | Any review request | No |
+| Review (default) | A code review or named-scope implementation audit | No |
 | Loop | The user explicitly asks to review, fix, and repeat; read [references/loop.md](references/loop.md) | Yes, must-fix items only |
-| Panel | The user asks for several models or a second opinion from another one, or you propose it for a high-risk change; read [references/panel.md](references/panel.md) | No |
+| Panel | The user asks other models to review code or audit implementation, or you propose it for a high-risk change; read [references/panel.md](references/panel.md) | No |
 | Simplify | The user explicitly asks for simplification or removable-complexity findings; read [references/simplify.md](references/simplify.md) | No |
 | Respond | The user hands over review comments from a person or a tool and asks to address them | Yes, accepted comments only |
 

@@ -1,6 +1,6 @@
 ---
 name: rumo-agent-collaboration
-description: Use when the user asks to delegate, transfer, or relay work to another agent CLI or model, such as Codex, Claude Code, pi, qwen, or grok ("give this part to pi", "交给 pi 执行"), to use Orca for collaboration, or to resume a run this skill recorded. Not for taking over another agent's session yourself. Reviews by another model, even a named CLI, belong to rumo-review alone. Use rumo-handoff for a handoff document and rumo-plan to split an agreed plan. A bare request for this client's own subagents, such as "start several subagents", does not need this skill.
+description: Use when the user asks to delegate, transfer, or relay implementation, research, design, or open-ended product evaluation to another agent CLI or model ("交给 pi 执行", "ask Codex to evaluate our product"), use Orca for collaboration, or resume a recorded run. Code reviews and implementation audits, including named-model second opinions, belong to rumo-review alone. Use rumo-handoff for handoff documents or taking over another session yourself, and rumo-plan for task breakdown. A plain request for this client's native subagents needs no collaboration skill. Without a request for another executor, answer locally.
 ---
 
 # Rumo Agent Collaboration
@@ -11,7 +11,9 @@ Hand a bounded piece of work to another agent where the user can see it, end you
 
 This skill picks the route for the agents it starts. A lane on the current client's own CLI, such as a `claude` lane inside Claude Code or a `codex` lane inside Codex, runs as the client's own subagent: it starts no second CLI and returns its result to this session. Every other lane runs through `scripts/agent_run.py`. A plain request for the client's subagents with no lane or model follows the client's own rules, except that a relay or transfer step run through one keeps the single-owner rules here. Before declaring native subagents available or unavailable, read [references/native.md](references/native.md).
 
-Reviews by another model, including a named external CLI, belong to rumo-review alone: its panel runs them with this skill's scripts. [references/trigger-examples.md](references/trigger-examples.md) marks the boundaries with neighboring skills.
+Code reviews and implementation audits by another model belong to rumo-review alone: its panel runs them with this skill's scripts. Delegated research, design, and open-ended product evaluation belong here, even when the user calls them a review or second opinion. Choose by the task, not that word. Without a request for another executor, answer locally. [references/trigger-examples.md](references/trigger-examples.md) marks the boundaries with neighboring skills.
+
+For an open-ended evaluation, the brief names the questions, relevant project material, comparison sources, and evidence limits. Let the evaluator question the goals and weigh benefits against costs; do not impose a diff-only or problems-only review template. At acceptance, check coverage, material claims, and cited sources; do not automatically repeat the full evaluation yourself.
 
 ## Ownership
 
@@ -20,6 +22,8 @@ You stay the owner: treat any request to hand work to another agent as delegatio
 ## Authorization
 
 Never start an agent through this skill unless the user asked for it. When the user named the CLI and the work, that request is the approval: state in one line before launching which CLI, model, and effort will run and what content you will send, then launch. Keep it to that line; do not ask again. A configured `delegate` lane counts as a named CLI. Ask first when the user named no route and none is configured, when you would send content the user did not mention, or when the work needs more access than the request implies.
+
+Follow the current client's mode and permission limits. If they prevent launching, name the specific restriction and what is prepared; do not infer a skill-selection failure from a run that has not started. Selecting a skill, reading its helper's help, and launching a receiver are separate events.
 
 - Pick read-only unless the work edits files; asking for edits approves writes limited to the files or module the user named. Use `workspace-write` only where the adapter documents a directory restriction. `native-write` has no directory isolation: state its default automatic approval and whether shell tools are available. A worktree is not a sandbox.
 - When the work itself means running commands, such as tests or a build, the request approves shell access for that work: say in the same line that commands run automatically without a directory sandbox, where the agent may write, and what it must not do. Shell access the work does not need, such as shell for a review, needs its own approval; ask at most once per launch.

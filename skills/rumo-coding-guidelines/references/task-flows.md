@@ -26,6 +26,6 @@ None of these flows commits, pushes, merges, deploys, or writes to a shared envi
 
 ## Repository Workflows
 
-- **Skill or prompt change.** Editing a `SKILL.md`, agent instructions, or a prompt. Write it with `rumo-prose`, run the repository's validators, and when the change alters triggering or behavior, run the repository's evaluation cases for it before calling it ready.
+- **Skill or prompt change.** Editing a `SKILL.md`, agent instructions, or a prompt. Write it with `rumo-prose`, run the repository's validators and focused regression checks, and follow the repository's acceptance policy for real-client trigger or behavior evaluations. Keep the risk gate and report any missing required evidence; do not make paid evaluations mandatory beyond that policy or the user's request.
 - **Pull request follow-up.** Only when the user asks to watch or fix an open pull request (`rumo-git-commit`). Resolve conflicts first, then review comments, then failing checks; classify a failure before rerunning it. Never merge the pull request or mark it ready.
 - **Pause.** The user stops the work, or the session must end before the task is done. Finish or back out of the current step and start nothing new; take no irreversible action to pause. Write a resume note with `rumo-handoff` when the user wants one, or report the state in the final message. Leave the changes as they are; commit only when the user asks.

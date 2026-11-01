@@ -78,7 +78,7 @@ Match the task to one of these routes. For any route except a small edit or an i
 | Runtime diagnosis | Capture the signal, narrow to one mechanism, confirm, map to source; diagnosis only |
 | Prototype | Name the decision, throwaway build outside the product, switchable variants, recommend |
 | Visual parity | Baseline screenshots, one component at a time, image comparison |
-| Skill or prompt change | `rumo-prose`, repository validators, evaluation cases when behavior changes |
+| Skill or prompt change | `rumo-prose`, repository validators, and the repository's acceptance policy |
 | Pull request follow-up | On request: conflicts, review comments, then checks (`rumo-git-commit`); never merge |
 | Pause | Stop at a safe boundary, nothing irreversible, resume note; commit only on request |
 

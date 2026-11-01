@@ -63,7 +63,7 @@ MODE_TRIGGERS = {
     "rumo-interface": (r"HTTP", r"event|queue message", r"configuration field"),
     "rumo-remote-ops": (r"remote Linux host", r"systemd|Docker Compose", r"backups? and restores?", r"deployment of selected application artifacts"),
     "rumo-debug": (r"stay read-only unless the request also asks for the fix",),
-    "rumo-agent-collaboration": (r"belong to rumo-review alone",),
+    "rumo-agent-collaboration": (r"code reviews?.*rumo-review", r"product evaluation"),
 }
 
 # Rules that keep rumo-clarify light; each must stay in the description or body.
@@ -132,6 +132,22 @@ def has_boundary(description: str, counterpart: str, scene_pattern: str) -> bool
 
 
 class SkillBoundariesTest(unittest.TestCase):
+    def test_product_evaluation_is_distinct_from_implementation_review(self) -> None:
+        collaboration = read_description(REPO_ROOT / "skills/rumo-agent-collaboration/SKILL.md")
+        review = read_description(REPO_ROOT / "skills/rumo-review/SKILL.md")
+        self.assertRegex(collaboration, r"research, design, or open-ended product evaluation")
+        self.assertNotIn("Reviews by another model, even a named CLI, belong to rumo-review alone", collaboration)
+        self.assertRegex(review, r"implementation audits")
+        self.assertRegex(review, r"product evaluation.*rumo-agent-collaboration")
+
+    def test_skill_changes_follow_repository_acceptance_policy(self) -> None:
+        for name in ("SKILL.md", "references/task-flows.md"):
+            text = (REPO_ROOT / "skills/rumo-coding-guidelines" / name).read_text(encoding="utf-8")
+            with self.subTest(path=name):
+                self.assertIn("repository's acceptance policy", text)
+                self.assertNotIn("evaluation cases when behavior changes", text)
+                self.assertNotIn("run the repository's evaluation cases for it before calling it ready", text)
+
     def test_descriptions_state_pair_boundaries(self) -> None:
         for first, second, first_scene, second_scene in BOUNDARIES:
             with self.subTest(pair=f"{first} <-> {second}"):
