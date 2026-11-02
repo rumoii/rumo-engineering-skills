@@ -37,7 +37,7 @@ Do not guess the base from branch names. Use the request, repository guidance, u
 
 Read enough surrounding code and current consumers to judge, in this order:
 
-1. **Correctness:** wrong conditions, missing states, broken error paths, stale data, behavior that contradicts the request.
+1. **Correctness:** wrong conditions, missing states, broken error paths, stale data, behavior that contradicts the request. When the target adds or changes error handling, fallbacks, default values on failure, or retries, read [references/silent-failures.md](references/silent-failures.md).
 2. **Security and data safety:** authorization, ownership and tenant isolation, secret exposure, injection, unsafe file or process handling, destructive migrations, missing rollback.
 3. **Lifecycle and concurrency:** races, duplicate work, cancellation, retry, timeout, resource ownership, disposal order, partial failure.
 4. **Cross-layer contracts:** request and response shapes, DTOs, schema and queries, messages and cache state, generated or deployed artifacts.
@@ -53,6 +53,7 @@ When the target is a CI job, verifier, threshold, or other gate, also apply the 
 - Treat tests and comments as evidence to weigh, not authority over production behavior.
 - For a diff, report only issues this change introduces or materially exposes; old debt is out of scope. For a named-scope audit, report existing actionable issues inside that scope, even on a clean HEAD. Do not expand either target into unrelated debt.
 - When a caller-supplied value drives a state change (money moved, stock reserved, quota spent, a record read or written for someone), name the stored value that must bound it: balance, amount paid, stock, quota, owner, or tenant. If nothing in scope compares against it, report a finding that states the assumed invariant and which component might already enforce it. A guarantee you cannot see elsewhere is an open question attached to the finding, not a reason to withhold it.
+- Before reporting, check each of your own findings with [references/judging-findings.md](references/judging-findings.md) as if a skeptic had raised it: reopen the cited code instead of recalling it, trace the trigger from a real caller, and try to refute it. Drop a finding whose own claims you cannot confirm: what the cited code does, that a real path reaches it, and that the consequence follows. An unseen guarantee elsewhere does not fail this check.
 - Check that a suggested fix direction is feasible, but do not edit code in review mode.
 
 ## Respond To Feedback

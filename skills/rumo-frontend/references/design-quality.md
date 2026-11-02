@@ -13,6 +13,14 @@ Before writing markup, state in a few lines:
 
 Every later choice should trace back to this direction. If the user gave none and the product offers no reference, propose one and treat it as an assumption to confirm.
 
+## Plan Tokens, Then Challenge Them
+
+Work in two passes; where a design system already fixes an item, plan only what it leaves open.
+
+1. Write a short token plan before any code: four to six named colors with hex values; the typefaces and the role of each; the layout as one sentence plus a rough sketch, including alignment; and one sentence on what sets this screen apart from others of its kind.
+2. Challenge each item: would you write the same thing for any similar page? Where the answer is yes and the request leaves that item open, replace it with a choice drawn from this product's subject and users, and note what changed and why. The patterns under Avoid The Template Look are the usual suspects.
+3. Show the plan and its changes to the user, then build from the revised plan without waiting for approval. Stop and ask only when the direction itself is an unconfirmed assumption, as above.
+
 ## Hierarchy And Type
 
 - Use a small type scale (four to six sizes) and keep to it. Build hierarchy with size, weight, and spacing before reaching for color.
@@ -47,10 +55,24 @@ These signal an interface nobody designed:
 
 - decorative gradients, glows, or glass effects with no role in the hierarchy;
 - emoji or mismatched icon sets standing in for a consistent icon family;
-- everything centered, or every block wrapped in an identical card;
 - default fonts and colors kept by inertia rather than choice;
 - placeholder copy, fake metrics, or sample data left in a deliverable;
 - several competing primary buttons on one screen.
+
+Generated designs also converge on the defaults below, whatever the subject. Each is legitimate when the request or brand asks for it, and the request's own words always win; where the request leaves the choice open, pick something specific to this product instead:
+
+- a warm cream background (around #F4F1EA) with a terracotta or clay accent (around #D97757) and a high-contrast serif display face;
+- a near-black background with a single acid-green or vermilion accent;
+- tinted near-black such as #0B0B0B or #111 standing in for black;
+- a newspaper layout of hairline rules, square corners, and dense columns regardless of content;
+- everything centered, or content chopped into identical rounded cards with one radius and the same soft gray shadow whatever their importance;
+- a tracked-out all-caps eyebrow label above every heading;
+- metadata strung together with middle dots ("A · B · C");
+- labels built as a word, a spaced em dash, and a fragment ("SPEED — built for teams");
+- a monospace face for small data labels that do not need aligned digits;
+- an arrow (→) appended to link and button text;
+- 01 / 02 / 03 numbering on content that is not a sequence;
+- every section fading and sliding up as it scrolls into view.
 
 ## Check The Result
 

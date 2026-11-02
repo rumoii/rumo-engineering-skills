@@ -146,6 +146,7 @@ RULES = {
         "For a diff, report only issues this change introduces or materially exposes",
         "For a named-scope audit, report existing actionable issues inside that scope",
         "A guarantee you cannot see elsewhere is an open question attached to the finding, not a reason to withhold it.",
+        "Drop a finding whose own claims you cannot confirm",
         "Each finding names the repository, file and line, the consequence, the triggering condition, and the evidence.",
         "Nothing is sent to another model or CLI until the user agrees",
     ),

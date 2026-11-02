@@ -1,6 +1,6 @@
 # Judging Findings
 
-Read before sorting findings that someone else produced: an independent review pass, another model or CLI, a review bot, or a human reviewer. A finding is a claim to check against the code, not a verdict.
+Read before sorting findings that someone else produced: an independent review pass, another model or CLI, a review bot, or a human reviewer. Read it also before reporting the findings of your own review. A finding is a claim to check against the code, not a verdict.
 
 ## Discount
 
@@ -9,6 +9,9 @@ Read before sorting findings that someone else produced: an independent review p
 - **Preference.** "I would structure this differently" is not a defect unless it names a concrete consequence: a bug, a broken contract, a measurable cost, or a maintenance trap the code actually creates.
 - **Speculative abstraction.** A request to extract, generalize, or add an interface needs a second real use. Without one, keep the simpler code.
 - **Missing context.** A reviewer working from a diff may flag code outside the change, a pattern the codebase uses on purpose, or a fix that breaks a constraint it could not see. Dismiss these with the context that settles them.
+- **Old problems.** For a diff target, a problem that existed before the change is out of scope, as the evidence standard in SKILL.md sets out.
+- **Tool-caught problems.** Something the repository's linter, type checker, or compiler already reports in its regular checks is not a review finding. When the repository does not run that check, report it as usual.
+- **Deliberate suppressions.** A rule silenced on purpose with an inline ignore or suppression comment is not a finding. Report it when the silenced check would have caught a real defect this change introduces.
 
 ## Weigh Up
 
