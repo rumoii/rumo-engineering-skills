@@ -73,7 +73,7 @@ Without a named model, omit `--model` so the CLI uses its configured default, an
 
 `workspace-write` is intended for a working-directory restriction. `native-write` keeps native CLI permissions without promising directory isolation. Disclose default automatic approval and shell availability before launching native-write. Saved records keep the flags they ran with. A tool allowlist is not an OS directory sandbox, so pi's write level is `native-write`: edits without asking, no shell. Wider access still requires approval.
 
-OpenCode native-write permits file edits through the edit tool, with no shell or directory isolation; other unlisted tools remain denied. Copilot and Aider native-write edit files; the caller executes requested checks. Cline Act has a documented auto-approve default. Goose approve mode can require interaction: if this turn cannot collect approval, stop and report it without changing mode. Goose read-only is chat-only, so include the code or diff in the brief.
+OpenCode native-write permits file edits through the edit tool, with no shell; its `external_directory` permission refuses paths outside the run directory, which is a tool permission rather than an OS sandbox. Other unlisted tools remain denied. Copilot and Aider native-write edit files; the caller executes requested checks. Cline Act has a documented auto-approve default. Goose approve mode can require interaction: if this turn cannot collect approval, stop and report it without changing mode. Goose read-only is chat-only, so include the code or diff in the brief.
 
 ## Run
 
