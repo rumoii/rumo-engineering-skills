@@ -16,6 +16,11 @@ claude@max; a lane with no model or effort uses the CLI's own default. A
 delegate lane may start with a use label, such as tests=pi:deepseek/v4@high;
 several delegate lanes need distinct labels, and work that matches none goes
 to the first.
+On set-role and check, repeat --executable cli=path for all lanes of a CLI,
+or cli:model=path for an exact model ID on that CLI. The model selector takes
+priority; repeating the same selector keeps its last path. Only the first
+'=' separates the selector from the path, and only the first ':' separates
+the CLI from the model. A selector with no matching lane is refused.
 auto_panel says what the agent may do when it judges, on its own, that a
 multi-model review is worth it: ask (default), allow, or off.
 
@@ -82,17 +87,21 @@ def parse_lane(text: str) -> dict:
 
 
 def with_executables(lanes: list[dict], pairs: list[str] | None) -> list[dict]:
-    """Attach --executable cli=path values to every lane of that CLI."""
+    """Attach CLI or exact-model executable paths; model selectors take priority."""
     paths = {}
     for pair in pairs or []:
-        cli, sep, path = pair.partition("=")
-        if not sep or not cli or not path:
-            raise Refused(f"--executable {pair!r} must look like cli=path")
-        paths[cli] = path
-    unused = set(paths) - {lane["cli"] for lane in lanes}
-    if unused:
-        raise Refused(f"--executable names a CLI with no lane: {', '.join(sorted(unused))}")
-    return [{**lane, "executable": paths[lane["cli"]]} if lane["cli"] in paths else lane for lane in lanes]
+        selector, sep, path = pair.partition("=")
+        cli, model_sep, model = selector.partition(":")
+        if not sep or not cli or not path or (model_sep and not model):
+            raise Refused(f"--executable {pair!r} must look like cli=path or cli:model=path")
+        if not any(lane["cli"] == cli and (not model_sep or lane.get("model") == model) for lane in lanes):
+            raise Refused(f"--executable {pair!r} names a selector with no lane")
+        paths[(cli, model if model_sep else None)] = path
+    result = []
+    for lane in lanes:
+        path = paths.get((lane["cli"], lane.get("model")), paths.get((lane["cli"], None)))
+        result.append({**lane, "executable": path} if path is not None else lane)
+    return result
 
 
 def lane_label(lane: dict) -> str:
@@ -392,14 +401,14 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("check", help="Check configured lanes, or candidate --lane values before writing them.")
     p.add_argument("--lane", action="append", help="Check this lane instead of the configuration; repeatable.")
-    p.add_argument("--executable", action="append", help="cli=path for a CLI that is not on PATH; repeatable.")
+    p.add_argument("--executable", action="append", help="cli=path for all lanes of a CLI, or cli:model=path for an exact model (takes priority); repeatable.")
     p.add_argument("--probe", action="store_true", help="Also run one tiny read-only turn per lane; spends a little quota.")
     p.add_argument("--timeout", type=float, default=300)
 
     p = sub.add_parser("set-role", help="Replace one role's lanes; other roles and settings are kept.")
     p.add_argument("role", choices=ROLES)
     p.add_argument("--lane", action="append", required=True, help="[use=]cli[:model][@effort]; repeatable, in order.")
-    p.add_argument("--executable", action="append", help="cli=path for a CLI that is not on PATH; repeatable.")
+    p.add_argument("--executable", action="append", help="cli=path for all lanes of a CLI, or cli:model=path for an exact model (takes priority); repeatable.")
 
     p = sub.add_parser("set-auto-panel", help="Set what the agent may do when it judges a multi-model panel worth it.")
     p.add_argument("value", choices=AUTO_PANEL)

@@ -97,6 +97,74 @@ class AgentConfigTest(unittest.TestCase):
                 self.assertEqual(self.run_config("set-role", *args).returncode, 2)
         self.assertEqual(json.loads(self.run_config("lanes", "delegate").stdout)["lanes"], lanes)
 
+    def test_model_executables_are_saved_and_shown_per_lane(self) -> None:
+        models = ("company-codex/gpt-6.1-sol", "xiaomi-token-plan-cn/mimo-v2.6-pro", "ollama/qwen:uncensored-4b")
+        paths = [str(self.fake.with_name(f"launcher={index}.py")) for index in range(len(models))]
+        args = ["set-role", "review"]
+        for model, path in zip(models, paths):
+            args += ["--lane", f"pi:{model}@high", "--executable", f"pi:{model}={path}"]
+        result = self.run_config(*args)
+        self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace"))
+        shown = self.run_config("show")
+        self.assertEqual(shown.returncode, 0, shown.stderr.decode("utf-8", "replace"))
+        lanes = json.loads(shown.stdout)["roles"]["review"]
+        self.assertEqual(lanes, [{"cli": "pi", "model": model, "effort": "high", "executable": path}
+                                 for model, path in zip(models, paths)])
+        self.assertEqual(json.loads(self.config.read_text(encoding="utf-8"))["version"], 1)
+
+    def test_model_executable_takes_priority_in_either_argument_order(self) -> None:
+        for pairs in (("pi:model=/specific", "pi=/fallback"), ("pi=/fallback", "pi:model=/specific")):
+            with self.subTest(pairs=pairs):
+                result = self.run_config("set-role", "review", "--lane", "pi:model@high", "--lane", "pi:model@low",
+                                         "--lane", "pi:other@high", "--lane", "pi",
+                                         "--executable", pairs[0], "--executable", pairs[1])
+                self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace"))
+                lanes = json.loads(self.run_config("show").stdout)["roles"]["review"]
+                self.assertEqual([lane["executable"] for lane in lanes],
+                                 ["/specific", "/specific", "/fallback", "/fallback"])
+
+    def test_unmatched_executable_names_the_value_and_keeps_the_configuration(self) -> None:
+        self.assertEqual(self.run_config("set-role", "review", "--lane", "pi:model@high").returncode, 0)
+        before = self.config.read_bytes()
+        for pair in ("pi:models=/wrong", "pi:Model=/wrong", "codex:model=/wrong", "claude=/wrong"):
+            for command in (("set-role", "review"), ("check",)):
+                with self.subTest(pair=pair, command=command):
+                    result = self.run_config(*command, "--lane", "pi:model@high", "--executable", pair)
+                    self.assertEqual(result.returncode, 2, result.stderr)
+                    self.assertIn(pair, result.stderr.decode("utf-8", "replace"))
+                    self.assertEqual(self.config.read_bytes(), before)
+
+    def test_cli_executable_still_applies_to_every_lane_of_that_cli(self) -> None:
+        result = self.run_config("set-role", "review", "--lane", "pi:one@high", "--lane", "pi:two@low",
+                                 "--lane", "pi", "--lane", "codex", "--executable", "pi=/shared")
+        self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace"))
+        lanes = json.loads(self.run_config("show").stdout)["roles"]["review"]
+        self.assertEqual([lane.get("executable") for lane in lanes], ["/shared", "/shared", "/shared", None])
+
+    def test_repeated_executable_selectors_keep_the_last_path(self) -> None:
+        for selector in ("pi", "pi:model"):
+            with self.subTest(selector=selector):
+                result = self.run_config("set-role", "review", "--lane", "pi:model@high",
+                                         "--executable", f"{selector}=/first", "--executable", f"{selector}=/last")
+                self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace"))
+                lane = json.loads(self.run_config("show").stdout)["roles"]["review"][0]
+                self.assertEqual(lane["executable"], "/last")
+
+    def test_check_uses_model_executables_for_candidate_and_stored_lanes(self) -> None:
+        other = self.fake.with_name("other_cli.py")
+        other.write_text(test_agent_run.FAKE.replace("fake 9.9.9", "fake 8.8.8"), encoding="utf-8")
+        lane_args = ["--lane", "pi:one@high", "--lane", "pi:two@high"]
+        pairs = ["--executable", f"pi:one={self.fake}", "--executable", f"pi:two={other}"]
+        self.assertEqual(self.run_config("set-role", "review", *lane_args).returncode, 0)
+        before = self.config.read_bytes()
+        for candidates in (lane_args, []):
+            with self.subTest(candidates=candidates):
+                result = self.run_config("check", *candidates, *pairs, cli="pi")
+                self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace") + result.stdout.decode())
+                self.assertEqual([row["version"] for row in json.loads(result.stdout)["lanes"]],
+                                 ["fake 9.9.9", "fake 8.8.8"])
+                self.assertEqual(self.config.read_bytes(), before)
+
     def test_a_stale_lane_never_blocks_repairing_the_configuration(self) -> None:
         # An adapter update can drop an effort that a saved lane still names.
         stale = {"version": 1, "auto_panel": "ask", "roles": {"review": [{"cli": "claude", "effort": "gone"}]}}
