@@ -130,7 +130,7 @@ cd rumo-engineering-skills
 
 agent 可以调用你本机装的其他 AI 编程工具，请它们独立复查改动，或者把活交给它们做。不配也完全能用；本机只有当前这一个 AI 工具时不用配。想用时，装好后开新会话运行 `/rumo-setup`（插件里是 `/rumo-engineering-skills:rumo-setup`，Codex 里是 `$rumo-setup`）：它会逐项解释每个配置、给出带理由的推荐，探测通过后才写入 `~/.rumo-engineering-skills/agents.json`。别的工具只在被调用时才花额度；你没点名时，agent 默认先问你再请它们。以后重跑它，或直接说“把评审换成 grok，思考强度 high”即可修改。
 
-实际跑通过的 CLI 是 codex、claude、grok、pi、qwen；aider、cline、copilot、cursor、goose 是实验性的，gemini、opencode 已停用，原因和升级为支持的方法见 [adapters.md](skills/rumo-agent-collaboration/references/adapters.md)。
+实际跑通过的 CLI 是 codex、claude、grok、opencode、pi、qwen；aider、cline、copilot、cursor、goose 是实验性的，gemini 已停用，原因和升级为支持的方法见 [adapters.md](skills/rumo-agent-collaboration/references/adapters.md)。
 
 ### 遇到问题
 

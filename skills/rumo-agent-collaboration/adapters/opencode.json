@@ -1,8 +1,11 @@
 {
   "name": "opencode",
   "executable": "opencode",
-  "verified": null,
-  "disabled_reason": "Managed configuration can override the inline permission policy; effective read-only permissions have not been established.",
+  "verified": {
+    "version": "opencode v2.2.2",
+    "on": "2026-11-04",
+    "live_run": true
+  },
   "help": [
     {
       "args": [
@@ -13,13 +16,15 @@
         "--format",
         "--session",
         "--model",
-        "--title"
+        "--title",
+        "--standalone"
       ]
     }
   ],
   "prompt": "stdin",
   "access": {
-    "read-only": []
+    "read-only": [],
+    "native-write": []
   },
   "env": {
     "OPENCODE_CONFIG_CONTENT": "{\"share\":\"disabled\",\"permission\":{\"*\":\"deny\",\"glob\":\"allow\",\"grep\":\"allow\",\"list\":\"allow\",\"lsp\":\"allow\",\"read\":{\"*\":\"allow\",\"*.env\":\"deny\",\"*.env.*\":\"deny\",\"*.env.example\":\"allow\"}}}"
@@ -30,6 +35,7 @@
   ],
   "start": [
     "run",
+    "--standalone",
     "--format",
     "json",
     "--title",
@@ -39,6 +45,7 @@
   ],
   "resume": [
     "run",
+    "--standalone",
     "--format",
     "json",
     "--session",
@@ -76,5 +83,25 @@
     "--session",
     "{session}"
   ],
-  "notes": "Disabled by the runner, including recovery of old snapshots. https://opencode.ai/docs/config/#precedence-order documents managed settings overriding OPENCODE_CONFIG_CONTENT. The inline policy denies tools except reading and searching and disables sharing, but effective permissions must be established before enabling this declaration. Arguments and output rules from https://opencode.ai/docs/cli/ are retained for inspection, not live acceptance. --title avoids an extra model call to name the session. Not run here."
+  "notes": "On 2.2.2 with deepseek/deepseek-flash: one read-only turn read a file and had no edit or shell tool; one native-write turn edited a file and had no shell tool; one resume kept the session. --standalone loads the inline permission policy in a private local process; without it the background service ignores OPENCODE_CONFIG_CONTENT. OpenCode takes its project directory from PWD, which the runner sets to the run directory. Managed configuration outranks the inline policy (https://opencode.ai/docs/config/#precedence-order), so managed paths cause refusal before CLI invocation. The MDM guard includes /Library/Managed Preferences to cover both global and per-user ai.opencode.managed.plist files, conservatively refusing even unrelated managed preferences; the macOS and Linux guards were not run on those systems. read-only retains the deny-by-default reading policy. native-write adds edit only: file edits without shell or directory isolation; bash, webfetch, task, and other unlisted tools remain denied. Effort variants use #variant in the model ID; this adapter does not support an effort option. --title avoids an extra model call to name the session.",
+  "refuse_if_exists": [
+    "{env:ProgramData}/opencode",
+    "/etc/opencode",
+    "/Library/Application Support/opencode",
+    "/Library/Managed Preferences/ai.opencode.managed.plist",
+    "/Library/Managed Preferences"
+  ],
+  "access_env": {
+    "native-write": {
+      "OPENCODE_CONFIG_CONTENT": "{\"share\":\"disabled\",\"permission\":{\"*\":\"deny\",\"glob\":\"allow\",\"grep\":\"allow\",\"list\":\"allow\",\"lsp\":\"allow\",\"read\":{\"*\":\"allow\",\"*.env\":\"deny\",\"*.env.*\":\"deny\",\"*.env.example\":\"allow\"},\"edit\":\"allow\"}}"
+    }
+  },
+  "models": {
+    "args": [
+      "models"
+    ],
+    "format": "text",
+    "pattern": "^(?P<provider>[^\\s/]+)/(?P<model>\\S+)$",
+    "id": "{provider}/{model}"
+  }
 }

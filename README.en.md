@@ -130,7 +130,7 @@ The installer validates the repository, then links the default skills into every
 
 The agent can call other AI coding tools installed on this machine to re-check a change independently or take over work. You do not need it: every skill works without it, and with a single AI tool on the machine there is nothing to configure. To use it, open a new session after installing and run `/rumo-setup` (`/rumo-engineering-skills:rumo-setup` with the plugin, `$rumo-setup` in Codex). It explains each setting, recommends a configuration with reasons, and writes `~/.rumo-engineering-skills/agents.json` only after each choice passes a probe. Another tool spends its quota only when it is called, and unless you name one, the agent asks you first. To change the configuration later, rerun it or just say "make review use grok at high".
 
-The CLIs with a completed real run are codex, claude, grok, pi, and qwen; aider, cline, copilot, cursor, and goose are experimental, and gemini and opencode are disabled. [adapters.md](skills/rumo-agent-collaboration/references/adapters.md) explains why and how a CLI becomes supported.
+The CLIs with a completed real run are codex, claude, grok, opencode, pi, and qwen; aider, cline, copilot, cursor, and goose are experimental, and gemini is disabled. [adapters.md](skills/rumo-agent-collaboration/references/adapters.md) explains why and how a CLI becomes supported.
 
 ### Troubleshooting
 

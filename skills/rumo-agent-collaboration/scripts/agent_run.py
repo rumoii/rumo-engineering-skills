@@ -167,6 +167,9 @@ def validate_adapter(adapter: object) -> list[str]:
     if "disabled_reason" in adapter and (not isinstance(adapter["disabled_reason"], str)
             or not adapter["disabled_reason"].strip() or "\0" in adapter["disabled_reason"]):
         problems.append("disabled_reason must be a nonempty string without NUL")
+    if "refuse_if_exists" in adapter and (not string_list(adapter["refuse_if_exists"])
+            or any(not path.strip() for path in adapter["refuse_if_exists"])):
+        problems.append("refuse_if_exists must be a list of nonempty strings without NUL")
     if not isinstance(adapter["name"], str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]*", adapter["name"]):
         problems.append("name must be lowercase letters, digits, or hyphens")
     if not isinstance(adapter["executable"], str) or not adapter["executable"] or any(c in adapter["executable"] for c in "\0\r\n"):
@@ -337,10 +340,20 @@ def load_adapters(runs_dir: str | None) -> dict[str, dict]:
 
 
 def disabled_reason(adapter: dict) -> str | None:
-    if "disabled_reason" not in adapter:
-        return None
-    reason = adapter["disabled_reason"]
-    return reason.strip() if isinstance(reason, str) and reason.strip() and "\0" not in reason else "invalid disabled_reason"
+    if "disabled_reason" in adapter:
+        reason = adapter["disabled_reason"]
+        return reason.strip() if isinstance(reason, str) and reason.strip() and "\0" not in reason else "invalid disabled_reason"
+    paths = adapter.get("refuse_if_exists", [])
+    if not string_list(paths) or any(not path.strip() for path in paths):
+        return "invalid refuse_if_exists"
+    for template in paths:
+        names = re.findall(r"\{env:([^{}]+)\}", template)
+        if any(name not in os.environ for name in names):
+            continue
+        expanded = re.sub(r"\{env:([^{}]+)\}", lambda match: os.environ[match[1]], template)
+        if Path(expanded).exists():
+            return f"refuse_if_exists path exists: {expanded}"
+    return None
 
 
 def run_disabled_reason(meta: dict, run_dir: Path) -> str | None:
@@ -398,11 +411,12 @@ def render(adapter: dict, kind: str, access: str, cwd: str, model: str | None, s
     return argv
 
 
-def child_environment(adapter: dict, access: str) -> dict[str, str]:
+def child_environment(adapter: dict, access: str, cwd: str) -> dict[str, str]:
     overrides = {**adapter.get("env", {}), **adapter.get("access_env", {}).get(access, {})}
     if os.name == "nt":
         overrides = {key.upper(): value for key, value in overrides.items()}
-    return {**os.environ, **overrides}
+    # Some CLIs, such as OpenCode, take their project directory from PWD rather than the process directory.
+    return {**os.environ, **overrides, "PWD": cwd}
 
 
 # --- Output parsing ---------------------------------------------------------
@@ -760,7 +774,7 @@ def run_turn(run_dir: Path, meta: dict, kind: str, prompt: str, timeout: float |
     refuse_batch_shell_syntax(meta["executable"], argv)
 
     kwargs: dict[str, Any] = {"creationflags": subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
-    kwargs["env"] = child_environment(adapter, meta["access"])
+    kwargs["env"] = child_environment(adapter, meta["access"], meta["cwd"])
     stdout_path = turn_dir / ("events.jsonl" if adapter["output"]["format"] == "jsonl" else "stdout.txt")
     preassigned = meta.get("session_id") if adapter["session"]["source"] == "preassign" else None
     proc, pid_started = None, None
@@ -1637,7 +1651,7 @@ def cmd_host(args: argparse.Namespace) -> int:
     # Ctrl+C belongs to the CLI in this console; a Python handler, unlike SIG_IGN, is not inherited.
     signal.signal(signal.SIGINT, lambda *_: None)
     try:
-        cli = subprocess.Popen(turn["argv"], cwd=meta["cwd"], env=child_environment(meta["adapter"], meta["access"]))
+        cli = subprocess.Popen(turn["argv"], cwd=meta["cwd"], env=child_environment(meta["adapter"], meta["access"], meta["cwd"]))
     except OSError as exc:
         update_turn(run_dir, number, state="launch-failed", error=str(exc), ended_at=now())
         print(f"could not start {meta['cli']}: {exc}", flush=True)

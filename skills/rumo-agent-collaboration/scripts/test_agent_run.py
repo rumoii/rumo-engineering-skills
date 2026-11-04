@@ -53,7 +53,7 @@ FAKE = textwrap.dedent(
         "grok": "-s --session-id --prompt-file --output-format --no-subagents --permission-mode --resume --model --reasoning-effort",
         "cursor": "-p --print --output-format --mode --sandbox --trust --resume --model",
         "gemini": "-o --output-format --approval-mode --resume --model",
-        "opencode": "--format --session --model --title",
+        "opencode": "--format --session --model --title --standalone",
         "copilot": "--output-format --available-tools --deny-tool --allow-tool --session-id --model --no-auto-update",
         "cline": "--json --plan --model",
         "goose": "--instructions --output-format --no-session --model",
@@ -90,7 +90,7 @@ FAKE = textwrap.dedent(
     else:
         prompt = sys.stdin.buffer.read().decode("utf-8")
     with open(os.environ["FAKE_LOG"], "a", encoding="utf-8") as log:
-        log.write(json.dumps({"argv": argv, "prompt": prompt, "cwd": os.getcwd(),
+        log.write(json.dumps({"argv": argv, "prompt": prompt, "cwd": os.getcwd(), "pwd": os.environ.get("PWD"),
                               "opencode_config": os.environ.get("OPENCODE_CONFIG_CONTENT"),
                               "goose_mode": os.environ.get("GOOSE_MODE")}, ensure_ascii=False) + "\n")
     def emit(event):
@@ -183,6 +183,7 @@ class Harness(unittest.TestCase):
         env = {**os.environ, "FAKE_DIALECT": dialect, "FAKE_MODE": mode, "FAKE_LOG": str(self.log)}
         env["RUMO_AGENT_ADAPTERS_DIR"] = str(self.user_adapters)
         env.pop("RUMO_AGENT_RUNS_DIR", None)
+        env["ProgramData"] = str(Path(self.tmp.name) / "program-data")
         return env
 
     def run_script(self, *args: str, dialect: str = "codex", mode: str = "ok", env: dict | None = None, cwd: Path | None = None) -> subprocess.CompletedProcess:
@@ -233,18 +234,19 @@ class BundledAdapterTest(unittest.TestCase):
             if adapter.get("verified") is None:
                 with self.subTest(cli=name):
                     self.assertIn("read-only", adapter["access"])
-                    if name in ("copilot", "aider", "cline", "goose"):
+                    if name in ("copilot", "aider", "cline", "goose", "opencode"):
                         self.assertIn("native-write", adapter["access"])
 
     def test_documented_adapters_offer_distinct_development_modes(self) -> None:
-        for name in ("copilot", "aider", "cline", "goose"):
+        for name in ("copilot", "aider", "cline", "goose", "opencode"):
             with self.subTest(cli=name):
                 adapter = BUNDLED[name]
                 ro = agent_run.render(adapter, "start", "read-only", "/w", None, "sid", "/p.md")
                 rw = agent_run.render(adapter, "start", "native-write", "/w", None, "sid", "/p.md")
                 self.assertNotEqual((ro, adapter.get("access_env", {}).get("read-only")),
                                     (rw, adapter.get("access_env", {}).get("native-write")))
-                self.assertIsNone(adapter["verified"])
+                if name != "opencode":
+                    self.assertIsNone(adapter["verified"])
                 self.assertIn("https://", adapter["notes"])
 
     def test_access_levels_render_each_cli_limit(self) -> None:
@@ -307,8 +309,8 @@ class BundledAdapterTest(unittest.TestCase):
     def test_access_environment_only_changes_the_child(self) -> None:
         adapter = BUNDLED["goose"]
         with patch.dict(os.environ, {"GOOSE_MODE": "auto"}):
-            self.assertEqual(agent_run.child_environment(adapter, "read-only")["GOOSE_MODE"], "chat")
-            self.assertEqual(agent_run.child_environment(adapter, "native-write")["GOOSE_MODE"], "approve")
+            self.assertEqual(agent_run.child_environment(adapter, "read-only", ".")["GOOSE_MODE"], "chat")
+            self.assertEqual(agent_run.child_environment(adapter, "native-write", ".")["GOOSE_MODE"], "approve")
             self.assertEqual(os.environ["GOOSE_MODE"], "auto")
 
     def test_opencode_read_only_comes_from_a_deny_by_default_config(self) -> None:
@@ -317,6 +319,34 @@ class BundledAdapterTest(unittest.TestCase):
         self.assertEqual(config["share"], "disabled")
         self.assertNotIn("edit", config["permission"])
         self.assertNotIn("shell", config["permission"])
+
+    def test_opencode_native_write_only_adds_edit_permission(self) -> None:
+        adapter = BUNDLED["opencode"]
+        config = json.loads(agent_run.child_environment(adapter, "native-write", ".")["OPENCODE_CONFIG_CONTENT"])
+        readonly = json.loads(adapter["env"]["OPENCODE_CONFIG_CONTENT"])
+        self.assertEqual(config["permission"].pop("edit", None), "allow")
+        self.assertEqual(config, readonly)
+        self.assertEqual(config["permission"].get("bash", config["permission"]["*"]), "deny")
+        self.assertEqual(agent_run.validate_adapter(adapter), [])
+
+    def test_opencode_start_and_resume_require_standalone(self) -> None:
+        adapter = BUNDLED["opencode"]
+        for kind in ("start", "resume"):
+            for access in ("read-only", "native-write"):
+                with self.subTest(kind=kind, access=access):
+                    argv = agent_run.render(adapter, kind, access, "/w", None, "sid", None)
+                    self.assertIn("--standalone", argv)
+                    self.assertNotIn("--auto", argv)
+        self.assertIn("--standalone", adapter["help"][0]["flags"])
+
+    def test_opencode_models_use_provider_and_model_groups(self) -> None:
+        import re
+        models = BUNDLED["opencode"]["models"]
+        self.assertEqual(models["args"], ["models"])
+        self.assertEqual(models["format"], "text")
+        match = re.fullmatch(models["pattern"], "deepseek/deepseek-v4-pro")
+        self.assertIsNotNone(match)
+        self.assertEqual(models["id"].format(**match.groupdict()), "deepseek/deepseek-v4-pro")
 
 
 class ParserFixtureTest(unittest.TestCase):
@@ -536,6 +566,8 @@ class RunTest(Harness):
                     self.assertEqual(call["prompt"], PROMPT)
                     self.assertNotIn(PROMPT.splitlines()[0], " ".join(call["argv"]))
                     self.assertEqual(Path(call["cwd"]).resolve(), self.cwd.resolve())
+                    # OpenCode takes its project directory from PWD, which the caller's shell may have set elsewhere.
+                    self.assertEqual(Path(call["pwd"]).resolve(), self.cwd.resolve())
                     self.assertEqual(call["opencode_config"] is not None, cli == "opencode")
                 self.assertIn(summary["session_id"], calls[1]["argv"])
 
@@ -1284,12 +1316,111 @@ class DisabledAdapterTest(Harness):
         self.assertEqual(len(self.calls()), 1)
 
     def test_bundled_permission_gaps_are_disabled(self) -> None:
-        for cli in ("gemini", "opencode"):
+        for cli in ("gemini",):
             with self.subTest(cli=cli):
                 self.assertTrue(BUNDLED[cli].get("disabled_reason"))
                 self.assertEqual(self.start(cli).returncode, 2)
         self.assertFalse(self.log.exists())
         self.assertFalse(self.runs.exists())
+
+
+class RefuseIfExistsTest(Harness):
+    def test_existing_file_or_directory_refuses_without_cli_calls(self) -> None:
+        for directory in (False, True):
+            with self.subTest(directory=directory):
+                blocked = self.cwd / ("managed-dir" if directory else "managed.json")
+                blocked.mkdir() if directory else blocked.touch()
+                self.write_adapter({**BUNDLED["codex"], "refuse_if_exists": [str(blocked)]})
+                for command in ("check", "start"):
+                    result = (self.run_script("check", "codex", "--executable", str(self.fake))
+                              if command == "check" else self.start())
+                    self.assertEqual(result.returncode, 2, result.stderr.decode())
+                    self.assertIn(str(blocked), result.stderr.decode())
+                shown = json.loads(self.run_script("show", "codex", "--access", "read-only").stdout)
+                rows = {r["cli"]: r for r in json.loads(self.run_script("list").stdout)}
+                for row in (shown, rows["codex"]):
+                    self.assertFalse(row["usable"])
+                    self.assertIn(str(blocked), row["disabled_reason"])
+                self.assertFalse(self.log.exists())
+                self.assertFalse(self.runs.exists())
+
+    def test_refusal_does_not_resolve_or_invoke_cli(self) -> None:
+        self.write_adapter({**BUNDLED["codex"], "refuse_if_exists": [str(self.cwd)]})
+        with patch.dict(os.environ, self.env("codex")), patch.object(agent_run, "resolve_executable") as resolve, \
+             patch.object(agent_run.subprocess, "run") as invoke:
+            self.assertEqual(agent_run.main(["check", "codex"]), 2)
+            self.assertEqual(agent_run.main(["start", "codex", "--cwd", str(self.cwd),
+                                             "--prompt-file", str(self.prompt), "--access", "read-only", "--no-window"]), 2)
+            resolve.assert_not_called()
+            invoke.assert_not_called()
+
+    def test_absent_path_allows_check_start_and_resume(self) -> None:
+        self.write_adapter({**BUNDLED["codex"], "refuse_if_exists": [str(self.cwd / "absent")]})
+        checked = self.run_script("check", "codex", "--executable", str(self.fake))
+        self.assertEqual(checked.returncode, 0, checked.stderr.decode())
+        started = self.start()
+        self.assertEqual(started.returncode, 0, started.stderr.decode())
+        self.assertEqual(self.resume(json.loads(started.stdout)["run_id"]).returncode, 0)
+        self.assertEqual(len(self.calls()), 2)
+
+    def test_missing_environment_variable_skips_entire_entry(self) -> None:
+        # Without skipping, substitution to an empty string would hit this existing absolute path.
+        self.write_adapter({**BUNDLED["codex"], "refuse_if_exists": ["{env:RUMO_TEST_MISSING}" + self.cwd.as_posix()]})
+        with patch.dict(os.environ):
+            os.environ.pop("RUMO_TEST_MISSING", None)
+            started = self.start()
+            self.assertEqual(started.returncode, 0, started.stderr.decode())
+            self.assertEqual(self.resume(json.loads(started.stdout)["run_id"]).returncode, 0)
+
+    def test_environment_expansion_refuses_existing_path(self) -> None:
+        self.write_adapter({**BUNDLED["codex"], "refuse_if_exists": ["{env:RUMO_TEST_ROOT}/工作 区"]})
+        env = {**self.env("codex"), "RUMO_TEST_ROOT": str(self.cwd.parent)}
+        checked = self.run_script("check", "codex", "--executable", str(self.fake), env=env)
+        self.assertEqual(checked.returncode, 2, checked.stderr.decode())
+        self.assertIn("工作 区", checked.stderr.decode())
+        self.assertFalse(self.log.exists())
+
+    def test_resume_checks_saved_and_current_paths_without_invoking_cli(self) -> None:
+        for saved in (True, False):
+            with self.subTest(saved=saved):
+                blocked = self.cwd / ("saved" if saved else "current")
+                adapter = {**BUNDLED["codex"], "refuse_if_exists": [str(blocked)]}
+                self.write_adapter(adapter if saved else BUNDLED["codex"])
+                started = self.start()
+                self.assertEqual(started.returncode, 0, started.stderr.decode())
+                info = json.loads(started.stdout)
+                run_dir = self.runs / info["run_id"]
+                before = (run_dir / "meta.json").read_bytes()
+                blocked.mkdir()
+                self.write_adapter(BUNDLED["codex"] if saved else adapter)
+                call_count = len(self.calls())
+                with patch.dict(os.environ, self.env("codex")), \
+                     patch.object(agent_run.subprocess, "Popen") as launch, \
+                     patch.object(agent_run.subprocess, "run") as invoke:
+                    self.assertEqual(agent_run.main(["resume", info["run_id"], "--runs-dir", str(self.runs),
+                                                     "--prompt-file", str(self.prompt), "--no-window"]), 2)
+                    launch.assert_not_called()
+                    invoke.assert_not_called()
+                self.assertEqual((run_dir / "meta.json").read_bytes(), before)
+                self.assertEqual(len(self.calls()), call_count)
+
+    def test_invalid_path_lists_are_rejected(self) -> None:
+        for value in (None, "path", {}, False, [1], [""], ["  "], ["bad\0path"]):
+            with self.subTest(value=value):
+                problems = agent_run.validate_adapter({**BUNDLED["codex"], "refuse_if_exists": value})
+                self.assertTrue(any("refuse_if_exists" in p for p in problems), problems)
+        self.assertEqual(agent_run.validate_adapter({**BUNDLED["codex"], "refuse_if_exists": []}), [])
+
+    def test_opencode_managed_directory_refuses_check_start_and_resume(self) -> None:
+        env = self.env("opencode")
+        managed = Path(env["ProgramData"]) / "opencode"
+        started = self.start("opencode")
+        self.assertEqual(started.returncode, 0, started.stderr.decode())
+        managed.mkdir(parents=True)
+        self.assertEqual(self.run_script("check", "opencode", "--executable", str(self.fake), env=env).returncode, 2)
+        self.assertEqual(self.start("opencode").returncode, 2)
+        self.assertEqual(self.resume(json.loads(started.stdout)["run_id"], "opencode").returncode, 2)
+        self.assertEqual(len(self.calls()), 1)
 
 
 class ProcessIdentityTest(Harness):

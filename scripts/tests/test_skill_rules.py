@@ -186,7 +186,7 @@ RULES = {
         "Selecting a skill, reading its helper's help, and launching a receiver are separate events.",
         "a CLI without a confirmed read-only mode cannot have an adapter.",
         "Do not describe an adapter as tested end to end unless its `verified.live_run` is true.",
-        "Do not launch a disabled adapter, including the bundled Gemini and OpenCode declarations.",
+        "Do not launch a disabled adapter, including the bundled Gemini declaration.",
         "Never give the receiver more access than you have, and never pass a flag that bypasses its sandbox, approvals, or tool limits.",
         "Do not switch route, model, or access level on your own.",
         "You cannot tell whether a turn was delivered: check the recorded session before sending anything again.",

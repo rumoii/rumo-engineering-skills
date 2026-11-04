@@ -45,7 +45,7 @@ To continue in a later conversation, read [references/records.md](references/rec
 
 ## Stop Conditions
 
-- Do not launch a disabled adapter, including the bundled Gemini and OpenCode declarations. See [references/adapters.md](references/adapters.md) for their permission gaps.
+- Do not launch a disabled adapter, including the bundled Gemini declaration. See [references/adapters.md](references/adapters.md) for its permission gap.
 - Two agents are writing the same files: stop both where you can, and report.
 - A record and the real state disagree: report the gap; do not start a second writer.
 - Native approval needs interaction that this turn cannot provide: stop and return the blocker; never switch to automatic approval to finish.

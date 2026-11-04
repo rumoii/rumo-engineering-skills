@@ -20,7 +20,7 @@ An adapter is a JSON file that tells `agent_run.py` how to drive one CLI: how to
 | grok | one read-only turn with effort run on 1.0.41 | read-only |
 | cursor (`cursor-agent`) | unverified, from the CLI reference | read-only |
 | gemini | disabled: headless Plan Mode can switch to unrestricted implementation | declared read-only is insufficient |
-| opencode | disabled: managed config can override inline permissions | effective read-only permissions are unconfirmed |
+| opencode | one read-only turn, one native-write turn, and a resume run on 2.2.2 | read-only, native-write (edit only, no shell) |
 | copilot | unverified, from GitHub CLI and SDK event references | read-only, native-write (file tools; no shell) |
 | aider | unverified, from options and chat-mode references | read-only, native-write (code edits; caller runs checks) |
 | cline | unverified, from CLI and Plan/Act references | read-only, native-write (Act defaults auto-approve) |
@@ -28,9 +28,9 @@ An adapter is a JSON file that tells `agent_run.py` how to drive one CLI: how to
 
 "Flags checked" means each flag appeared in that version's `--help`; it does not prove the whole turn works. Each adapter's `notes` field records what was and was not exercised; `show` prints it.
 
-Gemini's [Plan Mode reference](https://geminicli.com/docs/cli/plan-mode/#non-interactive-execution) says headless mode approves `exit_plan_mode` and then enables unrestricted implementation. OpenCode's [config precedence](https://opencode.ai/docs/config/#precedence-order) lets managed settings override inline permissions. Both declarations are retained for inspection with `disabled_reason`; establishing restrictive effective permissions is required before enabling either.
+Gemini's [Plan Mode reference](https://geminicli.com/docs/cli/plan-mode/#non-interactive-execution) says headless mode approves `exit_plan_mode` and then enables unrestricted implementation. Gemini remains disabled. OpenCode uses `--standalone` so the local process loads `OPENCODE_CONFIG_CONTENT`; the background service it uses otherwise ignores that variable. OpenCode also takes its project directory from `PWD`, so the runner sets `PWD` to the run directory for every CLI. Its [config precedence](https://opencode.ai/docs/config/#precedence-order) puts managed settings above that policy, so `refuse_if_exists` refuses execution when a declared managed path exists. The macOS guard includes the entire `/Library/Managed Preferences` directory to cover global and per-user MDM plists; unrelated managed preferences also cause refusal.
 
-A disabled adapter cannot start or resume a turn, including a run saved before it was disabled. `list` reports `usable: false` and the reason; `show` prints its declaration with the same status. `check`, `start`, and `resume` refuse with exit 2 before invoking the CLI. Existing runs still support status, notes, and cancellation when process ownership is confirmed. Resume checks the saved declaration and the current selected adapter for a disable decision; other current settings never replace the saved snapshot. The existing user-over-bundled selection rule still applies.
+A disabled adapter cannot start or resume a turn, including a run saved before it was disabled. A matching `refuse_if_exists` path uses the same refusal flow as `disabled_reason`. `list` reports `usable: false` and the reason; `show` prints its declaration with the same status. `check`, `start`, and `resume` refuse with exit 2 before invoking the CLI. Existing runs still support status, notes, and cancellation when process ownership is confirmed. Resume checks the saved declaration and the current selected adapter for a disable decision; other current settings never replace the saved snapshot. The existing user-over-bundled selection rule still applies.
 
 ## Not Included
 
@@ -48,6 +48,7 @@ These exclusions concern the adapter requirements, not whether each CLI can deve
 | `name`, `executable` | adapter name used on the command line; program looked up on PATH |
 | `verified` | `{"version", "on", "live_run"}` when checked against an installed CLI, else `null` |
 | `disabled_reason` | optional nonempty string; prevents checks and execution, while leaving the declaration available to inspect. Omit to enable; null, blank, and non-string values are invalid |
+| `refuse_if_exists` | optional list of nonempty path strings without NUL; any existing file or directory disables the adapter. `{env:NAME}` expands from the runner environment; an unset variable skips that entire entry. Omitted or empty lists add no restriction. Resume checks both saved and current declarations |
 | `help` | list of `{"args", "flags"}`: literal subcommands followed by `--help`; `check` requires exit 0 and every flag in the output |
 | `prompt` | `stdin`, or `file` with `{prompt_file}` in the templates. A prompt on the command line is refused |
 | `access` | `read-only` (required), optional `workspace-write` and `native-write`, each a list of flags. A missing level is refused |
