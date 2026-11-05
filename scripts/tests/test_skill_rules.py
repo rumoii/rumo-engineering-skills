@@ -84,6 +84,8 @@ RULES = {
         "Stop after the report unless the user asked to continue.",
         "Never repeat credentials that appear in a record.",
         "Make the handoff discoverable without this conversation.",
+        "It never commits, pushes, merges, or deploys;",
+        "An unmerged, dirty, or unprovable worktree: keep it, say why, and ask what to do.",
     ),
     "rumo-interface": (
         "A search is discovery, not proof of absence.",

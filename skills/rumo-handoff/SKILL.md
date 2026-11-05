@@ -1,11 +1,28 @@
 ---
 name: rumo-handoff
-description: Use when the user asks to hand off, hand over, pause, or package the current task so another session, agent, or client can continue it, or when a new session must pick up earlier work, such as asking for the current progress, the next step, or where a topic stands after days away ("汇报一下当前进度", "下一步做什么", "接着上次做", "回忆一下 X 做到哪了") or to continue another agent's session. Writes a handoff document only when asked; picks up from this project's recent Claude Code, Codex, and Kimi Code sessions, checked against the repository. Do not use for an end-of-task summary within the same session.
+description: Use when the user asks to wrap up ("收尾"), hand off, pause, or package a task so another session, agent, or client can continue it, or when a new session must pick up earlier work, such as asking for current progress, the next step, or where a topic stands ("汇报一下当前进度", "下一步做什么", "接着上次做", "回忆一下 X 做到哪了") or to continue another agent's session. Writes a handoff document when asked or when wrapping up leaves work open; picks up from this project's recent Claude Code, Codex, and Kimi Code sessions, checked against the repository. Do not use for a plain end-of-task summary.
 ---
 
 # Rumo Handoff
 
-Carry a task across sessions. Write a handoff document when the user asks for one; in a new session, pick up from the earlier sessions' own records, which already exist, so nothing has to be written at the end of a session.
+Carry a task across sessions. Wrap up a task when the user asks. Write a handoff document when the user asks for one or a wrap-up leaves work open. In a new session, pick up from the earlier sessions' own records, which already exist, so an ordinary session end needs no document.
+
+## Wrap Up
+
+Use when the user says "wrap up" or "收尾", including "先收尾，明天继续". Do not report the wrap-up finished until every item below has a state you checked now.
+
+Asking to wrap up authorizes the cleanup below and nothing else. It never commits, pushes, merges, or deploys; list what is uncommitted or unpushed.
+
+1. **Inventory.** For each repository involved: branch, HEAD, upstream, dirty files, and worktrees. Also the terminals, agents, servers, and processes this task started, and any temporary settings it placed. Only what the session's record proves this task started counts as its own.
+2. **Update records.** Bring the task's existing progress records and plan file up to date: task status, decisions and dead ends, what remains. Do not create new ones.
+3. **Clean up what is provably safe.**
+   - An agent still running: leave it and report it.
+   - A terminal this task opened, once its agent has ended and its result has been read: close it. Never close this session's own terminal or one the user opened.
+   - A process or server this task started: stop it unless the user is still using it. Remove temporary settings this task placed.
+   - A worktree this task created, when it is clean, its commits are on the target branch or it has none, and no agent, including this session, runs there: remove it without force, following `rumo-filesystem-safety` for ignored content and links, such as a `node_modules` linked to the main checkout. Delete its branch only with `git branch -d`; when that refuses, keep the branch and report it. In Orca, use Orca's own worktree and terminal commands.
+   - An unmerged, dirty, or unprovable worktree: keep it, say why, and ask what to do.
+4. **Handoff document.** When anything remains unfinished, unverified, unmerged, or unpushed, write or update one as [Write A Handoff Document](#write-a-handoff-document) describes. When nothing remains, write none and say so.
+5. **Report.** After re-checking the state, give what was cleaned, what was kept and why, the handoff path, the next step, and what needs the user's decision.
 
 ## Pick Up
 
@@ -22,7 +39,7 @@ Without session files, such as work from another machine, ask for a handoff docu
 
 ## Write A Handoff Document
 
-Write the document the next agent needs to continue without this conversation, only when the user asks for one.
+Write the document the next agent needs to continue without this conversation, only when the user asks for one or a wrap-up leaves work open.
 
 ### Where It Goes
 
@@ -77,7 +94,7 @@ The exact commands or reads to get back to a known-good state.
 - Never include passwords, tokens, keys, or private certificate material; name where credentials live instead.
 - Keep authorizations explicit: say what the user approved and what still needs approval. A handoff does not transfer approval for actions the user has not granted.
 - Prefer facts over narrative and keep it short enough to read in two minutes.
-- This skill writes the document and its necessary navigation link only. To start the receiving agent and confirm it took over, use `rumo-agent-collaboration` after the user authorizes that route. If the skill or route is unavailable, give the user the document and stop.
+- Writing a handoff covers the document and its necessary navigation link only. To start the receiving agent and confirm it took over, use `rumo-agent-collaboration` after the user authorizes that route. If the skill or route is unavailable, give the user the document and stop.
 
 ### Report
 

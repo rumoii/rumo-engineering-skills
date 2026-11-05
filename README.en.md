@@ -171,7 +171,7 @@ Installed by default.
 | `rumo-prose` | Comments, errors, logs, UI strings, docs, and agent-facing files that keep every fact |
 | `rumo-frontend` | Frontend page work and new interface design with accessibility checks, local dev-server troubleshooting, and requested browser evidence |
 | `rumo-explain` | Explain in plain words how a part of the repository works and why it was built that way: smallest complete answer first, reasons traced to git history and decision records, read-only |
-| `rumo-handoff` | In a new session, asked for the current progress or the next step, condense this project's recent Claude Code, Codex, and Kimi Code sessions and check them against the repository; on request, write a self-contained handoff and link it into existing navigation so the recipient can discover it |
+| `rumo-handoff` | Asked to wrap up, check the state and update progress and plan records, clean up this task's terminals and provably safe worktrees, and write a handoff when work remains. In a new session, asked for the current progress or the next step, condense this project's recent Claude Code, Codex, and Kimi Code sessions and check them against the repository; on request, write a self-contained handoff and link it into existing navigation so the recipient can discover it |
 | `rumo-project-profile` | Resolve and validate private project profiles for other skills |
 | `rumo-reflect` | Session retrospective: recurring mistakes and corrections, each fix discussed and applied only with your approval |
 | `rumo-setup` | Choose, once or at any time, the CLI, model, and reasoning effort for multi-model review and default delegation; probes each lane read-only before saving |

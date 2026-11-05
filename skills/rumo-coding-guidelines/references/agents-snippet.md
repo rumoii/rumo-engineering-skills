@@ -19,7 +19,7 @@ IMPORTANT: Before non-trivial engineering work, such as a feature, bug fix, refa
 | Database writes; deleting files; remote hosts | rumo-database-change-safety; rumo-filesystem-safety; rumo-remote-ops |
 | Interfaces other programs read; background work | rumo-interface; rumo-lifecycle-safety |
 | Handing work to another agent or model | rumo-agent-collaboration |
-| Resuming or handing off work | rumo-handoff |
+| Wrapping up, resuming, or handing off work | rumo-handoff |
 | How or why this repository's code works | rumo-explain |
 | Technical comparisons or feasibility research | rumo-research |
 

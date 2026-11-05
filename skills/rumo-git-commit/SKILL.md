@@ -41,7 +41,7 @@ When the source is a worktree or feature branch:
 7. Prefer cherry-pick for a linear landing unless topology must be preserved or the user requested merge.
 8. Verify the landed state before push.
 
-History rewriting, interactive rebase, force push, deleting branches, and replacing tags require a preview and explicit confirmation because they can invalidate other clones or references.
+History rewriting, interactive rebase, force push, deleting branches, and replacing tags require a preview and explicit confirmation because they can invalidate other clones or references. The exception is Wrap Up in `rumo-handoff`, which deletes a fully merged branch this task created with `git branch -d`.
 
 ## Pull Request
 
