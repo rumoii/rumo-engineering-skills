@@ -70,7 +70,7 @@ Match the task to one of these routes. For any route except a small edit or an i
 | Small edit | Read, edit, most relevant check, `rumo-verify`; no plan, no review |
 | Defect fix | `rumo-debug` proves the cause, failing test, fix, verification recipe, `rumo-verify` |
 | Feature | `rumo-clarify` if unclear, `rumo-plan` if multi-step, risk gate, thin slices, recipe, `rumo-verify` |
-| Investigation | Read-only answer with evidence; how or why code works goes to `rumo-explain` |
+| Investigation | Read-only answer with evidence; how or why code works goes to `rumo-explain`; technical comparisons and feasibility research go to `rumo-research` |
 | Resume | Read the handoff or decision record, check the actual repository state, continue |
 | Refactor | Cover the behavior with tests, move in green steps, rerun the same tests |
 | Performance problem | Baseline measurement, profile, fix, same measurement again; report both numbers |

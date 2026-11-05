@@ -21,6 +21,7 @@ IMPORTANT: Before non-trivial engineering work, such as a feature, bug fix, refa
 | Handing work to another agent or model | rumo-agent-collaboration |
 | Resuming or handing off work | rumo-handoff |
 | How or why this repository's code works | rumo-explain |
+| Technical comparisons or feasibility research | rumo-research |
 
 - Read the real entry point and call chain before editing; repository instructions override these defaults.
 - Do only what was asked and what it necessarily implies: every changed line traces to the request, and you report unrelated problems instead of fixing them. No speculative abstractions, drive-by refactors, or reformatting of neighboring code.

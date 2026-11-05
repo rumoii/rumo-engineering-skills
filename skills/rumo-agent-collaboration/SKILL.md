@@ -19,6 +19,8 @@ For an open-ended evaluation, the brief names the questions, relevant project ma
 
 You stay the owner: treat any request to hand work to another agent as delegation, whatever verb it uses, such as "交给" or "交接给". Transfer ownership only when the user says this session should step away, such as "let it take over; you're done here". In a relay (develop, review, fix), each step names the next owner, and nobody acts on the task between steps. Free-form agent-to-agent messaging and schedulers that keep running after this conversation are out of scope.
 
+For an explicitly requested multi-stage relay across agents, such as develop, review, and fix, read [references/relay.md](references/relay.md) before writing the stage briefs. It is a recipe, not an execution engine; keep the routes and acceptance rules below.
+
 ## Authorization
 
 Never start an agent through this skill unless the user asked for it. When the user named the CLI and the work, that request is the approval: state in one line before launching which CLI, model, and effort will run and what content you will send, then launch. Keep it to that line; do not ask again. A configured `delegate` lane counts as a named CLI. Ask first when the user named no route and none is configured, when you would send content the user did not mention, or when the work needs more access than the request implies.
@@ -28,6 +30,8 @@ Follow the current client's mode and permission limits. If they prevent launchin
 - Pick read-only unless the work edits files; asking for edits approves writes limited to the files or module the user named. Use `workspace-write` only where the adapter documents a directory restriction. `native-write` has no directory isolation: state its default automatic approval and whether shell tools are available. A worktree is not a sandbox.
 - When the work itself means running commands, such as tests or a build, the request approves shell access for that work: say in the same line that commands run automatically without a directory sandbox, where the agent may write, and what it must not do. Shell access the work does not need, such as shell for a review, needs its own approval; ask at most once per launch.
 - Never give the receiver more access than you have, and never pass a flag that bypasses its sandbox, approvals, or tool limits. The Orca route is the exception the user configured: agents run with the default arguments the user set in Orca, and pi with the matching worktree setting in [references/orca.md](references/orca.md); add nothing beyond them and do not change them. Commits, pushes, deployments, and dependency installs keep the approvals their own skills require.
+
+Existing authorization remains in force across relay stages; ask again only for a change that the rules above already require approval for. A relay recipe does not authorize extra agents, access, content, or side effects.
 
 ## Workflow
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Research"
+  short_description: "技术调研、方案对标与可行性判断，区分文档、源码、实测和推断，给出有依据的建议"
+  default_prompt: "Use $rumo-research to investigate the technical options and recommend an approach with versioned evidence and explicit uncertainties."

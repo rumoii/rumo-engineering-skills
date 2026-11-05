@@ -28,7 +28,7 @@ class CaseParsingTest(unittest.TestCase):
                 self.assertTrue(case["expect"] or case["avoid"] or case["no_rumo"])
         self.assertEqual(cases["no-skill-general-question"]["expect"], [])
         self.assertTrue(cases["no-skill-general-question"]["no_rumo"])
-        self.assertEqual((cases["debug-readonly"]["expect"], cases["debug-readonly"]["avoid"]), (["rumo-debug"], ["rumo-test"]))
+        self.assertEqual((cases["debug-readonly"]["expect"], cases["debug-readonly"]["avoid"]), (["rumo-debug"], ["rumo-research", "rumo-test"]))
 
     def test_unreadable_grader_is_an_error(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

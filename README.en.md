@@ -156,6 +156,7 @@ Installed by default.
 | --- | --- |
 | `rumo-clarify` | Group answerable questions with recommendations; follow up on newly exposed key decisions and never default critical ones |
 | `rumo-plan` | Short spec and verifiable task breakdown, task-by-task execution of an agreed plan, or a durable engineering decision record |
+| `rumo-research` | Technical research, option comparisons, and feasibility investigations with versioned sources and separate documented, implemented, observed, and inferred claims |
 | `rumo-coding-guidelines` | Baseline discipline: real code paths, only requested and necessary work, a risk gate for high-risk changes, verified results |
 | `rumo-test` | Evidence planning and test-first implementation |
 | `rumo-debug` | Reproduce, localize, and prove a root cause; read-only unless the fix is requested |
