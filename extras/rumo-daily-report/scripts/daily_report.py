@@ -106,9 +106,18 @@ def load_state() -> dict:
         return {"fingerprints": {}, "sessions": {}}
     try:
         state = json.loads(state_path().read_text(encoding="utf-8"))
-        if not isinstance(state, dict) or not isinstance(state.get("fingerprints", {}), dict):
+        if not isinstance(state, dict):
             raise ValueError("invalid state shape")
+        state.setdefault("fingerprints", {})
         state.setdefault("sessions", {})
+        if not isinstance(state["fingerprints"], dict) or not isinstance(state["sessions"], dict):
+            raise ValueError("invalid state shape")
+        for session in state["sessions"].values():
+            if not isinstance(session, dict):
+                raise ValueError("invalid session state")
+            count = session.get("added", 0)
+            if type(count) is not int or count < 0:
+                raise ValueError("invalid session added count")
         return state
     except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
         raise RuntimeError(f"日报去重状态损坏，未写入任何文件: {exc}") from exc
@@ -210,15 +219,18 @@ def append_report(items_json: str, session_id: str, forced_date: str | None) -> 
                 chunks.append("\n")
             for number, item, _ in added:
                 chunks.append(f"{number}.{item}\n")
-            atomic_write(report_path, original + "".join(chunks))
             timestamp = datetime.now().astimezone().isoformat(timespec="seconds")
             for number, item, digest in added:
                 state["fingerprints"][date_prefix + digest] = {"number": number}
-            state.setdefault("sessions", {})[session_id] = {
+            session = state["sessions"].get(session_id, {})
+            state["sessions"][session_id] = {
+                **session,
                 "updated_at": timestamp,
-                "added": state.setdefault("sessions", {}).get(session_id, {}).get("added", 0) + len(added),
+                "added": session.get("added", 0) + len(added),
             }
-            atomic_write(state_path(), json.dumps(state, ensure_ascii=False, indent=2) + "\n")
+            state_text = json.dumps(state, ensure_ascii=False, indent=2) + "\n"
+            atomic_write(report_path, original + "".join(chunks))
+            atomic_write(state_path(), state_text)
         result = {
             "path": str(report_path),
             "date": report_date.isoformat(),

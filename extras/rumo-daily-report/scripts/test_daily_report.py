@@ -105,6 +105,56 @@ class DailyReportScriptTest(unittest.TestCase):
             self.home / ".rumo-engineering-skills" / "daily-report" / "config.json",
         )
 
+    def test_corrupt_session_state_does_not_change_report_or_state(self) -> None:
+        report = self.reports / "2026-08-27-日报.txt"
+        original = b"1.Existing work.\n"
+        states = [
+            {"fingerprints": [], "sessions": {}},
+            {"fingerprints": {}, "sessions": []},
+            {"fingerprints": {}, "sessions": {"thread-a": []}},
+            {"fingerprints": {}, "sessions": {"thread-a": None}},
+            {"fingerprints": {}, "sessions": {"another-thread": []}},
+            {"fingerprints": {}, "sessions": {"thread-a": {"added": "1"}}},
+            {"fingerprints": {}, "sessions": {"thread-a": {"added": -1}}},
+            {"fingerprints": {}, "sessions": {"thread-a": {"added": True}}},
+        ]
+        for state in states:
+            with self.subTest(state=state):
+                report.write_bytes(original)
+                state_bytes = json.dumps(state).encode("utf-8")
+                daily_report.state_path().write_bytes(state_bytes)
+
+                with self.assertRaisesRegex(RuntimeError, "状态损坏"):
+                    self.append(["New work."], "thread-a", "2026-08-27")
+
+                self.assertEqual(report.read_bytes(), original)
+                self.assertEqual(daily_report.state_path().read_bytes(), state_bytes)
+
+    def test_missing_state_maps_remain_compatible(self) -> None:
+        for index, state in enumerate([{}, {"fingerprints": {}}, {"sessions": {}}]):
+            with self.subTest(state=state):
+                daily_report.state_path().write_text(json.dumps(state), encoding="utf-8")
+
+                self.append([f"Work item {index}."], "thread-a", "2026-08-27")
+
+                saved = json.loads(daily_report.state_path().read_text(encoding="utf-8"))
+                self.assertIsInstance(saved["fingerprints"], dict)
+                self.assertEqual(saved["sessions"]["thread-a"]["added"], 1)
+
+    def test_session_counts_accumulate_and_unknown_state_fields_are_preserved(self) -> None:
+        daily_report.state_path().write_text(
+            json.dumps({"fingerprints": {}, "sessions": {"thread-a": {"added": 2, "extension": "keep"}}, "extension": {"keep": True}}),
+            encoding="utf-8",
+        )
+
+        self.append(["First work.", "Second work."], "thread-a", "2026-08-27")
+        self.append(["Second work.", "Third work."], "thread-a", "2026-08-27")
+
+        saved = json.loads(daily_report.state_path().read_text(encoding="utf-8"))
+        self.assertEqual(saved["sessions"]["thread-a"]["added"], 5)
+        self.assertEqual(saved["sessions"]["thread-a"]["extension"], "keep")
+        self.assertEqual(saved["extension"], {"keep": True})
+
 
 if __name__ == "__main__":
     unittest.main()
