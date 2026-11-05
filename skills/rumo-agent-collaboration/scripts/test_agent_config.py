@@ -52,6 +52,18 @@ class AgentConfigTest(unittest.TestCase):
         return subprocess.run([sys.executable, str(SCRIPT), "--runs-dir", str(self.runs), *args],
                               env=env, capture_output=True, timeout=120)
 
+    def test_check_rejects_malformed_stored_lanes_without_a_traceback(self) -> None:
+        for lane in ("oops", {}, {"cli": []}, {"cli": "claude", "model": {}}, {"cli": "claude", "effort": []}):
+            with self.subTest(lane=lane):
+                self.config.write_text(json.dumps({"version": 1, "roles": {"review": [lane]}}), encoding="utf-8")
+                before = self.config.read_bytes()
+                result = self.run_config("check")
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertIn("refused:", result.stderr.decode("utf-8", "replace"))
+                self.assertNotIn("Traceback", result.stderr.decode("utf-8", "replace"))
+                self.assertEqual(self.config.read_bytes(), before)
+                self.assertFalse(self.log.exists())
+
     def test_missing_configuration_tells_the_user_to_run_setup(self) -> None:
         for args in (("show",), ("lanes", "review"), ("check",)):
             with self.subTest(args=args):
@@ -264,8 +276,8 @@ class ModelListingTest(unittest.TestCase):
         ])
 
     def test_text_listings_become_model_ids(self) -> None:
-        grok = "You are logged in.\n\nDefault model: grok-4.7\n\nAvailable models:\n  * grok-4.7 (default)\n  * grok-4.7-mini\n"
-        self.assertEqual([m["id"] for m in self.listed("grok", grok)], ["grok-4.7", "grok-4.7-mini"])
+        grok = "You are logged in.\n\nDefault model: grok-4.7\n\nAvailable models:\n  * grok-4.7 (default)\n  - grok-4.7-build-fast\n  - grok-4.6\n"
+        self.assertEqual([m["id"] for m in self.listed("grok", grok)], ["grok-4.7", "grok-4.7-build-fast", "grok-4.6"])
         pi = ("provider              model               context  max-out  thinking  images\n"
               "ollama                qwen:uncensored-4b  32.8K    512      no        no    \n"
               "deepseek              deepseek-v4-pro     1.0M     64K      yes       no    \n")

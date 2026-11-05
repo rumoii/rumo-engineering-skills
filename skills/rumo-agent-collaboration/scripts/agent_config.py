@@ -88,6 +88,9 @@ def parse_lane(text: str) -> dict:
 
 def with_executables(lanes: list[dict], pairs: list[str] | None) -> list[dict]:
     """Attach CLI or exact-model executable paths; model selectors take priority."""
+    for lane in lanes:
+        if problems := lane_shape_problems(lane):
+            raise Refused("invalid lane: " + "; ".join(problems))
     paths = {}
     for pair in pairs or []:
         selector, sep, path = pair.partition("=")
@@ -108,14 +111,21 @@ def lane_label(lane: dict) -> str:
     return (f"{lane['use']}=" if lane.get("use") else "") + lane["cli"] + (f":{lane['model']}" if lane.get("model") else "") + (f"@{lane['effort']}" if lane.get("effort") else "")
 
 
-def lane_problems(lane: object, runs_dir: str | None = None) -> list[str]:
-    """Static problems: unknown keys, missing or disabled adapter, effort the adapter does not offer."""
+def lane_shape_problems(lane: object) -> list[str]:
+    """Validate fields before callers index or use them as dictionary keys."""
     if not isinstance(lane, dict) or not isinstance(lane.get("cli"), str):
         return ["each lane must be an object with a cli"]
     problems = [f"unknown lane key {key!r}" for key in sorted(set(lane) - LANE_KEYS)]
     for key in ("use", "model", "effort", "executable"):
         if key in lane and (not isinstance(lane[key], str) or not lane[key].strip()):
             problems.append(f"{key} must be a nonempty string")
+    return problems
+
+
+def lane_problems(lane: object, runs_dir: str | None = None) -> list[str]:
+    """Static problems: unknown keys, missing or disabled adapter, effort the adapter does not offer."""
+    if problems := lane_shape_problems(lane):
+        return problems
     entry = agent_run.load_adapters(runs_dir).get(lane["cli"])
     if entry is None:
         return problems + [f"no adapter named {lane['cli']!r}"]
@@ -318,7 +328,7 @@ def cmd_check(args: argparse.Namespace) -> int:
     if args.lane:
         targets = [("candidate", lane) for lane in with_executables([parse_lane(t) for t in args.lane], args.executable)]
     else:
-        # Stale lanes are reported per row below instead of refusing the whole check.
+        # Stale lanes are reported per row below; a malformed lane refuses the whole check.
         config = load(args.runs_dir, roles_to_check=())
         stored = [(role, lane) for role, lanes in config.get("roles", {}).items() for lane in lanes]
         if not stored:

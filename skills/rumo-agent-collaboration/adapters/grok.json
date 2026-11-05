@@ -50,7 +50,7 @@
       "models"
     ],
     "format": "text",
-    "pattern": "^\\s+\\*\\s+(?P<id>[\\w.:/-]+)"
+    "pattern": "^\\s+[*-]\\s+(?P<id>[\\w.:/-]+)"
   },
   "start": [
     "--prompt-file",
