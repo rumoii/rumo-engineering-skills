@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- `rumo-imagegen` 先解析 endpoint：只接受 HTTP 和 HTTPS，`HTTP://` 大写或带前后空格的明文地址同样要 `--allow-insecure-http`，请求发往规范化后的 URL。之前只按字符串前缀判断，这些写法能绕过确认。
 - `rumo-daily-report` 读到形状不对的去重状态时报损坏，不写日报也不写状态，其他会话的记录损坏时同样如此。更新计数时保留状态文件里的未知字段，序列化状态放在写日报之前。
 - `verify_skills.py` 的密钥检查改用服务的真实前缀 `ghp_`、`github_pat_`、`glpat-`、`sk-`。之前写成 `ghp-`、`github_pat-`，真实的 GitHub token 查不出来。
 - `install.ps1` 和 `install.sh` 现在也认 `CLAUDE_CONFIG_DIR`，优先级是显式参数 > `CLAUDE_HOME` > `CLAUDE_CONFIG_DIR` > `~/.claude`。之前用这个变量换了 Claude 配置目录的机器上，技能和基线块仍然装到 `~/.claude`，安装后 Claude Code 读不到。

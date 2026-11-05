@@ -89,6 +89,15 @@ export function buildPlan(options) {
     throw new Error("Timeout must be a positive integer");
   }
   validateSize(options.size);
+  let endpoint;
+  try {
+    endpoint = new URL(options.endpoint);
+  } catch {
+    throw new Error("Endpoint must be a valid HTTP or HTTPS URL");
+  }
+  if (endpoint.protocol !== "http:" && endpoint.protocol !== "https:") {
+    throw new Error("Endpoint must be a valid HTTP or HTTPS URL");
+  }
 
   const promptFile = path.resolve(options.promptFile);
   const output = path.resolve(options.output);
@@ -101,14 +110,14 @@ export function buildPlan(options) {
   const prompt = readFileSync(promptFile, "utf8").trim();
   if (!prompt) throw new Error("Prompt file is empty");
   if ([...prompt].length > 100_000) throw new Error("Prompt exceeds the 100000-character safety limit");
-  if (!options.dryRun && options.endpoint.startsWith("http://") && !options.allowInsecureHttp) {
+  if (!options.dryRun && endpoint.protocol === "http:" && !options.allowInsecureHttp) {
     throw new Error(
       "Plain HTTP is not acknowledged; add --allow-insecure-http only after accepting the transport risk",
     );
   }
 
   return {
-    endpoint: options.endpoint,
+    endpoint: endpoint.href,
     model: options.model,
     output,
     prompt,

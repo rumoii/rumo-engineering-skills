@@ -60,6 +60,58 @@ test("buildPlan rejects a live request without plain HTTP acknowledgement", () =
   });
 });
 
+for (const endpoint of ["HTTP://example.test/v1/images/generations", "  http://example.test/v1/images/generations  "]) {
+  test(`buildPlan requires HTTP acknowledgement after parsing ${JSON.stringify(endpoint)}`, () => {
+    withTemporaryDirectory((directory) => {
+      const promptFile = path.join(directory, "prompt.txt");
+      writeFileSync(promptFile, "test prompt");
+
+      assert.throws(
+        () => buildPlan(parseArgs(["--endpoint", endpoint, "--prompt-file", promptFile, "--output", path.join(directory, "result.png")])),
+        /Plain HTTP is not acknowledged/,
+      );
+    });
+  });
+}
+
+test("buildPlan returns the normalized endpoint for acknowledged HTTP and HTTPS", () => {
+  withTemporaryDirectory((directory) => {
+    const promptFile = path.join(directory, "prompt.txt");
+    writeFileSync(promptFile, "test prompt");
+    for (const [endpoint, expected, flags] of [
+      ["  HTTP://EXAMPLE.test:80/v1/images/generations  ", "http://example.test/v1/images/generations", ["--allow-insecure-http"]],
+      ["  HTTPS://EXAMPLE.test:443/v1/images/generations  ", "https://example.test/v1/images/generations", []],
+    ]) {
+      const plan = buildPlan(parseArgs([...flags, "--endpoint", endpoint, "--prompt-file", promptFile, "--output", path.join(directory, "result.png")]));
+
+      assert.equal(plan.endpoint, expected);
+    }
+  });
+});
+
+test("buildPlan permits an HTTP dry run without acknowledgement", () => {
+  withTemporaryDirectory((directory) => {
+    const promptFile = path.join(directory, "prompt.txt");
+    writeFileSync(promptFile, "test prompt");
+    const plan = buildPlan(parseArgs(["--dry-run", "--endpoint", " HTTP://EXAMPLE.test/image ", "--prompt-file", promptFile, "--output", path.join(directory, "result.png")]));
+
+    assert.equal(plan.endpoint, "http://example.test/image");
+  });
+});
+
+test("buildPlan rejects invalid URLs and non-HTTP image endpoints", () => {
+  withTemporaryDirectory((directory) => {
+    const promptFile = path.join(directory, "prompt.txt");
+    writeFileSync(promptFile, "test prompt");
+    for (const endpoint of ["not a URL", "ftp://example.test/image", "file:///image.png", "data:image/png;base64,AA=="]) {
+      assert.throws(
+        () => buildPlan(parseArgs(["--dry-run", "--endpoint", endpoint, "--prompt-file", promptFile, "--output", path.join(directory, "result.png")])),
+        /Endpoint must be a valid HTTP or HTTPS URL/,
+      );
+    }
+  });
+});
+
 test("generateImage sends one request and atomically saves returned PNG data", async () => {
   await withTemporaryDirectory(async (directory) => {
     const output = path.join(directory, "result.png");
