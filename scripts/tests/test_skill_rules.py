@@ -376,6 +376,7 @@ REFERENCE_RULES = {
     ),
     "rumo-agent-collaboration/references/external-cli.md": (
         "More than one listed match for a fragment: ask the user which one.",
+        "its brief must list the guidance files to read first",
         "`start` and `open` check the CLI and the adapter's flags themselves, so do not run `list`, `check`, or `show` first for a verified adapter.",
         "run `agent_run.py show` and show the user the full command and known limits",
         "Unverified status alone does not require repeated approval.",

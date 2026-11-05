@@ -109,7 +109,7 @@ python <skill-dir>/scripts/agent_run.py record <run-id> --outcome accepted|rejec
 
 ## Brief Contents
 
-Give the receiver the goal, the files in scope, the acceptance check, the access it has, what it must not do (commit, push, install, touch files outside scope), and what to return: changed files, checks run with results, and anything unfinished. Withhold your own reasoning and earlier conclusions when you want an independent result.
+Give the receiver the goal, the files in scope, the acceptance check, the access it has, what it must not do (commit, push, install, touch files outside scope), and what to return: changed files, checks run with results, and anything unfinished. Withhold your own reasoning and earlier conclusions when you want an independent result. OpenCode does not load project guidance on its own, so its brief must list the guidance files to read first, such as `AGENTS.md`.
 
 ## Worktrees
 
