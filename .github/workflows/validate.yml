@@ -47,7 +47,11 @@ jobs:
           fi
 
   auxiliary:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -57,4 +61,4 @@ jobs:
         with:
           node-version: "20"
       - name: Run auxiliary skill tests
-        run: python3 scripts/run_auxiliary_tests.py
+        run: python scripts/run_auxiliary_tests.py
