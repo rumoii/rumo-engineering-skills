@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import contextlib
+import io
+import tempfile
 import queue
 import sys
 import time
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import importlib.util
 
@@ -166,6 +169,53 @@ class BlockingVerdictTest(unittest.TestCase):
         for text, expected in cases.items():
             with self.subTest(text=text):
                 self.assertIs(app_server_review.has_blocking_finding(text), expected)
+
+
+class LaneLaunchTest(unittest.TestCase):
+    def invoke(self, extra: list[str]):
+        proc = Mock()
+        client = Mock()
+        client.stderr_lines = []
+        client.request.side_effect = lambda method, params=None: {"thread": {"id": "thread-1"}} if method == "thread/start" else {"turn": {"id": "turn-1"}} if method == "review/start" else {}
+        with patch.object(sys, "argv", ["app_server_review.py", "--quiet-progress", *extra]), \
+                patch.object(app_server_review.subprocess, "Popen", return_value=proc) as popen, \
+                patch.object(app_server_review, "AppServerClient", return_value=client), \
+                patch.object(app_server_review, "wait_for_review", return_value=("No findings.", {"status": "completed"})), \
+                contextlib.redirect_stdout(io.StringIO()):
+            code = app_server_review.main()
+        return code, popen, client
+
+    def test_named_launcher_and_effort_reach_the_real_main_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            for suffix in (".py", ".cmd", ".bat"):
+                with self.subTest(suffix=suffix):
+                    launcher = Path(directory) / ("custom launcher" + suffix)
+                    launcher.write_text("", encoding="utf-8")
+                    code, popen, client = self.invoke(["--executable", str(launcher), "--model", "named-model", "--effort", "high"])
+                    expected = [sys.executable, str(launcher)] if suffix == ".py" else [str(launcher)]
+                    self.assertEqual(code, 0)
+                    self.assertEqual(popen.call_args.args[0], [*expected, "app-server", "--stdio"])
+                    start = next(call.args[1] for call in client.request.call_args_list if call.args[0] == "thread/start")
+                    self.assertEqual(start["model"], "named-model")
+                    self.assertEqual(start["config"], {"model_reasoning_effort": "high"})
+                    self.assertEqual(start["sandbox"], "workspace-write")
+                    self.assertEqual(start["approvalPolicy"], "never")
+                    self.assertTrue(any(call.args[0] == "review/start" for call in client.request.call_args_list))
+
+    def test_default_launch_keeps_the_existing_protocol(self) -> None:
+        code, popen, client = self.invoke([])
+        self.assertEqual(code, 0)
+        self.assertEqual(popen.call_args.args[0], ["codex", "app-server", "--stdio"])
+        start = next(call.args[1] for call in client.request.call_args_list if call.args[0] == "thread/start")
+        self.assertNotIn("config", start)
+
+    def test_missing_launcher_fails_before_starting_a_process(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(sys, "argv", ["app_server_review.py", "--executable", str(Path(directory) / "missing.exe")]), \
+                    patch.object(app_server_review.subprocess, "Popen") as popen:
+                with self.assertRaisesRegex((ValueError, FileNotFoundError), "executable"):
+                    app_server_review.main()
+            popen.assert_not_called()
 
 
 if __name__ == "__main__":

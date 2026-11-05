@@ -523,6 +523,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--instructions", help="Custom review instructions for --target custom.")
     parser.add_argument("--delivery", choices=["inline", "detached"], default="inline")
     parser.add_argument("--model", help="Optional model override for thread/start.")
+    parser.add_argument("--effort", help="Optional model_reasoning_effort override for thread/start.")
+    parser.add_argument("--executable", help="Path to the Codex launcher when it is not on PATH.")
     parser.add_argument(
         "--sandbox",
         choices=["read-only", "workspace-write", "danger-full-access"],
@@ -568,13 +570,23 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def review_command(executable: str | None) -> list[str]:
+    if executable is None:
+        return ["codex", "app-server", "--stdio"]
+    path = Path(executable).expanduser().resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"executable not found: {executable}")
+    launcher = [sys.executable, str(path)] if path.suffix.lower() == ".py" else [str(path)]
+    return [*launcher, "app-server", "--stdio"]
+
+
 def main() -> int:
     args = parse_args()
     cwd = str(Path(args.cwd).expanduser().resolve())
     target = build_target(args)
     thread_id: str | None = None
     proc = subprocess.Popen(
-        ["codex", "app-server", "--stdio"],
+        review_command(args.executable),
         cwd=cwd,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
@@ -608,6 +620,8 @@ def main() -> int:
         }
         if args.model:
             thread_params["model"] = args.model
+        if args.effort:
+            thread_params["config"] = {"model_reasoning_effort": args.effort}
         thread_result = client.request("thread/start", thread_params)
         thread = thread_result.get("thread") or {}
         thread_id = thread.get("id")

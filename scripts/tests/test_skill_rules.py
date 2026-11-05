@@ -213,6 +213,7 @@ RULES = {
     ),
     "rumo-setup": (
         "change only the items the user names. Never offer a reset to the defaults.",
+        "Preserve launcher paths for unchanged lanes",
         "Probe the new or changed lanes before writing",
         "do not look IDs up in the CLI's model catalog or configuration files",
         "write nothing for the roles that use it.",
@@ -306,6 +307,7 @@ REFERENCE_RULES = {
     ),
     "rumo-review/references/loop.md": (
         "never hard-code a provider",
+        "Pass the selected lane's model, effort, and executable",
         "One agreement covers later cycles on the same lane and content scope",
         "Withhold the fix history and earlier findings",
         "never substitute another provider or start a panel to keep the loop going",

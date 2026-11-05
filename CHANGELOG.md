@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- `app_server_review.py` 新增 `--effort` 和 `--executable`，评审循环可以按所选线路的模型、思考强度和启动器运行 Codex。`rumo-setup` 保存线路时要求保留未改动线路的启动器路径，并带上探测成功时用的 `--executable`。
 - `agent_config.py check` 遇到形状不合法的已保存线路时，以 exit 2 拒绝整个检查，不再抛 traceback；adapter 消失或被禁用的线路仍然逐行报告。grok 的模型列表解析同时认 `*` 和 `-` 两种项目符号：真实的 `grok models` 输出里，非默认模型用的是 `-`，之前会被漏掉。
 - opencode 适配器堵住了项目配置放权的两条路。start/resume 固定 `--agent build`，并在 `agent.build.permission` 重复访问策略：之前项目的 `opencode.json` 能在只读模式下放开 shell。适配器还设置 `OPENCODE_CONFIG_PROJECT_DISABLE=1`：之前项目的本地 MCP 命令和 `.opencode` 插件在只读模式下也会执行。代价是项目的 `AGENTS.md` 不再自动加载，任务书要写明读哪些指南文件；全局配置和模型不受影响。新增适配器字段 `resume_contract`，保存的快照对不上时拒绝恢复，`status` 不再给出交互恢复命令；改动前记录的 opencode 运行要新开。`show` 接受 `--executable`，交互恢复命令使用记录的启动器。以上在 Windows 上用 opencode 2.2.2 和 deepseek-flash 实测过，macOS 和 Linux 没有运行。
 - `rumo-imagegen` 先解析 endpoint：只接受 HTTP 和 HTTPS，`HTTP://` 大写或带前后空格的明文地址同样要 `--allow-insecure-http`，请求发往规范化后的 URL。之前只按字符串前缀判断，这些写法能绕过确认。
