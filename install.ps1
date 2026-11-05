@@ -12,7 +12,7 @@ Optional private project profiles repository to save in ~/.rumo-engineering-skil
 Codex home directory. Defaults to CODEX_HOME, then ~/.codex.
 
 .PARAMETER ClaudeHome
-Claude Code home directory. Defaults to CLAUDE_HOME, then ~/.claude.
+Claude Code home directory. Defaults to CLAUDE_HOME, then CLAUDE_CONFIG_DIR, then ~/.claude.
 
 .PARAMETER AgentsHome
 Shared agent skills home directory. Defaults to AGENTS_HOME, then ~/.agents.
@@ -101,6 +101,7 @@ trap {
   throw $_
 }
 $CodexHomeExplicit = -not [string]::IsNullOrWhiteSpace($CodexHome)
+if (-not $ClaudeHome) { $ClaudeHome = $env:CLAUDE_CONFIG_DIR }
 $ClaudeHomeExplicit = -not [string]::IsNullOrWhiteSpace($ClaudeHome)
 $AgentsHomeExplicit = -not [string]::IsNullOrWhiteSpace($AgentsHome)
 $ProfilesRepoExplicit = -not [string]::IsNullOrWhiteSpace($ProfilesRepo)

@@ -169,7 +169,7 @@ class InstallPowerShellTests(unittest.TestCase):
         environment = {
             key: value
             for key, value in os.environ.items()
-            if key.upper() not in {"CODEX_HOME", "CLAUDE_HOME", "AGENTS_HOME", "PATH"}
+            if key.upper() not in {"CODEX_HOME", "CLAUDE_HOME", "CLAUDE_CONFIG_DIR", "AGENTS_HOME", "PATH"}
         }
         tool_dirs = {
             str(Path(shutil.which("git")).parent),
@@ -184,6 +184,55 @@ class InstallPowerShellTests(unittest.TestCase):
             }
         )
         return environment
+
+    def test_claude_home_precedence_and_dry_run(self) -> None:
+        for selection in ("native", "legacy", "explicit", "default"):
+            with self.subTest(selection=selection), tempfile.TemporaryDirectory() as temp_dir:
+                temp_root = Path(temp_dir)
+                user_home = temp_root / "user-home"
+                user_home.mkdir()
+                environment = self.isolated_environment(user_home)
+                native, legacy, explicit = (temp_root / name for name in ("native", "legacy", "explicit"))
+                homes = {}
+                if selection != "default":
+                    environment["CLAUDE_CONFIG_DIR"] = str(native)
+                if selection in ("legacy", "explicit"):
+                    environment["CLAUDE_HOME"] = str(legacy)
+                if selection == "explicit":
+                    homes["ClaudeHome"] = explicit
+                expected = {"native": native, "legacy": legacy, "explicit": explicit, "default": user_home / ".claude"}[selection]
+                if selection == "default":
+                    expected.mkdir()
+
+                result = self.run_installer(homes, "-DryRun", environment=environment)
+
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn(str(expected / "skills"), result.stdout)
+                for home in (native, legacy, explicit, user_home / ".claude"):
+                    self.assertFalse((home / "skills").exists(), home)
+                self.assertFalse((user_home / ".codex").exists())
+                self.assertFalse((user_home / ".agents").exists())
+
+    def test_native_claude_home_install_baseline_and_uninstall(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            user_home = temp_root / "user-home"
+            user_home.mkdir()
+            target = temp_root / "native-claude"
+            environment = self.isolated_environment(user_home)
+            environment["CLAUDE_CONFIG_DIR"] = str(target)
+
+            result = self.run_installer({}, "-Baseline", environment=environment)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertTrue(os.path.samefile(target / "skills" / "rumo-git-commit", REPO_ROOT / "skills" / "rumo-git-commit"))
+            self.assertIn(BASELINE_START, (target / "CLAUDE.md").read_text(encoding="utf-8"))
+
+            result = self.run_installer({}, "-Uninstall", environment=environment)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertFalse(any((target / "skills").iterdir()))
+            self.assertNotIn(BASELINE_START, (target / "CLAUDE.md").read_text(encoding="utf-8"))
+            for client_home in (".claude", ".codex", ".agents"):
+                self.assertFalse((user_home / client_home).exists(), client_home)
 
     def test_skips_undetected_codex(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -248,11 +297,7 @@ class InstallPowerShellTests(unittest.TestCase):
             profiles_repo = temp_root / "private-profiles"
             (profiles_repo / "profiles").mkdir(parents=True)
             user_home = temp_root / "user-home"
-            environment = {
-                **os.environ,
-                "HOME": str(user_home),
-                "USERPROFILE": str(user_home),
-            }
+            environment = self.isolated_environment(user_home)
 
             result = self.run_installer(
                 homes,
@@ -280,11 +325,7 @@ class InstallPowerShellTests(unittest.TestCase):
             invalid = temp_root / "missing-profiles"
             invalid.mkdir()
             user_home = temp_root / "user-home"
-            environment = {
-                **os.environ,
-                "HOME": str(user_home),
-                "USERPROFILE": str(user_home),
-            }
+            environment = self.isolated_environment(user_home)
 
             result = self.run_installer(
                 homes,
@@ -307,11 +348,7 @@ class InstallPowerShellTests(unittest.TestCase):
             profiles_repo = temp_root / "private-profiles"
             (profiles_repo / "profiles").mkdir(parents=True)
             user_home = temp_root / "user-home"
-            environment = {
-                **os.environ,
-                "HOME": str(user_home),
-                "USERPROFILE": str(user_home),
-            }
+            environment = self.isolated_environment(user_home)
 
             result = self.run_installer(
                 homes,

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- `install.ps1` 和 `install.sh` 现在也认 `CLAUDE_CONFIG_DIR`，优先级是显式参数 > `CLAUDE_HOME` > `CLAUDE_CONFIG_DIR` > `~/.claude`。之前用这个变量换了 Claude 配置目录的机器上，技能和基线块仍然装到 `~/.claude`，安装后 Claude Code 读不到。
+
 - `agent_config.py` 的 `set-role` 和 `check` 支持 `--executable cli:model=path`，同一个 CLI 的不同模型可以使用各自的启动器，模型 ID 完全匹配时优先于 `cli=path`；原有按 CLI 指定启动器的用法不变，同一选择器重复出现时仍由后面的路径覆盖前面的。
 
 - opencode 适配器重新启用，并在 2.2.2 上用 deepseek-flash 实际跑通了只读、写模式和 resume。start/resume 加了 `--standalone`：不加时 opencode 连的是后台服务，不会读取内联权限 `OPENCODE_CONFIG_CONTENT`。新增适配器字段 `refuse_if_exists`，本机存在 opencode 的托管配置路径时拒绝运行，因为托管配置会压过内联权限；resume 同时检查保存的声明和当前声明。新增 native-write：只能改文件，没有 shell，没有目录隔离。新增 `provider/model` 的文本模型列表。不声明 effort。`agent_run.py` 现在把子进程的 `PWD` 设成运行目录：opencode 按 `PWD` 而不是进程目录决定项目目录，以前从别的目录启动时，它会去读写启动者所在的仓库。

@@ -27,10 +27,11 @@ cd /path/to/rumo-engineering-skills
 | 客户端 | 检测条件 | 技能目录 |
 |--------|----------|----------|
 | Codex | `codex` 命令、`~/.codex`，或显式 `CODEX_HOME` / `-CodexHome` / `--codex-home` | `~/.codex/skills` |
-| Claude Code | `claude` 命令、`~/.claude`，或显式 `CLAUDE_HOME` / `-ClaudeHome` / `--claude-home` | `~/.claude/skills` |
+| Claude Code | `claude` 命令、配置目录已存在，或显式 `CLAUDE_HOME` / `CLAUDE_CONFIG_DIR` / `-ClaudeHome` / `--claude-home` | 所选配置目录下的 `skills`，默认 `~/.claude/skills` |
 | 共享 agents 目录 | `~/.agents` 已存在、`grok` 命令、`~/.grok`，或显式 `AGENTS_HOME` / `-AgentsHome` / `--agents-home` | `~/.agents/skills` |
 
 - 未检测到的客户端会跳过；一个都没检测到时直接失败，不做任何改动。
+- Claude 配置目录优先级：显式 `-ClaudeHome` / `--claude-home` > `CLAUDE_HOME` > `CLAUDE_CONFIG_DIR` > `~/.claude`。
 - 安装器只管理 `rumo-*` 链接，不会删除其他来源的技能。
 - 同名链接如果来自另一个仓库，安装器会先停下；确认要切换来源后再加 `-ReplaceForeignLinks` / `--replace-foreign-links`。
 - 成功时每个客户端会输出一行 `<数量> skills linked in <目录>`，最后一行以 `Next:` 开头，提示下一步。

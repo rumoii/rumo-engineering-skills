@@ -248,7 +248,7 @@ Profile 是可选的，不是使用技能的前提。仓库名称、组件清单
 - `RUMO_SKILL_PROFILES_REPO`：私有 Profile 仓库
 - `RUMO_PROJECT_PROFILE`：显式指定 Profile
 - `RUMO_AGENTS_CONFIG`：另一份 agent 配置，例如某个仓库长期用另一套线路时
-- `CODEX_HOME`、`CLAUDE_HOME`、`AGENTS_HOME`：自定义客户端目录
+- `CODEX_HOME`、`CLAUDE_HOME`、`CLAUDE_CONFIG_DIR`、`AGENTS_HOME`：自定义客户端目录；Claude 目录的优先级见 [GETTING_STARTED.md](GETTING_STARTED.md)
 
 安装时加 `-ProfilesRepo <path>` 或 `--profiles-repo <path>` 可把 Profile 仓库路径保存到 `~/.rumo-engineering-skills/config.json`。
 

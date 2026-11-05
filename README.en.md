@@ -248,7 +248,7 @@ Environment variables:
 - `RUMO_SKILL_PROFILES_REPO`: private profiles checkout
 - `RUMO_PROJECT_PROFILE`: explicit profile ID
 - `RUMO_AGENTS_CONFIG`: a separate agent configuration, such as for a repository that should always use other lanes
-- `CODEX_HOME`, `CLAUDE_HOME`, `AGENTS_HOME`: custom client homes
+- `CODEX_HOME`, `CLAUDE_HOME`, `CLAUDE_CONFIG_DIR`, `AGENTS_HOME`: custom client homes; [GETTING_STARTED.md](GETTING_STARTED.md) gives the Claude home precedence
 
 Pass `-ProfilesRepo <path>` or `--profiles-repo <path>` to persist a profiles checkout in `~/.rumo-engineering-skills/config.json`.
 

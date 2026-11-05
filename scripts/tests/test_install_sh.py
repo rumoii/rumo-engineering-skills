@@ -281,6 +281,57 @@ class InstallShellTests(unittest.TestCase):
             self.assertFalse((temp_root / ".codex").exists())
             self.assert_link_targets(claude_home / "skills", ["rumo-git-commit"])
 
+    def test_claude_home_precedence_and_dry_run(self) -> None:
+        for selection in ("native", "legacy", "explicit", "default"):
+            with self.subTest(selection=selection), tempfile.TemporaryDirectory() as temp_dir:
+                temp_root = Path(temp_dir)
+                bin_dir = self.minimal_bin(temp_root)
+                environment = {"HOME": str(temp_root), "PATH": str(bin_dir)}
+                native, legacy, explicit = (temp_root / name for name in ("native", "legacy", "explicit"))
+                if selection != "default":
+                    environment["CLAUDE_CONFIG_DIR"] = str(native)
+                if selection in ("legacy", "explicit"):
+                    environment["CLAUDE_HOME"] = str(legacy)
+                extra = ["--claude-home", str(explicit)] if selection == "explicit" else []
+                expected = {"native": native, "legacy": legacy, "explicit": explicit, "default": temp_root / ".claude"}[selection]
+                if selection == "default":
+                    expected.mkdir()
+
+                result = subprocess.run(
+                    [SH, str(REPO_ROOT / "install.sh"), "--repo", str(REPO_ROOT), "--no-pull", "--dry-run", *extra],
+                    cwd=REPO_ROOT, env=environment, capture_output=True, text=True, check=False,
+                )
+
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn(str(expected / "skills"), result.stdout)
+                for home in (native, legacy, explicit, temp_root / ".claude"):
+                    self.assertFalse((home / "skills").exists(), home)
+                self.assertFalse((temp_root / ".codex").exists())
+                self.assertFalse((temp_root / ".agents").exists())
+
+    def test_native_claude_home_install_baseline_and_uninstall(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            target = temp_root / "native-claude"
+            environment = {
+                "HOME": str(temp_root),
+                "PATH": str(self.minimal_bin(temp_root)),
+                "CLAUDE_CONFIG_DIR": str(target),
+            }
+            command = [SH, str(REPO_ROOT / "install.sh"), "--repo", str(REPO_ROOT), "--no-pull"]
+
+            result = subprocess.run([*command, "--baseline"], cwd=REPO_ROOT, env=environment, capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assert_link_targets(target / "skills", ["rumo-git-commit"])
+            self.assertIn(BASELINE_START, (target / "CLAUDE.md").read_text(encoding="utf-8"))
+
+            result = subprocess.run([*command, "--uninstall"], cwd=REPO_ROOT, env=environment, capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertFalse(any((target / "skills").iterdir()))
+            self.assertNotIn(BASELINE_START, (target / "CLAUDE.md").read_text(encoding="utf-8"))
+            for client_home in (".claude", ".codex", ".agents"):
+                self.assertFalse((temp_root / client_home).exists(), client_home)
+
     def test_existing_shared_agents_home_is_detected(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_root = Path(temp_dir)
