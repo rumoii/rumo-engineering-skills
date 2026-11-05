@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """List and condense this project's recent Claude Code, Codex, and Kimi Code sessions so a new session can pick up the work.
 
-Read-only. Only sessions whose working directory is this project (the given
-directory or its Git root) are opened; other projects' sessions are never read.
+Read-only. Discovery reads session ownership metadata. Conversation content is
+parsed only for sessions in this project (the given directory or its Git root).
 `show` keeps the user's messages, each turn's final reply, and the latest
 compaction summary, and drops tool output and injected context.
 """
