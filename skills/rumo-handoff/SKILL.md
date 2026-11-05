@@ -19,8 +19,8 @@ Asking to wrap up authorizes the cleanup below and nothing else. It never commit
    - An agent still running: leave it and report it.
    - A terminal this task opened, once its agent has ended and its result has been read: close it. Never close this session's own terminal or one the user opened.
    - A process or server this task started: stop it unless the user is still using it. Remove temporary settings this task placed.
-   - A worktree this task created, when it is clean, its commits are on the target branch or it has none, and no agent, including this session, runs there: remove it without force, following `rumo-filesystem-safety` for ignored content and links, such as a `node_modules` linked to the main checkout. Delete its branch only with `git branch -d`; when that refuses, keep the branch and report it. In Orca, use Orca's own worktree and terminal commands.
-   - An unmerged, dirty, or unprovable worktree: keep it, say why, and ask what to do.
+   - A worktree this task created, when it is clean, its commits are on the target branch or it has none, no agent, including this session, runs there, and no kept worktree links into it: remove it without force, following `rumo-filesystem-safety` for ignored content and links, such as a `node_modules` linked to the main checkout. Delete its branch only with `git branch -d`; when that refuses, keep the branch and report it. In Orca, use Orca's own worktree and terminal commands.
+   - An unmerged, dirty, linked-to, or unprovable worktree: keep it, say why, and ask what to do. Do not repair links during a wrap-up.
 4. **Handoff document.** When anything remains unfinished, unverified, unmerged, or unpushed, write or update one as [Write A Handoff Document](#write-a-handoff-document) describes. When nothing remains, write none and say so.
 5. **Report.** After re-checking the state, give what was cleaned, what was kept and why, the handoff path, the next step, and what needs the user's decision.
 

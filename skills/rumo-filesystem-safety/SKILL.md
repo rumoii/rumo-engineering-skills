@@ -47,6 +47,7 @@ Use the full path whenever any of these applies:
 
 - Confirm each target's absolute location and its parent path before deletion. Stop if a target falls outside the authorized workspace or resolves to a filesystem root, user home, system directory, repository root, or Git metadata without explicit scope for that target.
 - Identify symbolic links, Windows junctions, and other reparse points on every component of each path before deleting, not only on the target: a linked parent directory makes `a/skills/x` and `b/skills/x` the same directory. Do not traverse a link to delete its destination. If only the link itself is in scope, use a platform-appropriate non-recursive operation; stop when its behavior is uncertain.
+- Before removing a directory, look for links that point into it from what stays, such as other worktrees of the same repository, including inside their ignored dependency directories; a clean Git status does not show them. When something kept links into the target, keep the target and report the link. Repairing those links is separate work the user decides on.
 - Do not infer safety from a familiar command name or a clean Git status.
 
 ### Preview And Confirm

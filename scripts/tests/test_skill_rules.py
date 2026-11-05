@@ -51,6 +51,7 @@ RULES = {
         "Writing or editing a cleanup script does not authorize running it.",
         "Do not traverse a link to delete its destination.",
         "on every component of each path before deleting, not only on the target",
+        "keep the target and report the link",
         "Removing a duplicate requires proof that the copies are separate objects",
         "Never create ad-hoc backup copies as part of a deletion",
         "without retrying against a broader path",
@@ -85,7 +86,8 @@ RULES = {
         "Never repeat credentials that appear in a record.",
         "Make the handoff discoverable without this conversation.",
         "It never commits, pushes, merges, or deploys;",
-        "An unmerged, dirty, or unprovable worktree: keep it, say why, and ask what to do.",
+        "An unmerged, dirty, linked-to, or unprovable worktree: keep it, say why, and ask what to do.",
+        "Do not repair links during a wrap-up.",
     ),
     "rumo-interface": (
         "A search is discovery, not proof of absence.",
