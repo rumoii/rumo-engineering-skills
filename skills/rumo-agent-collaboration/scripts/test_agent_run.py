@@ -53,7 +53,7 @@ FAKE = textwrap.dedent(
         "grok": "-s --session-id --prompt-file --output-format --no-subagents --permission-mode --resume --model --reasoning-effort",
         "cursor": "-p --print --output-format --mode --sandbox --trust --resume --model",
         "gemini": "-o --output-format --approval-mode --resume --model",
-        "opencode": "--format --session --model --title --standalone",
+        "opencode": "--format --session --model --title --standalone --agent",
         "copilot": "--output-format --available-tools --deny-tool --allow-tool --session-id --model --no-auto-update",
         "cline": "--json --plan --model",
         "goose": "--instructions --output-format --no-session --model",
@@ -325,6 +325,7 @@ class BundledAdapterTest(unittest.TestCase):
         config = json.loads(agent_run.child_environment(adapter, "native-write", ".")["OPENCODE_CONFIG_CONTENT"])
         readonly = json.loads(adapter["env"]["OPENCODE_CONFIG_CONTENT"])
         self.assertEqual(config["permission"].pop("edit", None), "allow")
+        self.assertEqual(config["agent"]["build"]["permission"].pop("edit", None), "allow")
         self.assertEqual(config, readonly)
         self.assertEqual(config["permission"].get("bash", config["permission"]["*"]), "deny")
         self.assertEqual(agent_run.validate_adapter(adapter), [])
@@ -1800,6 +1801,87 @@ class PrivateRecordsTest(unittest.TestCase):
                 self.assertEqual(stat.S_IMODE(directory.stat().st_mode), 0o700)
             for path in (turn_dir / "prompt.md", turn_dir / "events.jsonl", turn_dir / "stderr.log", run_dir / "meta.json", run_dir / ".lock"):
                 self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
+
+
+class ReliabilityContractTest(Harness):
+    def test_opencode_pins_build_and_applies_permissions_at_agent_level(self) -> None:
+        adapter = BUNDLED["opencode"]
+        for access in ("read-only", "native-write"):
+            with self.subTest(access=access):
+                environment = agent_run.child_environment(adapter, access, ".")
+                self.assertEqual(environment["OPENCODE_CONFIG_PROJECT_DISABLE"], "1")
+                config = json.loads(environment["OPENCODE_CONFIG_CONTENT"])
+                self.assertEqual(config["agent"]["build"]["permission"], config["permission"])
+                self.assertEqual(config["permission"]["*"], "deny")
+                self.assertEqual(config["permission"].get("edit", "deny"), "allow" if access == "native-write" else "deny")
+                for kind in ("start", "resume"):
+                    argv = agent_run.render(adapter, kind, access, "/w", None, "sid", None)
+                    self.assertEqual(argv[argv.index("--agent") + 1], "build")
+        self.assertIn("--agent", adapter["help"][0]["flags"])
+        self.assertEqual(adapter["resume_contract"], "opencode-build-permissions-v2")
+
+    def test_resume_contract_rejects_old_runs_before_any_mutation(self) -> None:
+        for saved_marker in (None, "old-policy"):
+            with self.subTest(saved_marker=saved_marker):
+                current = copy.deepcopy(BUNDLED["claude"])
+                self.write_adapter(current)
+                result = self.start("claude")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                info = json.loads(result.stdout)
+                run_dir = Path(info["run_dir"])
+                meta = self.meta(run_dir)
+                if saved_marker is not None:
+                    meta["adapter"]["resume_contract"] = saved_marker
+                agent_run.write_json(run_dir / "meta.json", meta)
+                before = (run_dir / "meta.json").read_bytes()
+                calls = len(self.calls())
+                current["resume_contract"] = "new-policy"
+                self.write_adapter(current)
+                refused = self.resume(info["run_id"], "claude")
+                self.assertEqual(refused.returncode, 2, refused.stderr)
+                self.assertIn("resume_contract", refused.stderr.decode("utf-8", "replace"))
+                self.assertEqual((run_dir / "meta.json").read_bytes(), before)
+                self.assertEqual(len(self.calls()), calls)
+                status = json.loads(self.run_script("status", info["run_id"], "--runs-dir", str(self.runs)).stdout)
+                self.assertIn("resume_contract", status["disabled_reason"])
+                self.assertNotIn("interactive_resume", status)
+
+    def test_matching_resume_contract_keeps_the_saved_snapshot(self) -> None:
+        adapter = copy.deepcopy(BUNDLED["claude"])
+        adapter["resume_contract"] = "policy-v1"
+        self.write_adapter(adapter)
+        result = self.start("claude")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        info = json.loads(result.stdout)
+        adapter["notes"] = "current declaration is not the saved snapshot"
+        self.write_adapter(adapter)
+        resumed = self.resume(info["run_id"], "claude")
+        self.assertEqual(resumed.returncode, 0, resumed.stderr)
+        self.assertNotEqual(self.meta(Path(info["run_dir"]))["adapter"].get("notes"), adapter["notes"])
+
+    def test_resume_contract_shape_is_validated(self) -> None:
+        for value in (None, "", " ", 1, "bad\0marker"):
+            with self.subTest(value=value):
+                problems = agent_run.validate_adapter({**BUNDLED["claude"], "resume_contract": value})
+                self.assertTrue(any("resume_contract" in problem for problem in problems), problems)
+
+    def test_interactive_resume_uses_the_recorded_executable_argv(self) -> None:
+        result = self.start("claude")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        info = json.loads(result.stdout)
+        self.assertEqual(info["interactive_resume"]["argv"][:2], [sys.executable, str(self.fake)])
+        for executable in (["D:/tools/custom.cmd"], ["D:/tools/custom.bat"]):
+            meta = {"adapter": BUNDLED["claude"], "executable": executable}
+            self.assertEqual(agent_run.interactive_argv(meta, "sid")[:len(executable)], executable)
+        self.assertEqual(agent_run.interactive_argv({"adapter": BUNDLED["claude"]}, "sid")[0], "claude")
+
+    def test_show_accepts_an_executable_without_invoking_it(self) -> None:
+        result = self.run_script("show", "claude", "--access", "read-only", "--executable", str(self.fake))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        shown = json.loads(result.stdout)
+        self.assertEqual(shown["start"][:2], [sys.executable, str(self.fake)])
+        self.assertEqual(shown["resume"][:2], [sys.executable, str(self.fake)])
+        self.assertFalse(self.log.exists())
 
 
 if __name__ == "__main__":

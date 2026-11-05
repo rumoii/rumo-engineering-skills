@@ -41,14 +41,15 @@ Read on only when a command refuses, a run looks wrong, or the work needs more t
 ```text
 python <skill-dir>/scripts/agent_run.py list
 python <skill-dir>/scripts/agent_run.py check <cli>
-python <skill-dir>/scripts/agent_run.py show <cli> --access read-only [--model <id>]
+python <skill-dir>/scripts/agent_run.py show <cli> --access read-only [--model <id>] [--executable <path>]
 ```
 
 - `list` shows each adapter's source, whether it was verified, its access levels, whether the CLI is installed, and `disabled_reason` when execution is blocked.
 - `check` confirms the CLI is installed and that its help lists the adapter's declared flags. A failed help command or missing flag exits 2: stop and report it rather than guessing a replacement flag. This does not validate flag values or prove runtime permissions. `version_drift` is a warning to report, not a blocker.
 - `show` prints the exact start and resume commands without running anything. Show it to the user before the first launch through an unverified or newly written adapter.
+- When the lane specifies a launcher, pass the same `--executable <path>` to `show` and the launch. Recorded interactive recovery commands use that saved launcher; their native access defaults still need inspection before reopening.
 
-`disabled_reason` blocks `check`, `start`, and `resume` before the CLI is invoked; `show` stays available for inspection. Gemini CLI and OpenCode are bundled but disabled pending reliable read-only permissions. A Gemini model behind another client still uses that client's adapter. First-use disclosure does not require another confirmation when the named route, task, and content are already authorized.
+`disabled_reason` blocks `check`, `start`, and `resume` before the CLI is invoked; `show` stays available for inspection. Gemini CLI is disabled pending reliable read-only permissions. OpenCode is enabled with a fixed build agent and restricted permissions, and it ignores project configuration, including `AGENTS.md`, so name the guidance files to read in its brief; declared managed configuration paths still block it. A Gemini model behind another client still uses that client's adapter. First-use disclosure does not require another confirmation when the named route, task, and content are already authorized.
 
 A CLI that is installed but not signed in fails on the first turn; never sign in, copy credentials, or change its configuration for the user.
 

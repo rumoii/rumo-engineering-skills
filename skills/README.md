@@ -28,7 +28,7 @@ Every skill uses the `rumo-` namespace and stays independent of any company, pro
 | `rumo-project-profile` | Private project profile resolution and validation |
 | `rumo-reflect` | Session retrospective that proposes where to fix recurring mistakes and applies only approved items |
 | `rumo-setup` | Configure the CLI, model, and reasoning effort for multi-model review and default delegation, with a read-only probe per lane |
-| `rumo-agent-collaboration` | Delegate, transfer, or relay work to Codex, Claude Code, pi, qwen, grok, Cursor, Copilot CLI, Aider, Cline CLI, Goose, or Orca; supports read-only and development access on Windows and Linux/WSL, with one owner and records. Named, bounded requests supply authorization. Gemini CLI and OpenCode declarations remain inspectable; the runner blocks their new turns and old-record recovery |
+| `rumo-agent-collaboration` | Delegate, transfer, or relay work to Codex, Claude Code, pi, qwen, grok, OpenCode, Cursor, Copilot CLI, Aider, Cline CLI, Goose, or Orca; supports read-only and development access on Windows and Linux/WSL, with one owner and records. Named, bounded requests supply authorization. Gemini CLI remains disabled; OpenCode enforces a fixed build agent, ignores project configuration, and rejects incompatible saved runs |
 
 ## Extras
 

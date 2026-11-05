@@ -342,6 +342,7 @@ REFERENCE_RULES = {
     ),
     "rumo-agent-collaboration/references/adapters.md": (
         "Approval that the headless turn cannot collect is a blocker, not permission to change modes.",
+        "A resume contract mismatch refuses recovery without changing the saved run.",
         "Constructed samples and mock tests establish parser/rendering behavior only.",
         "A disabled adapter cannot start or resume a turn, including a run saved before it was disabled.",
     ),

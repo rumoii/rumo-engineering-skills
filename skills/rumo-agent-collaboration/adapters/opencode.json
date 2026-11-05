@@ -3,7 +3,7 @@
   "executable": "opencode",
   "verified": {
     "version": "opencode v2.2.2",
-    "on": "2026-11-04",
+    "on": "2026-11-05",
     "live_run": true
   },
   "help": [
@@ -17,7 +17,8 @@
         "--session",
         "--model",
         "--title",
-        "--standalone"
+        "--standalone",
+        "--agent"
       ]
     }
   ],
@@ -27,7 +28,8 @@
     "native-write": []
   },
   "env": {
-    "OPENCODE_CONFIG_CONTENT": "{\"share\":\"disabled\",\"permission\":{\"*\":\"deny\",\"glob\":\"allow\",\"grep\":\"allow\",\"list\":\"allow\",\"lsp\":\"allow\",\"read\":{\"*\":\"allow\",\"*.env\":\"deny\",\"*.env.*\":\"deny\",\"*.env.example\":\"allow\"}}}"
+    "OPENCODE_CONFIG_PROJECT_DISABLE": "1",
+    "OPENCODE_CONFIG_CONTENT": "{\"share\":\"disabled\",\"permission\":{\"*\":\"deny\",\"glob\":\"allow\",\"grep\":\"allow\",\"list\":\"allow\",\"lsp\":\"allow\",\"read\":{\"*\":\"allow\",\"*.env\":\"deny\",\"*.env.*\":\"deny\",\"*.env.example\":\"allow\"}},\"agent\":{\"build\":{\"permission\":{\"*\":\"deny\",\"glob\":\"allow\",\"grep\":\"allow\",\"list\":\"allow\",\"lsp\":\"allow\",\"read\":{\"*\":\"allow\",\"*.env\":\"deny\",\"*.env.*\":\"deny\",\"*.env.example\":\"allow\"}}}}}"
   },
   "model": [
     "--model",
@@ -36,6 +38,8 @@
   "start": [
     "run",
     "--standalone",
+    "--agent",
+    "build",
     "--format",
     "json",
     "--title",
@@ -46,6 +50,8 @@
   "resume": [
     "run",
     "--standalone",
+    "--agent",
+    "build",
     "--format",
     "json",
     "--session",
@@ -83,7 +89,7 @@
     "--session",
     "{session}"
   ],
-  "notes": "On 2.2.2 with deepseek/deepseek-flash: one read-only turn read a file and had no edit or shell tool; one native-write turn edited a file and had no shell tool; one resume kept the session. A later native-write turn edited a file inside the run directory, while reading or writing outside it by absolute or ../ path was refused with external_directory. The skill tool is listed, but loading an installed skill is refused with \"Permission denied: skill\". --standalone loads the inline permission policy in a private local process; without it the background service ignores OPENCODE_CONFIG_CONTENT. OpenCode takes its project directory from PWD, which the runner sets to the run directory. Managed configuration outranks the inline policy (https://opencode.ai/docs/config/#precedence-order), so managed paths cause refusal before CLI invocation. The MDM guard includes /Library/Managed Preferences to cover both global and per-user ai.opencode.managed.plist files, conservatively refusing even unrelated managed preferences; the macOS and Linux guards were not run on those systems. read-only retains the deny-by-default reading policy. native-write adds edit only: file edits without shell; OpenCode's external_directory permission, not an OS sandbox, keeps them inside the run directory; bash, webfetch, task, and other unlisted tools remain denied. Effort variants use #variant in the model ID; this adapter does not support an effort option. --title avoids an extra model call to name the session.",
+  "notes": "On 2.2.2 with deepseek/deepseek-flash: one read-only turn read a file and had no edit or shell tool; one native-write turn edited a file and had no shell tool; one resume kept the session. A later native-write turn edited a file inside the run directory, while reading or writing outside it by absolute or ../ path was refused with external_directory. The skill tool is listed, but loading an installed skill is refused with \"Permission denied: skill\". --standalone loads the inline permission policy in a private local process; without it the background service ignores OPENCODE_CONFIG_CONTENT. OpenCode takes its project directory from PWD, which the runner sets to the run directory. Managed configuration outranks the inline policy (https://opencode.ai/docs/config/#precedence-order), so managed paths cause refusal before CLI invocation. The MDM guard includes /Library/Managed Preferences to cover both global and per-user ai.opencode.managed.plist files, conservatively refusing even unrelated managed preferences; the macOS and Linux guards were not run on those systems. read-only retains the deny-by-default reading policy. native-write adds edit only: file edits without shell; OpenCode's external_directory permission, not an OS sandbox, keeps them inside the run directory; bash, webfetch, task, and other unlisted tools remain denied. Effort variants use #variant in the model ID; this adapter does not support an effort option. --title avoids an extra model call to name the session. start/resume pin the build agent and repeat the permission policy at agent.build.permission so project agent permissions cannot override it. Older run snapshots without the current resume_contract must start a new run; records are not migrated. Tested on 2026-11-05 on Windows with deepseek/deepseek-flash, in a project whose opencode.json allows everything at both the top and agent.build permission levels: read-only exposed glob, grep, read, and skill only, refused skill and external_directory, and a resume kept the session; native-write created a file inside the run directory, exposed no shell or task tool, and refused skill and external reads and writes. The same project config let the shell run under the earlier top-level-only policy. OPENCODE_CONFIG_PROJECT_DISABLE=1 keeps project configuration out: without it, a read-only turn ran the project's local MCP command and .opencode plugins; with it, neither ran, global configuration and models still loaded, and the project's AGENTS.md was no longer loaded, so a brief must name the guidance files to read.",
   "refuse_if_exists": [
     "{env:ProgramData}/opencode",
     "/etc/opencode",
@@ -93,7 +99,7 @@
   ],
   "access_env": {
     "native-write": {
-      "OPENCODE_CONFIG_CONTENT": "{\"share\":\"disabled\",\"permission\":{\"*\":\"deny\",\"glob\":\"allow\",\"grep\":\"allow\",\"list\":\"allow\",\"lsp\":\"allow\",\"read\":{\"*\":\"allow\",\"*.env\":\"deny\",\"*.env.*\":\"deny\",\"*.env.example\":\"allow\"},\"edit\":\"allow\"}}"
+      "OPENCODE_CONFIG_CONTENT": "{\"share\":\"disabled\",\"permission\":{\"*\":\"deny\",\"glob\":\"allow\",\"grep\":\"allow\",\"list\":\"allow\",\"lsp\":\"allow\",\"read\":{\"*\":\"allow\",\"*.env\":\"deny\",\"*.env.*\":\"deny\",\"*.env.example\":\"allow\"},\"edit\":\"allow\"},\"agent\":{\"build\":{\"permission\":{\"*\":\"deny\",\"glob\":\"allow\",\"grep\":\"allow\",\"list\":\"allow\",\"lsp\":\"allow\",\"read\":{\"*\":\"allow\",\"*.env\":\"deny\",\"*.env.*\":\"deny\",\"*.env.example\":\"allow\"},\"edit\":\"allow\"}}}}"
     }
   },
   "models": {
@@ -103,5 +109,6 @@
     "format": "text",
     "pattern": "^(?P<provider>[^\\s/]+)/(?P<model>\\S+)$",
     "id": "{provider}/{model}"
-  }
+  },
+  "resume_contract": "opencode-build-permissions-v2"
 }

@@ -167,6 +167,9 @@ def validate_adapter(adapter: object) -> list[str]:
     if "disabled_reason" in adapter and (not isinstance(adapter["disabled_reason"], str)
             or not adapter["disabled_reason"].strip() or "\0" in adapter["disabled_reason"]):
         problems.append("disabled_reason must be a nonempty string without NUL")
+    if "resume_contract" in adapter and (not isinstance(adapter["resume_contract"], str)
+            or not adapter["resume_contract"].strip() or "\0" in adapter["resume_contract"]):
+        problems.append("resume_contract must be a nonempty string without NUL")
     if "refuse_if_exists" in adapter and (not string_list(adapter["refuse_if_exists"])
             or any(not path.strip() for path in adapter["refuse_if_exists"])):
         problems.append("refuse_if_exists must be a list of nonempty strings without NUL")
@@ -357,10 +360,16 @@ def disabled_reason(adapter: dict) -> str | None:
 
 
 def run_disabled_reason(meta: dict, run_dir: Path) -> str | None:
-    # Only the current disable decision applies to snapshots, never new argv or access settings.
+    # Current safety requirements can refuse a saved snapshot, but never replace its argv or permissions.
     saved = disabled_reason(meta["adapter"])
     current = load_adapters(str(run_dir.parent)).get(meta["cli"])
-    return saved or (disabled_reason(current["adapter"]) if current else None)
+    reason = saved or (disabled_reason(current["adapter"]) if current else None)
+    if reason:
+        return reason
+    contract = current["adapter"].get("resume_contract") if current else None
+    if contract is not None and meta["adapter"].get("resume_contract") != contract:
+        return "resume_contract differs from the current adapter; start a new run"
+    return None
 
 
 def get_adapter(name: str, runs_dir: str | None, *, allow_disabled: bool = False) -> dict:
@@ -863,7 +872,8 @@ def interactive_argv(meta: dict, session: str) -> list[str]:
     template = meta["adapter"].get("interactive")
     if not template:
         return []
-    return [meta["adapter"]["executable"], *(t.replace("{session}", session) for t in template)]
+    executable = meta.get("executable", [meta["adapter"]["executable"]])
+    return [*executable, *(t.replace("{session}", session) for t in template)]
 
 
 def summary(run_dir: Path) -> dict:
@@ -946,7 +956,7 @@ def cmd_list(args: argparse.Namespace) -> int:
 def cmd_show(args: argparse.Namespace) -> int:
     entry = get_adapter(args.cli, args.runs_dir, allow_disabled=True)
     adapter = entry["adapter"]
-    exe = [adapter["executable"]]
+    exe = resolve_executable(adapter, args.executable) if args.executable else [adapter["executable"]]
     cwd = str(Path(args.cwd).resolve()) if args.cwd else "<cwd>"
     result = {
         "cli": args.cli, "adapter": entry["path"], "source": entry["source"], "verified": adapter.get("verified"),
@@ -1737,6 +1747,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("show", help="Print the exact command a run would execute, without running it.")
     p.add_argument("cli")
+    p.add_argument("--executable", help="Path to the CLI when it is not on PATH.")
     p.add_argument("--access", required=True, choices=ACCESS_LEVELS)
     p.add_argument("--model")
     p.add_argument("--effort", help="Reasoning effort; one of the adapter's efforts.")

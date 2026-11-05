@@ -30,7 +30,13 @@ An adapter is a JSON file that tells `agent_run.py` how to drive one CLI: how to
 
 Gemini's [Plan Mode reference](https://geminicli.com/docs/cli/plan-mode/#non-interactive-execution) says headless mode approves `exit_plan_mode` and then enables unrestricted implementation. Gemini remains disabled. OpenCode uses `--standalone` so the local process loads `OPENCODE_CONFIG_CONTENT`; the background service it uses otherwise ignores that variable. OpenCode also takes its project directory from `PWD`, so the runner sets `PWD` to the run directory for every CLI. Its [config precedence](https://opencode.ai/docs/config/#precedence-order) puts managed settings above that policy, so `refuse_if_exists` refuses execution when a declared managed path exists. The macOS guard includes the entire `/Library/Managed Preferences` directory to cover global and per-user MDM plists; unrelated managed preferences also cause refusal.
 
+OpenCode start and resume select `--agent build`. Its inline configuration repeats the access policy in `agent.build.permission`, so project or global agent permissions cannot re-enable shell, edits, or subagents in read-only mode. `native-write` allows edit only; shell and subagents remain denied. The adapter's `resume_contract` rejects runs recorded before these restrictions.
+
+The adapter also sets `OPENCODE_CONFIG_PROJECT_DISABLE=1`, because a project's local MCP commands and `.opencode` plugins otherwise run even in read-only mode. Global configuration and models still load. The project's `AGENTS.md` does not, so a brief must name the guidance files to read.
+
 A disabled adapter cannot start or resume a turn, including a run saved before it was disabled. A matching `refuse_if_exists` path uses the same refusal flow as `disabled_reason`. `list` reports `usable: false` and the reason; `show` prints its declaration with the same status. `check`, `start`, and `resume` refuse with exit 2 before invoking the CLI. Existing runs still support status, notes, and cancellation when process ownership is confirmed. Resume checks the saved declaration and the current selected adapter for a disable decision; other current settings never replace the saved snapshot. The existing user-over-bundled selection rule still applies.
+
+A resume contract mismatch refuses recovery without changing the saved run. When the current adapter declares `resume_contract`, the saved snapshot must carry the same value; a missing or different value requires a new run. Status remains available but omits the incompatible interactive recovery command. Adapters without this field keep their existing recovery behavior.
 
 ## Not Included
 
@@ -49,6 +55,7 @@ These exclusions concern the adapter requirements, not whether each CLI can deve
 | `verified` | `{"version", "on", "live_run"}` when checked against an installed CLI, else `null` |
 | `disabled_reason` | optional nonempty string; prevents checks and execution, while leaving the declaration available to inspect. Omit to enable; null, blank, and non-string values are invalid |
 | `refuse_if_exists` | optional list of nonempty path strings without NUL; any existing file or directory disables the adapter. `{env:NAME}` expands from the runner environment; an unset variable skips that entire entry. Omitted or empty lists add no restriction. Resume checks both saved and current declarations |
+| `resume_contract` | optional nonempty string without NUL; a current declaration requires the saved adapter snapshot to carry the same value before recovery. Saved records are not migrated or rewritten |
 | `help` | list of `{"args", "flags"}`: literal subcommands followed by `--help`; `check` requires exit 0 and every flag in the output |
 | `prompt` | `stdin`, or `file` with `{prompt_file}` in the templates. A prompt on the command line is refused |
 | `access` | `read-only` (required), optional `workspace-write` and `native-write`, each a list of flags. A missing level is refused |
