@@ -293,6 +293,21 @@ class VerifySkillsTest(unittest.TestCase):
         )
         self.assert_error_contains("possible private key or access token")
 
+    def test_rejects_access_tokens_with_their_service_prefixes(self) -> None:
+        for prefix, length in (("ghp_", 36), ("github_pat_", 82), ("glpat-", 20), ("sk-", 20)):
+            with self.subTest(prefix=prefix):
+                (self.repo_root / "leaked.txt").write_text(
+                    prefix + "A" * length + "\n", encoding="utf-8"
+                )
+                self.assert_error_contains("possible private key or access token")
+
+    def test_short_access_token_placeholders_are_allowed(self) -> None:
+        (self.repo_root / "example.txt").write_text(
+            "\n".join(prefix + "example" for prefix in ("ghp_", "github_pat_", "glpat-", "sk-")),
+            encoding="utf-8",
+        )
+        self.assertEqual(validate_repository(self.repo_root), [])
+
     def test_rejects_plaintext_credential_filename(self) -> None:
         (self.repo_root / "credentials.md").write_text("redacted\n", encoding="utf-8")
         self.assert_error_contains("plaintext credential file must not be tracked")

@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- `verify_skills.py` 的密钥检查改用服务的真实前缀 `ghp_`、`github_pat_`、`glpat-`、`sk-`。之前写成 `ghp-`、`github_pat-`，真实的 GitHub token 查不出来。
 - `install.ps1` 和 `install.sh` 现在也认 `CLAUDE_CONFIG_DIR`，优先级是显式参数 > `CLAUDE_HOME` > `CLAUDE_CONFIG_DIR` > `~/.claude`。之前用这个变量换了 Claude 配置目录的机器上，技能和基线块仍然装到 `~/.claude`，安装后 Claude Code 读不到。
 
 - `agent_config.py` 的 `set-role` 和 `check` 支持 `--executable cli:model=path`，同一个 CLI 的不同模型可以使用各自的启动器，模型 ID 完全匹配时优先于 `cli=path`；原有按 CLI 指定启动器的用法不变，同一选择器重复出现时仍由后面的路径覆盖前面的。

@@ -37,7 +37,7 @@ SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$")
 FORBIDDEN_TERMS_ENV = "RUMO_FORBIDDEN_TERMS_FILE"
 FORBIDDEN_SECRET_PATTERNS = (
     re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----"),
-    re.compile(r"\b(?:ghp|github_pat|glpat|sk)-[A-Za-z0-9_-]{20,}\b"),
+    re.compile(r"\b(?:ghp_|github_pat_|glpat-|sk-)[A-Za-z0-9_-]{20,}\b"),
 )
 FORBIDDEN_TRACKED_NAMES = {
     ".env",
