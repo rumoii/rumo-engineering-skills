@@ -1869,7 +1869,7 @@ class ReliabilityContractTest(Harness):
         result = self.start("claude")
         self.assertEqual(result.returncode, 0, result.stderr)
         info = json.loads(result.stdout)
-        self.assertEqual(info["interactive_resume"]["argv"][:2], [sys.executable, str(self.fake)])
+        self.assertEqual(info["interactive_resume"]["argv"][:2], [sys.executable, str(self.fake.resolve())])
         for executable in (["D:/tools/custom.cmd"], ["D:/tools/custom.bat"]):
             meta = {"adapter": BUNDLED["claude"], "executable": executable}
             self.assertEqual(agent_run.interactive_argv(meta, "sid")[:len(executable)], executable)
@@ -1879,8 +1879,8 @@ class ReliabilityContractTest(Harness):
         result = self.run_script("show", "claude", "--access", "read-only", "--executable", str(self.fake))
         self.assertEqual(result.returncode, 0, result.stderr)
         shown = json.loads(result.stdout)
-        self.assertEqual(shown["start"][:2], [sys.executable, str(self.fake)])
-        self.assertEqual(shown["resume"][:2], [sys.executable, str(self.fake)])
+        self.assertEqual(shown["start"][:2], [sys.executable, str(self.fake.resolve())])
+        self.assertEqual(shown["resume"][:2], [sys.executable, str(self.fake.resolve())])
         self.assertFalse(self.log.exists())
 
 

@@ -192,7 +192,7 @@ class LaneLaunchTest(unittest.TestCase):
                     launcher = Path(directory) / ("custom launcher" + suffix)
                     launcher.write_text("", encoding="utf-8")
                     code, popen, client = self.invoke(["--executable", str(launcher), "--model", "named-model", "--effort", "high"])
-                    expected = [sys.executable, str(launcher)] if suffix == ".py" else [str(launcher)]
+                    expected = [sys.executable, str(launcher.resolve())] if suffix == ".py" else [str(launcher.resolve())]
                     self.assertEqual(code, 0)
                     self.assertEqual(popen.call_args.args[0], [*expected, "app-server", "--stdio"])
                     start = next(call.args[1] for call in client.request.call_args_list if call.args[0] == "thread/start")
