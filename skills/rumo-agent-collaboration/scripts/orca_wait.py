@@ -5,7 +5,8 @@ For any agent CLI. Run it as a background command in a client that reports
 when a command exits; it polls `orca terminal read` and the agent state that
 Orca's hooks publish in `orca worktree ps`, and ends with one line:
 
-  0 done       the report file changed after the wait began and the screen shows one of the markers
+  0 done       Orca shows the turn ended, the report file changed after the wait began, and one of
+               the markers is in the last lines of the screen
   6 attention  Orca has shown the agent blocked on an approval or waiting on a question for --attention seconds
   3 idle       the screen has not changed for --idle seconds, or Orca has shown the turn ended for
                --attention seconds without done: finished, asking, or waiting for approval
@@ -13,11 +14,12 @@ Orca's hooks publish in `orca worktree ps`, and ends with one line:
   5 lost       every read failed for --lost seconds
   2 usage error
 
-Agents without Orca hooks, or with a lagging hook state, still end in idle.
-The attention line names the prompt's start; pass it back as --seen to wait
-again without reporting the same prompt, which then ends in idle if nobody
-answers it. Without --marker the report alone means done, and without
---report the marker alone; with neither, done never ends the wait.
+Agents without Orca hooks, or with a lagging hook state, never reach done and
+end in idle. The attention line names the prompt's start; pass it back as
+--seen to wait again without reporting the same prompt, which then ends in idle
+if nobody answers it. Without --marker the report alone completes a finished
+turn, and without --report the marker alone; with neither, done never ends the
+wait.
 Interrupting the wait leaves the agent running.
 """
 
@@ -40,6 +42,10 @@ STALE = {"terminal_handle_stale"}
 TIMED = {"blocked", "waiting", "done"}
 # A hung orca call counts as one failed read rather than blocking the wait.
 CALL_TIMEOUT = 30
+# Non-blank screen lines, counted from the bottom, that may hold the end marker: the agent's last
+# message plus what a CLI draws below it. A finished Claude Code turn with a six-line status line
+# put about twelve such lines under the agent's last line.
+MARKER_LINES = 20
 
 Orca = Callable[[list[str]], "dict | None"]
 
@@ -123,11 +129,15 @@ def summary(value: object, limit: int = 200) -> str:
     return text if len(text) <= limit else text[:limit] + "…"
 
 
-def finished(screen: str, report: Path | None, markers: list[str] | None, since: float) -> str | None:
-    """What ended the work: the marker on screen, or the report when no marker is given; None while it runs."""
-    if report is None and not markers:
+def finished(screen: str, report: Path | None, markers: list[str] | None, since: float,
+             turn_ended: bool) -> str | None:
+    """What ended the work once Orca shows the turn ended: the marker the agent printed last, or the report
+    when no marker is given; None while it runs."""
+    if not turn_ended or (report is None and not markers):
         return None
-    shown = next((m for m in markers if m in screen), None) if markers else None
+    # A marker higher up can be an earlier round's, an echoed message, or a printed brief.
+    bottom = [line for line in screen.splitlines() if line.strip()][-MARKER_LINES:]
+    shown = next((m for line in reversed(bottom) for m in markers if m in line), None) if markers else None
     if markers and shown is None:
         return None
     try:
@@ -159,10 +169,10 @@ def wait(poll: Callable[[], tuple[str, str]], report: Path | None, markers: list
             last_ok = now
             if value != last_screen:
                 last_screen, changed_at = value, now
-            ended = finished(value, report, markers, since)
+            state = agent() if agent else None
+            ended = finished(value, report, markers, since, bool(state) and state.get("state") == "done")
             if ended:
                 return EXIT_DONE, f"done / 已结束: {ended}"
-            state = agent() if agent else None
             # No reply or no matching pane says nothing about the prompt, so it keeps the timer running.
             if state and state.get("state") in TIMED:
                 started = str(state.get("stateStartedAt") or "")

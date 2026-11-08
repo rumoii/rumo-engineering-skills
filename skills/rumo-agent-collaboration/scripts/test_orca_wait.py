@@ -107,7 +107,8 @@ class WaitTest(unittest.TestCase):
         def on_read(count: int) -> None:
             if count == 3:
                 self.write_report(time.time() + 5)
-        orca = Orca([screen("brief says: reply 1B 完成"), screen("working"), screen("1B 完成")], on_read=on_read)
+        orca = Orca([screen("brief says: reply 1B 完成"), screen("working"), screen("1B 完成")], on_read=on_read,
+                    states=[ps("working"), ps("working"), ps("done")])
         code, line = self.run_wait(orca, self.report, "1B 完成")
         self.assertEqual(code, orca_wait.EXIT_DONE)
         self.assertIn(str(self.report), line)
@@ -124,8 +125,47 @@ class WaitTest(unittest.TestCase):
 
     def test_report_alone_counts_when_no_marker_is_given(self) -> None:
         self.write_report(time.time() + 5)
-        code, _ = self.run_wait(Orca([screen("anything")]), self.report)
+        code, _ = self.run_wait(Orca([screen("anything")], states=[ps("done")]), self.report)
         self.assertEqual(code, orca_wait.EXIT_DONE)
+
+    def test_old_marker_on_screen_is_not_done_while_the_turn_runs(self) -> None:
+        # The last round's marker stays on screen, and the agent rewrites its report mid-turn.
+        def on_read(count: int) -> None:
+            if count == 2:
+                self.write_report(time.time() + 5)
+        reads = [screen("X: DONE", "> next task", "." * i) for i in range(1, 6)]
+        code, _ = self.run_wait(Orca(reads, on_read=on_read, states=[ps("working")]), self.report, "X: DONE")
+        self.assertEqual(code, orca_wait.EXIT_IDLE)
+
+    def test_reports_the_marker_the_agent_printed_last(self) -> None:
+        # The orchestrator's message echoes both markers; the agent ends with the stop line.
+        self.write_report(time.time() + 5)
+        orca = Orca([screen("end with X: DONE or X: STOPPED", "working", "X: STOPPED", "", "")], states=[ps("done")])
+        code, line = self.run_wait(orca, self.report, ["X: DONE", "X: STOPPED"])
+        self.assertEqual(code, orca_wait.EXIT_DONE)
+        self.assertIn("marker 'X: STOPPED'", line)
+
+    def test_marker_above_the_cli_footer_is_done(self) -> None:
+        # Claude Code draws a timing line, a recap, the input box, and a status line under the last message.
+        self.write_report(time.time() + 5)
+        footer = ["✻ Cooked for 51s", "※ recap: the report is written", "  in /config)", "─" * 40, "❯", "─" * 40,
+                  *(f"status {i}" for i in range(6))]
+        orca = Orca([screen("X: DONE", "", *footer)], states=[ps("done")])
+        code, _ = self.run_wait(orca, self.report, "X: DONE")
+        self.assertEqual(code, orca_wait.EXIT_DONE)
+
+    def test_marker_far_above_the_bottom_is_not_done(self) -> None:
+        # The agent printed its brief, marker included, then ended its turn without the marker.
+        self.write_report(time.time() + 5)
+        orca = Orca([screen("X: DONE", *(f"output {i}" for i in range(30)))], states=[ps("done")])
+        code, line = self.run_wait(orca, self.report, "X: DONE")
+        self.assertEqual(code, orca_wait.EXIT_IDLE)
+        self.assertIn("turn ended", line)
+
+    def test_marker_and_report_without_agent_state_end_in_idle(self) -> None:
+        self.write_report(time.time() + 5)
+        code, _ = self.run_wait(Orca([screen("X: DONE")], states=[ps(None)]), self.report, "X: DONE")
+        self.assertEqual(code, orca_wait.EXIT_IDLE)
 
     def test_idle_after_unchanged_screen_and_changes_reset_the_timer(self) -> None:
         reads = [screen("a")] * 5 + [screen("b")] + [screen("b")] * 10
@@ -138,7 +178,7 @@ class WaitTest(unittest.TestCase):
     def test_any_of_several_markers_ends_the_wait(self) -> None:
         # The brief names one line for finishing and one for stopping to ask; either ends the wait.
         self.write_report(time.time() + 5)
-        code, line = self.run_wait(Orca([screen("5A 暂停")]), self.report, ["5A 完成", "5A 暂停"])
+        code, line = self.run_wait(Orca([screen("5A 暂停")], states=[ps("done")]), self.report, ["5A 完成", "5A 暂停"])
         self.assertEqual(code, orca_wait.EXIT_DONE)
         self.assertIn("5A 暂停", line)
 
@@ -190,10 +230,11 @@ class WaitTest(unittest.TestCase):
         code, _ = self.run_wait(Orca(reads, states=[ps("blocked"), ps("working")]))
         self.assertEqual(code, orca_wait.EXIT_IDLE)
 
-    def test_done_wins_over_attention(self) -> None:
+    def test_prompt_wins_over_marker_and_report(self) -> None:
+        # An agent at an approval prompt has not ended its turn, whatever the screen shows.
         self.write_report(time.time() + 5)
         code, _ = self.run_wait(Orca([screen("1B 完成")], states=[ps("blocked")]), self.report, "1B 完成")
-        self.assertEqual(code, orca_wait.EXIT_DONE)
+        self.assertEqual(code, orca_wait.EXIT_ATTENTION)
 
     def test_missing_pane_or_failed_ps_falls_back_to_screen_idle(self) -> None:
         for states in ([ps(None)], [None], [failure("runtime_unavailable")], [{"ok": True, "result": []}]):
@@ -248,16 +289,17 @@ FAKE_ORCA = textwrap.dedent(
     with open(os.environ["FAKE_LOG"], "a", encoding="utf-8") as log:
         log.write(json.dumps(sys.argv[1:]) + "\n")
     agent_state = os.environ.get("FAKE_AGENT_STATE")
+    state = Path(os.environ["FAKE_STATE"])
     if sys.argv[1:3] == ["terminal", "show"]:
         print(json.dumps({"ok": True, "result": {"terminal": {"tabId": "tab", "leafId": "leaf"}}}))
         sys.exit()
     if sys.argv[1:3] == ["worktree", "ps"]:
-        # Orca leaves control characters raw inside agent messages.
+        # The turn ends with the second read; Orca leaves control characters raw inside agent messages.
+        ended = state.exists() and int(state.read_text()) >= 2
         print('{"ok": true, "result": {"worktrees": [{"agents": [{"paneKey": "tab:leaf", "state": "%s", '
               '"toolName": "WebFetch", "toolInput": "x", "stateStartedAt": 5, "lastAssistantMessage": "a\x1bb\tc"}]}]}}'
-              % (agent_state or "working"))
+              % (agent_state or ("done" if ended else "working")))
         sys.exit()
-    state = Path(os.environ["FAKE_STATE"])
     count = int(state.read_text()) + 1 if state.exists() else 1
     state.write_text(str(count))
     if count == 2 and not agent_state:

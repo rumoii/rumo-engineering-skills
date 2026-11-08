@@ -31,7 +31,7 @@ When this client runs background commands and reports their exit, as Claude Code
 
 Run `scripts/orca_wait.py --terminal <handle> --report <report path> --marker <end line>`, resolved from this skill's directory, for every agent, with one `--marker` for each end line the brief names, such as one for finishing and one for stopping. It only reads Orca and exits with one line:
 
-- done: the report changed after the wait began and one of the markers is on screen; the line names which.
+- done: Orca has shown the agent's turn ended, the report changed after the wait began, and one of the markers is in the last lines of the screen; the line names the lowest one. A marker higher up, from an earlier round, an echoed message, or a printed brief, does not count. An agent whose state Orca does not report never reaches done and ends in idle.
 - attention: Orca has shown the agent at an approval or question prompt for `--attention` seconds, 60 by default.
 - idle: Orca has shown the agent's turn ended for `--attention` seconds without done, for example a stop report whose line differs from the marker, or the screen has not changed for `--idle` seconds, 200 by default. The screen check covers agents whose state Orca does not report.
 - stopped: the terminal exited or its handle went stale.
