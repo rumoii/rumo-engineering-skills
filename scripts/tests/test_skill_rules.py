@@ -88,6 +88,7 @@ RULES = {
         "It never commits, pushes, merges, or deploys;",
         "An unmerged, dirty, linked-to, or unprovable worktree: keep it, say why, and ask what to do.",
         "Do not repair links during a wrap-up.",
+        "A decision the agent made stays marked unconfirmed until the user confirms it.",
     ),
     "rumo-interface": (
         "A search is discovery, not proof of absence.",
