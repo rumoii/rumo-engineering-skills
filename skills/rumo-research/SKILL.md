@@ -19,7 +19,7 @@ Resolve a technical uncertainty with evidence strong enough for the next decisio
 - For each decision-changing claim, keep the source location, applicable version or date, and the condition under which it holds. Link to the supporting section or cite a local file and line. Search snippets and product claims are leads until inspected.
 - Keep three kinds of support distinct: **documented** by a source, **implemented** in inspected code, and **observed** in a run you performed. Label your inference separately; none of these kinds automatically proves the others.
 - Resolve disagreement by checking versions, platform, configuration, and the workload. Several pages repeating one announcement are one source. When sources still disagree, describe the conflict and its effect on the decision.
-- Check the strongest plausible alternative against the same requirements. Include keeping the current approach when it is viable. Reject an option for a concrete constraint, not because it is unfamiliar or less popular.
+- Check the strongest plausible alternative against the same requirements, including what the host platform or a free substitute already provides. Include keeping the current approach when it is viable. Reject an option for a concrete constraint, not because it is unfamiliar or less popular.
 - Stop gathering material once the decision-changing uncertainties are resolved, or further work needs unavailable evidence. Report the remaining uncertainty instead of expanding the survey indefinitely.
 
 ## Test Feasibility When Needed
@@ -38,7 +38,7 @@ Use the criteria that affect this decision: capability fit, integration work, co
 
 Recommend an option and explain the trade-off, the uncertainty that could reverse it, and the next action. When an unresolved fact could invalidate the choice, make the recommendation conditional or say that the evidence does not yet select a winner.
 
-Keep research conclusions separate from user approval. When the request ends at research, hand back the answer; when it also asks for implementation, pass the selected constraints and unresolved questions to rumo-plan or the task's existing workflow. Do not start another agent or a downstream stage merely because it appears in the recommendation.
+When the request ends at research, hand back the answer; a choice of option or sequence alone does not authorize prototyping or implementation. Word each option as a choice, not an offer to start work. When the request also asks for implementation, pass the selected constraints and unresolved questions to rumo-plan or the task's existing workflow. Do not start another agent or a downstream stage merely because it appears in the recommendation.
 
 ## Boundaries
 
