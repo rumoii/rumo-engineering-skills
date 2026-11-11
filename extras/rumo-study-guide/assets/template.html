@@ -3,78 +3,85 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>学习讲义｜从一个完整例子开始</title>
+<title>学习讲义骨架</title>
 <link rel="icon" href="data:,">
+<!--
+  Skeleton, not a design. It carries the script hooks and the functional rules that
+  check_render.mjs exercises: themes, js-only, narrow screens, and printing light.
+  Design each guide for its own subject and reader, then add that design here.
+-->
 <style>
-:root{color-scheme:light;--bg:#f6f7f9;--fg:#1d2330;--muted:#536176;--card:#fff;--border:#78869a;--soft:#eef1f6;--accent:#185ac1;--accent-soft:#e3edff;--tip:#7041ad;--tip-soft:#f1eafc;--code:#f3f4f7;--font:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;--mono:"Cascadia Code",Consolas,monospace}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#12151b;--fg:#e4e8ef;--muted:#aeb9cb;--card:#1a1f27;--border:#718199;--soft:#222935;--accent:#8ab8ff;--accent-soft:#1d2b44;--tip:#c3a6f5;--tip-soft:#2a2140;--code:#1f252f}}
-:root[data-theme="dark"]{color-scheme:dark;--bg:#12151b;--fg:#e4e8ef;--muted:#aeb9cb;--card:#1a1f27;--border:#718199;--soft:#222935;--accent:#8ab8ff;--accent-soft:#1d2b44;--tip:#c3a6f5;--tip-soft:#2a2140;--code:#1f252f}
-*{box-sizing:border-box}html{scroll-padding-top:24px}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.8 var(--font);-webkit-text-size-adjust:100%}body.present{font-size:20px}a{color:var(--accent);overflow-wrap:anywhere}button,input,select{font:inherit}button,select{color:var(--fg);background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 10px;min-height:40px;max-width:100%}button,summary,label:has(input){cursor:pointer}input{accent-color:var(--accent)}:focus-visible{outline:3px solid var(--accent);outline-offset:3px}button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
-.shell{max-width:1200px;margin:auto;padding:28px 32px 72px}.hero{max-width:900px}.eyebrow{color:var(--accent);font-weight:700;font-size:.85em}h1{font-size:2.1em;line-height:1.35;letter-spacing:-.03em;margin:10px 0 20px}h2{font-size:1.5em;line-height:1.45;margin:0 0 16px}h3{font-size:1.15em;margin:24px 0 8px}p{margin:10px 0}ul,ol{padding-left:1.5em}.muted,.ref,figcaption{color:var(--muted);font-size:.88em}.intro{border-left:4px solid var(--accent);background:var(--accent-soft);padding:8px 18px}.toolbar{margin:24px 0;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:10px}.row{display:flex;flex-wrap:wrap;align-items:center;gap:12px}.toolbar details{margin-top:14px}.toolbar fieldset{border:0;padding:8px 0 0;margin:0;display:flex;flex-wrap:wrap;gap:8px 20px;min-width:0}.toolbar legend{color:var(--muted);font-size:.85em}.status{font-size:.85em;color:var(--muted)}.js-only{display:none!important}.js .js-only{display:revert!important}.js .toolbar.js-only{display:block!important}[hidden]{display:none!important}
-.book{display:grid;grid-template-columns:180px minmax(0,1fr);gap:36px}.toc{position:sticky;top:24px;align-self:start;border-top:2px solid var(--accent);padding-top:12px}.toc b{color:var(--muted);font-size:.85em}.toc a{display:block;padding:7px 0;text-decoration:none}main{min-width:0;max-width:800px;overflow-wrap:anywhere}.goals{padding:20px 24px;background:var(--card);border:1px solid var(--border);margin-bottom:32px}.goals h2{font-size:1.15em}.chapter{border-top:2px solid var(--border);padding-top:20px}.chapter-num{color:var(--accent);font-size:.85em}.badges{display:inline-flex;gap:6px;flex-wrap:wrap;vertical-align:middle}.badge{font-size:12px;line-height:1.8;font-weight:700;padding:1px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}.badge.time{background:var(--soft);color:var(--muted)}.evidence{border-left:3px solid var(--tip);background:var(--tip-soft);padding:8px 14px;margin:16px 0}.evidence strong{color:var(--tip)}
-.diagram{margin:16px 0;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px}.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.flow span{background:var(--soft);padding:7px 12px}.flow i{font-style:normal;color:var(--muted)}figcaption{margin-top:8px}pre,code{font-family:var(--mono);font-size:.88em;background:var(--code);border-radius:4px}code{padding:2px 4px;overflow-wrap:anywhere}pre{margin:10px 0;padding:14px;border:1px solid var(--border);white-space:pre-wrap;overflow-wrap:anywhere}pre code{font-size:inherit;padding:0}.walkpair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}.excerpt{min-width:0;margin:0}.walkpair ol{margin:8px 0}
-.quiz,.similar,.open{border-top:1px dashed var(--border);margin-top:24px;padding-top:4px}details.answer{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin:12px 0}summary{color:var(--accent)}details.answer[open] summary{margin-bottom:10px}.prediction{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;margin:20px 0}.lab-model{background:var(--card);border:1px solid var(--accent);border-radius:8px;padding:16px;margin:16px 0}.lab-model h3{margin-top:0}.range-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin:12px 0}.range-row input{grid-column:1/-1;width:100%;margin:0}.model-number{color:var(--accent);font-size:1.5em;font-variant-numeric:tabular-nums}.review{background:var(--soft);border-radius:8px;padding:20px;margin:28px 0}.review-card{border-top:1px solid var(--border);padding-top:12px}.mark{display:flex;gap:24px}.term{display:inline-block;max-width:100%;vertical-align:baseline}.term summary{display:inline;cursor:help;border-bottom:1px dotted var(--accent)}.term .tooltip{padding:8px 12px;border:1px solid var(--border);background:var(--card);font-size:.9em}.footer{margin-top:32px;border-top:1px solid var(--border);padding-top:16px;font-size:.85em;color:var(--muted)}
-.off-quiz .quiz,.off-predict .prediction,.off-similar .similar,.off-lab .lab-model,.off-walk .walkthrough,.off-review .review,.off-badges .badges,.off-open .open,.off-terms .term .tooltip{display:none!important}
-@media(max-width:900px){.shell{padding:20px}.book{grid-template-columns:1fr;gap:24px}.toc{position:static;display:flex;flex-wrap:wrap;gap:4px 20px}.toc b{width:100%}.toc a{padding:3px 0}.walkpair{grid-template-columns:1fr}}
-@media(max-width:500px){body{font-size:15px}.shell{padding:18px 16px 48px}h1{font-size:1.8em}h2{font-size:1.35em}.goals,.review,.toolbar{padding:14px}.badges{margin-top:6px}}
-@media print{html.js .toolbar.js-only,html.js .js-only,.toolbar,.toc,.js-only,.skip{display:none!important}:root,:root[data-theme],:root:not([data-theme="light"]){--bg:#fff;--fg:#000;--muted:#333;--card:#fff;--soft:#fff;--border:#777;--accent:#000;--accent-soft:#fff;--tip:#000;--tip-soft:#fff;--code:#fff}body,body.present{font-size:11pt;background:#fff;color:#000}.shell{padding:0}.book,.walkpair{display:block}main{max-width:none}h2,h3{break-after:avoid}pre,.diagram{break-inside:avoid}details::details-content{content-visibility:visible;display:block}details.answer>*{display:block!important}.term .tooltip{display:block!important}[data-component]{display:block!important}.badges{display:inline-flex!important}.chapter{border-top:1px solid #777}}
+:root{color-scheme:light;--bg:#fff;--fg:#1f2328;--muted:#59636e;--line:#d1d9e0}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--line:#3d444d}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--line:#3d444d}
+*{box-sizing:border-box}
+body{margin:0 auto;max-width:72rem;padding:0 16px 48px;background:var(--bg);color:var(--fg);font:16px/1.7 system-ui,"Microsoft YaHei",sans-serif}
+body.present{font-size:20px}
+main{min-width:0;overflow-wrap:anywhere}
+pre{white-space:pre-wrap}
+svg{max-width:100%;height:auto}
+.js-only{display:none!important}.js .js-only{display:revert!important}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.js .toolbar.js-only{display:flex!important}
+.status:empty{display:none}
+@media print{html.js .toolbar.js-only,html.js .js-only,.toolbar,.js-only{display:none!important}:root,:root[data-theme],:root:not([data-theme="light"]){--bg:#fff;--fg:#000;--muted:#333;--line:#999}body,body.present{font-size:11pt;max-width:none}details::details-content{content-visibility:visible;display:block}details.answer>*{display:block!important}}
 </style>
 </head>
 <body>
-<a class="skip" href="#goals">跳到学习目标</a>
-<div class="shell">
-<header class="hero">
-  <div class="eyebrow">学习讲义 / 待替换的通用示例</div>
-  <h1>从一个完整例子开始，<br>再试着自己解释。</h1>
-  <div class="intro"><p>这一章演示怎样学习“从 1 加到 n”。制作讲义时，请替换标题、读者目标、来源和示例；按内容选择组件。</p></div>
-  <p class="muted">示例读者：会读简单代码，想练习追踪计算。所有数字与代码都是教学示例，非项目实测；没有关联实际仓库或服务。</p>
-</header>
 <div class="toolbar js-only" aria-label="阅读设置">
-  <div class="row"><label for="theme">显示主题 <select id="theme"><option value="system">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label><button id="present" type="button" aria-pressed="false">投屏字号</button><label for="source-opener">打开源码用 <select id="source-opener"><option value="vscode">VS Code</option><option value="cursor">Cursor</option></select></label></div>
-  <details><summary>学习组件（可分别开关）</summary><fieldset><legend>开关只改变显示，不代表学习结果。</legend>
-    <label><input type="checkbox" data-toggle="quiz" checked> 分章自测</label>
-    <label><input type="checkbox" data-toggle="predict" checked> 先预测再揭晓</label>
-    <label><input type="checkbox" data-toggle="lab" checked> 参数小实验</label>
-    <label><input type="checkbox" data-toggle="walk" checked> 代码走读</label>
-    <label><input type="checkbox" data-toggle="similar" checked> 相似题</label>
-    <label><input type="checkbox" data-toggle="review" checked> 复习清单</label>
-    <label><input type="checkbox" data-toggle="badges" checked> 优先级与用时</label>
-    <label><input type="checkbox" data-toggle="open" checked> 开放复述题</label>
-    <label><input type="checkbox" data-toggle="terms" checked> 术语提示</label>
-  </fieldset></details>
-  <p class="status" id="storage-status" role="status">设置与“会 / 不会”自评只保存在此浏览器，不是掌握程度认证。</p>
+  <label for="theme">主题 <select id="theme"><option value="system">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label>
+  <button id="present" type="button" aria-pressed="false">投屏字号</button>
+  <label for="source-opener">打开源码用 <select id="source-opener"><option value="vscode">VS Code</option><option value="cursor">Cursor</option></select></label>
+  <p class="status" id="storage-status" role="status"></p>
 </div>
-<noscript><p class="intro">JavaScript 已关闭：正文、完整算例与折叠答案仍可阅读。参数调整和本地保存不可用。</p></noscript>
-<div class="book">
-<nav class="toc" aria-label="讲义目录"><b>阅读与复习</b><a href="#goals">学习目标</a><a href="#ch1">1 从输入追到结果</a><a href="#sources">来源与验证边界</a></nav>
+<nav aria-label="讲义目录"><a href="#jar">一个存钱罐</a> · <a href="#predict">先猜，再看</a> · <a href="#review">下次先做这题</a></nav>
 <main>
-<section class="goals" id="goals"><h2>读完后，试着完成</h2><ol><li>G1：逐步说出从 1 加到 4 的累加值。</li><li>G2：预测把终点从 4 改成 5 后，结果增加多少，并说明原因。</li></ol><p class="muted">冲刺安排示例：先看完整算例 3 分钟，再闭卷作答 2 分钟；下次打开先重答。用时是建议，可按自己的基础调整。</p></section>
-<section class="chapter" id="ch1">
-  <header><span class="chapter-num">第一章 / 输入、过程、结果</span><h2>多加一个数，结果怎样变？ <span class="badges" data-component="badges"><span class="badge">P0 能独立解释</span><span class="badge time">预计 5 分钟</span></span></h2></header>
-  <p>本章问题：从 1 加到 4 得到多少？终点增加 1，结果也只增加 1 吗？</p>
-  <h3 id="principle">讲解：每一步都把下一个数加入总数</h3>
-  <p>从 0 开始，每次加入一个整数，直到包含终点 n。这个过程叫累加：总数保留前面各步的结果，再接着加。</p>
-  <details class="term" data-component="terms"><summary>术语提示：累加器</summary><div class="tooltip">用于保存中间总数的变量。本例中的 total 就是累加器；每一步更新后，保留截至当前的和。</div></details>
-  <figure class="diagram"><div class="flow" aria-label="从输入到输出"><span>输入：n = 4</span><i aria-hidden="true">→</i><span>依次加入 1、2、3、4</span><i aria-hidden="true">→</i><span>输出：10</span></div><figcaption>教学示意：终点也参与相加；不代表任何实际系统的调用链。</figcaption></figure>
-  <div class="evidence"><strong>教学示例，非实测</strong><p>只讨论 1 到 20 的正整数。手算和页面模型说明相同的规则，没有测量真实服务的性能。</p></div>
-  <h3 id="example">完整例子：从 1 加到 4</h3>
-  <p>输入 n = 4，初值 total = 0。依次变成 0 + 1 = 1，1 + 2 = 3，3 + 3 = 6，6 + 4 = 10。所以结果是 10。</p>
-  <div class="walkthrough" data-component="walk"><h3>代码走读：把每一行对回手算</h3><div class="walkpair"><figure class="excerpt"><pre><code>n = 4
+<noscript><p>JavaScript 已关闭：正文和答案照常能看，设置不能保存。</p></noscript>
+<header>
+  <p>第 1 章　约 6 分钟</p>
+  <h1>多加一个数，总数会怎么变</h1>
+  <p>购物车算总价、统计今天来了多少人，都在做同一件事：手里攥着一个“到目前为止的总数”，每来一个新东西就往上加。看懂这个小例子，以后读到类似的代码，你一眼就能看出它在攒什么。</p>
+  <p><b>读完你能：</b>不看代码，说出从 1 加到 4 每一步的总数；并预测终点从 4 变成 5 时，总数会多出多少。</p>
+</header>
+
+<section id="jar">
+  <h2>一个存钱罐</h2>
+  <p>想象一个存钱罐，一开始是空的。第一天放 1 块，第二天放 2 块……罐子里的钱就是“到目前为止的总数”。程序里装这个总数的变量叫累加器，下面代码里的 <code>total</code> 就是。</p>
+  <figure>
+    <svg viewBox="0 0 480 90" role="img" aria-labelledby="jar-t">
+      <title id="jar-t">从空罐子开始，每天放进当天的钱，四天后罐子里有 10 块</title>
+      <g font-size="14" fill="currentColor" text-anchor="middle">
+        <rect x="10" y="20" width="70" height="44" rx="6" fill="none" stroke="currentColor"/><text x="45" y="47">0</text>
+        <text x="100" y="38">+1</text>
+        <rect x="120" y="20" width="70" height="44" rx="6" fill="none" stroke="currentColor"/><text x="155" y="47">1</text>
+        <text x="210" y="38">+2</text>
+        <rect x="230" y="20" width="70" height="44" rx="6" fill="none" stroke="currentColor"/><text x="265" y="47">3</text>
+        <text x="320" y="38">+3 +4</text>
+        <rect x="350" y="20" width="70" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/><text x="385" y="47">10</text>
+      </g>
+    </svg>
+    <figcaption>放了 4 天，罐子里一共 10 块。示意图：每份讲义按自己的设计画。</figcaption>
+  </figure>
+  <p>下面几行 Python 做的就是存钱罐的事。这段代码是为讲解写的小例子，不来自真实项目。<!-- Placeholder path; replace with a checked reference, then run link_refs.py. --><a href="vscode://file//path/to/repo/src/example.py:3" data-p="src/example.py" data-l="3" data-s="total" data-abs="/path/to/repo/src/example.py">看原文</a></p>
+  <pre><code>n = 4
 total = 0
 for value in range(1, n + 1):
     total += value
-print(total)</code></pre><figcaption>Python 教学片段，未运行。预期结果来自上面的手算。</figcaption></figure><ol><li>设定终点，并用 0 保存初值。</li><li><code>range(1, n + 1)</code> 包含 1 到 n。</li><li>每轮将当前整数加到 total。</li><li>打印最终总数；手算预期为 10。</li></ol></div></div>
-  <div class="similar" data-component="similar"><h3>相似题 · G1</h3><p>现在换成 n = 3，不看上面的例子，说出每一步的总数。</p><details class="answer"><summary>先自己答，再看解释</summary><p>从 0 开始，依次是 1、3、6。第三步加的是 3，而不是再加 1。<a href="#example">回看完整例子</a>。</p></details></div>
-  <div class="prediction" data-component="predict"><h3>先预测再揭晓 · G2</h3><p>把 n 从 4 改成 5，结果会增加 1、4，还是 5？先说理由。</p><details class="answer"><summary>说完预测，再揭晓</summary><p>增加 5。原来的 1 + 2 + 3 + 4 保留，再加一个新终点 5，得到 15。不是只把总数加 1。<a href="#principle">回看累加规则</a>。</p></details></div>
-  <div class="lab-model" data-component="lab"><h3>参数小实验：只改变终点</h3><p>先预测一次，再展开下方结果；随后改变 n，比较你预测的增量与结果。</p><details class="answer"><summary>揭晓模型并调整参数</summary><div class="range-row js-only"><label for="sum-n">终点 n</label><output id="sum-n-value" for="sum-n">4</output><input id="sum-n" type="range" min="1" max="20" step="1" value="4"></div><p>模型算式：<output id="sum-formula">4 × (4 + 1) ÷ 2</output> = <output class="model-number" id="sum-result" aria-live="polite">10</output></p><p class="muted">教学模型：1 + … + n = n × (n + 1) ÷ 2。无脚本时显示 n = 4 的静态算例。<a href="#example">回看逐步累加</a>。</p></details></div>
-  <div class="quiz" data-component="quiz"><h3>分章自测 · G1 / G2</h3><p>不看正文，从 1 加到 6 得到多少？它比从 1 加到 5 多多少，为什么？</p><details class="answer"><summary>先自己答，再看答案与原因</summary><p>结果是 21，比 15 多 6。前五项不变，只多出第六项 6。若你答“多 1”，把终点的增量误当成了总数的增量。<a href="#principle">回看规则</a> / <a href="#example">回看完整例子</a>。</p></details></div>
-  <div class="open" data-component="open"><h3>先自己讲一遍再看</h3><p>向一个没看过本页的人解释：循环怎样保留前面的和？为什么终点加 1，总数会增加新的终点？</p><details class="answer"><summary>参考讲法与自评要点</summary><p>total 保留到上一步的总数，每轮再加入当前整数。n 从 4 到 5 时，前四项仍是 10，新增一项 5，总数为 15。自评时检查是否说清“保留旧总数”“加入当前项”“包含终点”。措辞可以不同。<a href="#example">回看例子</a>。</p></details></div>
-  <section class="review" data-component="review" aria-labelledby="review-title"><h3 id="review-title">下次打开，合上正文再试</h3><p>这是你自己的“会 / 不会”记录。下次可先重答，再调整标记；标“会”不代表已通过独立测验。</p><article class="review-card" data-review="g2"><p>n 从 6 变成 7，总数怎样变化？先说规则，再给结果。</p><fieldset class="mark js-only"><legend>我的自评</legend><label><input type="radio" name="review-g2" value="yes"> 会</label><label><input type="radio" name="review-g2" value="no"> 不会</label></fieldset><details class="answer"><summary>重答后查看解释</summary><p>增加新的一项 7，从 21 变成 28。<a href="#principle">回看规则</a>，再换一个终点重新试。</p></details></article></section>
+print(total)</code></pre>
 </section>
-<footer class="footer" id="sources"><h2>来源与验证边界</h2><p>本页是待替换的通用模板，数学、代码和问题均为教学编排。没有实际项目引用；代码片段未运行。真实讲义应填写素材版本、来源与检查记录。</p><p>源码标注示意（路径为占位，替换为真实引用后再检查）：<a class="ref" href="vscode://file//path/to/repo/src/example.py:3" data-p="src/example.py" data-l="3" data-s="total" data-abs="/path/to/repo/src/example.py">src/example.py:3</a></p><p>示例构建占位符（下面为可见说明，不会运行）：</p><pre><code>&lt;!--CODE:examples/sum.py--&gt;
-&lt;!--SNIPPET:examples/sum.py--&gt;
-&lt;!--OUT:examples/sum.py--&gt;</code></pre><p>交付时分别记录：引用定位、内容核对、页面可用、学习效果。学习效果等待读者反馈，不能从页面运行正常推定。</p></footer>
-</main></div></div>
+
+<section id="predict">
+  <h2>先猜，再看</h2>
+  <p>如果放 5 天而不是 4 天，罐子里会多出多少？1 块、4 块，还是 5 块？</p>
+  <details class="answer"><summary>看答案</summary><p>多 5 块。前 4 天的 10 块都还在，第 5 天再放进 5 块，一共 15。<a href="#jar">回看存钱罐</a></p></details>
+  <details class="answer"><summary>打开滑块自己调</summary><div class="js-only"><label for="sum-n">放几天</label> <output id="sum-n-value" for="sum-n">4</output> <input id="sum-n" type="range" min="1" max="20" step="1" value="4"></div><p>用公式算：<output id="sum-formula">4 × (4 + 1) ÷ 2</output> = <output id="sum-result" aria-live="polite">10</output>。</p></details>
+</section>
+
+<section id="review" aria-labelledby="review-title">
+  <h2 id="review-title">下次打开，先做这题</h2>
+  <article data-review="g2"><p>放的天数从 6 变成 7，总数怎么变？</p><fieldset class="js-only"><legend>这题我</legend><label><input type="radio" name="review-g2" value="yes"> 会</label> <label><input type="radio" name="review-g2" value="no"> 还不会</label></fieldset><details class="answer"><summary>看答案</summary><p>多出第 7 天的 7 块，从 21 变成 28。<a href="#jar">回看存钱罐</a></p></details></article>
+</section>
+</main>
 <script>
 (() => {
   'use strict';
@@ -82,14 +89,14 @@ print(total)</code></pre><figcaption>Python 教学片段，未运行。预期结
   const one = selector => document.querySelector(selector);
   const all = selector => [...document.querySelectorAll(selector)];
   // Replace this key for each delivered guide and content revision.
-  const KEY = 'study-guide-generic-sum-v1';
+  const KEY = 'study-guide-skeleton-v1';
   const refs = all('a[data-abs]');
   const sourceChoices = ['vscode', 'cursor'];
   if (refs.some(el => el.hasAttribute('data-web'))) {
     sourceChoices.push('web');
     one('#source-opener').add(new Option('网页', 'web'));
   }
-  const notice = () => { one('#storage-status').textContent = '本地保存不可用；阅读与操作照常，本次选择仅在当前页面有效。'; };
+  const notice = () => { one('#storage-status').textContent = '本地保存不可用，设置只在本次有效。'; };
   let saved = {};
   try {
     const parsed = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -100,9 +107,8 @@ print(total)</code></pre><figcaption>Python 教学片段，未运行。预期结
     source: sourceChoices.includes(saved.source) ? saved.source :
       (refs[0]?.dataset.web && /^https?:/.test(refs[0].getAttribute('href')) ? 'web' : 'vscode'),
     present: saved.present === true,
-    toggles: {}, review: {}
+    review: {}
   };
-  for (const el of all('[data-toggle]')) state.toggles[el.dataset.toggle] = saved.toggles?.[el.dataset.toggle] !== false;
   for (const el of all('[data-review]')) {
     const value = saved.review?.[el.dataset.review];
     if (['yes', 'no'].includes(value)) state.review[el.dataset.review] = value;
@@ -123,10 +129,6 @@ print(total)</code></pre><figcaption>Python 教学片段，未运行。预期结
     }
     document.body.classList.toggle('present', state.present);
     one('#present').setAttribute('aria-pressed', String(state.present));
-    for (const el of all('[data-toggle]')) {
-      el.checked = state.toggles[el.dataset.toggle];
-      root.classList.toggle('off-' + el.dataset.toggle, !el.checked);
-    }
     for (const el of all('[data-review] input[type="radio"]')) {
       el.checked = state.review[el.closest('[data-review]').dataset.review] === el.value;
     }
@@ -134,7 +136,6 @@ print(total)</code></pre><figcaption>Python 教学片段，未运行。预期结
   one('#theme').addEventListener('change', event => { state.theme = event.target.value; apply(); save(); });
   one('#source-opener').addEventListener('change', event => { state.source = event.target.value; apply(); save(); });
   one('#present').addEventListener('click', () => { state.present = !state.present; apply(); save(); });
-  for (const el of all('[data-toggle]')) el.addEventListener('change', () => { state.toggles[el.dataset.toggle] = el.checked; apply(); save(); });
   for (const el of all('[data-review] input[type="radio"]')) el.addEventListener('change', () => { state.review[el.closest('[data-review]').dataset.review] = el.value; save(); });
   // Demonstration model: optional, so a guide that removes it still initializes.
   one('#sum-n')?.addEventListener('input', event => {

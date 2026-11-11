@@ -1,160 +1,180 @@
 # Learning Components
 
-Read this when selecting markup. Copy the single-file template, then replace
-its content. These fragments use its classes; keep ids unique and update every
-review link after renaming a section. Use the optional-component criteria in
-[writing.md](writing.md), not every component in every chapter.
+Read this when selecting markup. The fragments show structure only; their class
+names are suggestions, and each guide styles them in its own design. Keep the
+hooks under Script Hooks, keep ids unique, and update every return link after
+renaming a section. Use the component criteria in
+[writing.md](writing.md); not every component belongs in every chapter.
 
-## Chapter Self-Test And Similar Task
+## Script Hooks
 
-Ask for an independent answer, then offer reasoning and a precise return link.
-Keep answers in native details so they work without JavaScript. Repeat this
-structure in each chapter, not just once at the end of a long guide.
+The template script and `check_render.mjs` rely on these; keep them in any design:
+
+- `html.js` added at the end of initialization; elements with `js-only` stay hidden without it.
+- Toolbar controls `#theme` (system/light/dark), `#present`, and `#source-opener`
+  labeled “打开源码用”, plus an empty `#storage-status` for storage failures.
+- Guarded `localStorage` reads and writes under a storage key unique to the guide.
+- Answers in native `details.answer` elements whose text is in the HTML.
+- A print rule that sets white paper and dark text for `:root`, `:root[data-theme]`,
+  and `:root:not([data-theme="light"])`, so manual and system dark themes print light.
+  Theme rules added later win over an earlier print rule of equal specificity, so
+  a design that adds its own color variables restates every one of them in a print
+  rule after its theme rules.
+- `a[data-abs]` source links rewritten by the opener selector.
+
+## Chapter Opening
+
+Open with why the reader should care and a goal the reader can attempt. For a
+dated sprint, put the priority and estimated time in the kicker line, defined
+for this reader; estimates are planning judgments, not measured learning speed.
 
 ```html
-<div class="quiz" data-component="quiz">
-  <h3>分章自测 · G1</h3>
-  <p>从 1 加到 6 的结果是多少？比加到 5 多多少？</p>
-  <details class="answer">
-    <summary>先自己答，再看答案与原因</summary>
-    <p>结果是 21，多 6，因为只新增第六项。<a href="#principle">回看规则</a>。</p>
-  </details>
+<header>
+  <p class="kicker">第 2 章　P0　约 15 分钟</p>
+  <h1>多加一个数，总数会怎么变</h1>
+  <p class="lead">购物车算总价、统计访问量，都在做同一件事：……</p>
+  <div class="goal"><b>读完你能</b>不看代码，说出从 1 加到 4 每一步的总数。</div>
+</header>
+```
+
+## Term Note And Key Sentence
+
+Explain a term where it first appears, in the paragraph or in a note placed
+beside it; on narrow screens the note sits inline before the paragraph. Mark at
+most one key sentence per section.
+
+```html
+<aside class="note"><b>累加器</b>：装“到目前为止的总数”的变量，比如 total。</aside>
+<p>……程序里装这个总数的变量叫<span class="term">累加器</span>。</p>
+<p><span class="key">罐子里原来的钱从来不倒掉，每次只是往里再放一点。</span></p>
+```
+
+## Figure
+
+Draw the mechanism as inline SVG: boxes for the parts, arrows for what passes
+between them, labels in the reader's words. Give it a `title` for screen
+readers, take colors from the page's CSS variables so both themes stay legible,
+and put it beside the paragraph it explains. When labels would shrink below
+reading size on a narrow screen, let the figure scroll inside its own box
+rather than the page.
+
+```html
+<figure>
+  <svg viewBox="0 0 520 300" role="img" aria-labelledby="pipe-title">
+    <title id="pipe-title">agent 把要求交给派活脚本，脚本读 adapter 后启动 Codex</title>
+    <!-- boxes, arrows, and labels for this mechanism -->
+  </svg>
+  <figcaption>一句话说明这张图要读者看出什么。</figcaption>
+</figure>
+```
+
+## Code Walkthrough
+
+Pair a short real excerpt with a plain-language translation, line by line.
+Say once, in plain words, when code was written for teaching rather than taken
+from the project. The pair stacks vertically on narrow screens.
+
+```html
+<div class="xlate">
+  <div class="h">代码</div><div class="h">白话</div>
+  <div class="o">total = 0</div><div>罐子先是空的。</div>
+  <div class="o">    total += value</div><div>把当天的钱放进罐子，原来的钱还在。</div>
 </div>
 ```
 
-After a complete worked example, use the same structure with `class="similar"`
-and `data-component="similar"` for a changed-input problem. Do not count revealing
-an answer as passing a test.
+## Self-Test And Similar Task
+
+Ask for an independent answer, then give the reasoning, the usual mistake, and
+a return link. Put a few in every chapter, not only at the end. After a worked
+example, ask the same task with one changed input. Revealing an answer is not
+passing a test.
+
+```html
+<section class="practice" id="practice">
+  <h2>自己试试</h2>
+  <div class="q">
+    <p>1. 从 1 加到 6 是多少？比从 1 加到 5 多多少？</p>
+    <details class="answer"><summary>看答案</summary>
+      <p>21，比 15 多 6。前五天的钱都在，只多了第六天的 6 块。<a href="#jar">回看存钱罐</a></p>
+    </details>
+  </div>
+</section>
+```
 
 ## Prediction Before Reveal
 
-Use when changing one condition helps reveal a mechanism. Ask for a reason;
-do not force an input or block further reading until the reader types something.
+Use when changing one condition reveals a mechanism. Ask for a reason; do not
+force input or block further reading.
 
 ```html
-<div class="prediction" data-component="predict">
-  <h3>先预测再揭晓</h3>
-  <p>终点从 4 改成 5，总数会增加多少？先说理由。</p>
-  <details class="answer"><summary>说完预测，再揭晓</summary>
-    <p>增加 5，因为新增一项 5。<a href="#principle">回看规则</a>。</p>
-  </details>
-</div>
+<p>如果放 5 天而不是 4 天，罐子里会多出多少？先想好理由再点开。</p>
+<details class="answer"><summary>看答案</summary>
+  <p>多 5 块。前 4 天的 10 块都还在，第 5 天再放进 5 块。<a href="#jar">回看存钱罐</a></p>
+</details>
 ```
 
 ## Parameter Experiment
 
-Keep the formula, assumptions, and initial worked value in static HTML. Only
-controls depend on JavaScript. This fragment uses the template's sum handler;
-replace both the calculation and its explanation for a different mechanism.
-The result stays folded until the reader chooses to reveal it.
+Keep the formula and the initial worked value in static HTML; only the control
+needs JavaScript. This fragment uses the template's sum handler; replace both
+the calculation and the explanation for a different mechanism, and do not paste
+a second copy with the same ids.
 
 ```html
-<div class="lab-model" data-component="lab">
-  <h3>参数小实验：只改变终点</h3><p>先预测，再展开并调整 n。</p>
-  <details class="answer"><summary>揭晓模型并调整参数</summary>
+<div class="lab">
+  <h3>自己调一调</h3><p>先猜一个数，再拖动滑块看结果。</p>
+  <details class="answer"><summary>打开滑块</summary>
     <div class="range-row js-only">
-      <label for="sum-n">终点 n</label><output id="sum-n-value" for="sum-n">4</output>
+      <label for="sum-n">放几天</label><output id="sum-n-value" for="sum-n">4</output>
       <input id="sum-n" type="range" min="1" max="20" step="1" value="4">
     </div>
-    <p>模型算式：<output id="sum-formula">4 × (4 + 1) ÷ 2</output> =
-      <output class="model-number" id="sum-result" aria-live="polite">10</output></p>
-    <p>教学模型，非实测。<a href="#example">回看逐步累加</a>。</p>
+    <p>用现成的公式算：<output id="sum-formula">4 × (4 + 1) ÷ 2</output> =
+      <output class="model-number" id="sum-result" aria-live="polite">10</output>。</p>
   </details>
 </div>
 ```
 
-Do not paste a second copy with the same ids. Extend the handler deliberately
-if the guide needs multiple models; keep outputs and labels tied to that model.
+## Open Retelling
 
-## Code Walkthrough
-
-Pair a short real excerpt with steps explaining what it does. Label invented
-or unrun code. Source references belong next to repository excerpts; code names
-alone do not prove a call path. The pair stacks vertically on narrow screens.
-
-```html
-<div class="walkthrough" data-component="walk">
-  <h3>代码走读</h3><div class="walkpair">
-    <figure class="excerpt"><pre><code>total += value</code></pre>
-      <figcaption>教学片段，未运行。</figcaption></figure>
-    <ol><li>读取此前的总数。</li><li>加上当前项并保存。</li></ol>
-  </div>
-</div>
-```
+Use for synthesis or interview preparation: ask the reader to explain the whole
+path aloud, then give the points a good answer covers. Different wording is fine.
+Use the self-test markup with a summary such as “看参考讲法”.
 
 ## Review List And Local Self-Reports
 
 Ask the reader to retry a core task in a later session. Use unique `data-review`
 values and radio group names; the template stores `yes` / `no` in localStorage.
-Keep its guarded reads and writes and choose a distinct storage key per guide
-and content revision. If storage fails, the lesson and current controls still
-work. Self-reports are the reader's judgment, not automatic mastery evidence.
+If storage fails, the lesson and current controls still work. A self-report is
+the reader's own judgment, not evidence of mastery.
 
 ```html
-<section class="review" data-component="review" aria-labelledby="review-title">
-  <h3 id="review-title">下次打开，合上正文再试</h3>
+<section class="review" id="review" aria-labelledby="review-title">
+  <h2 id="review-title">下次打开，先做这题</h2>
   <article class="review-card" data-review="g2">
-    <p>n 从 6 到 7，总数怎样变化？</p>
-    <fieldset class="mark js-only"><legend>我的自评</legend>
+    <p>放的天数从 6 变成 7，总数怎么变？</p>
+    <fieldset class="mark js-only"><legend>这题我</legend>
       <label><input type="radio" name="review-g2" value="yes"> 会</label>
-      <label><input type="radio" name="review-g2" value="no"> 不会</label>
+      <label><input type="radio" name="review-g2" value="no"> 还不会</label>
     </fieldset>
-    <details class="answer"><summary>重答后查看解释</summary>
-      <p>增加 7，从 21 到 28。<a href="#principle">回看规则</a>。</p>
+    <details class="answer"><summary>看答案</summary>
+      <p>多出第 7 天的 7 块，从 21 变成 28。<a href="#jar">回看存钱罐</a></p>
     </details>
   </article>
 </section>
 ```
 
-## Priority And Time
+## Source Link
 
-Use for a dated sprint, defining what each priority demands from this reader.
-Estimate time including practice; it is a plan, not a learning-speed measurement.
-
-```html
-<span class="badges" data-component="badges">
-  <span class="badge">P0 能独立解释</span>
-  <span class="badge time">预计 5 分钟</span>
-</span>
-```
-
-## Open Retelling
-
-Use for synthesis or spoken preparation. Give reference points and reasoning,
-allow different wording, and keep evaluation with the reader.
+Put a small “看原文” link after the sentence or code it supports, only where a
+reader may want to open the source. Do not collect links into an index at the
+end; the evidence record belongs in `report.md`. Replace the example path, line,
+and substring with checked evidence; all three attributes must be on the same
+anchor. The template's live example uses a placeholder path; replace it before
+delivering a guide.
 
 ```html
-<div class="open" data-component="open"><h3>先自己讲一遍再看</h3>
-  <p>解释 total 怎样保留此前的总数，并举一个变式。</p>
-  <details class="answer"><summary>参考讲法与自评要点</summary>
-    <p>先保留旧和，再加入当前项。检查是否说明这两点，并正确举例。
-      <a href="#example">回看例子</a>。</p>
-  </details>
-</div>
-```
-
-## Term Hint
-
-Use native details for mouse, touch, and keyboard access; no hover is required.
-Explain central terms in the normal paragraph as well. Avoid hiding essential
-definitions inside an optional component.
-
-```html
-<details class="term" data-component="terms"><summary>术语提示：累加器</summary>
-  <div class="tooltip">保存中间总数的变量，如 total。</div>
-</details>
-```
-
-## Source Annotation
-
-Replace the example path, line, and substring with checked evidence. All three
-attributes must occur on the same element. Visible text remains useful when
-editor links are unavailable. The template's live example uses a clearly labeled
-placeholder path; replace it before delivering a guide.
-
-```html
-<a class="ref" href="vscode://file//path/to/repo/src/example.py:3" data-p="src/example.py" data-l="3" data-s="total">src/example.py:3</a>
-<a class="ref" href="vscode://file//path/to/repo/lib/helpers.py:8" data-p="LIB:helpers.py" data-l="8" data-s="def combine">LIB:helpers.py:8</a>
+<a class="src" href="vscode://file//path/to/repo/src/example.py:3" data-p="src/example.py" data-l="3" data-s="total">看原文</a>
+<a class="src" href="vscode://file//path/to/repo/lib/helpers.py:8" data-p="LIB:helpers.py" data-l="8" data-s="def combine">看原文</a>
 ```
 
 After building examples, run the linker from the installed skill directory:
@@ -240,6 +260,7 @@ missing Playwright exits 2. Normal Node
 resolution or `PLAYWRIGHT_MODULE` locates Playwright; do not embed machine paths
 in the guide. `node --test scripts/test_check_render.mjs` uses temporary fixtures
 to check regressions; it explicitly skips when existing Playwright or Chromium
-is unavailable, without installing anything. Manually check answer correctness,
-explanation clarity, figure/text agreement, evidence links and self-report
-persistence; these browser checks do not establish learning.
+is unavailable, without installing anything. With `--out <dir>` it also saves
+a full-page screenshot for each width and theme; look at them before delivery.
+Answer correctness, plain language, and figure/text agreement still need a
+reader: see the cold read in SKILL.md. These checks do not establish learning.

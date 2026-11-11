@@ -12,6 +12,7 @@ Produce an evidence-backed, reusable HTML guide for explaining, applying, and re
 ### 1. Establish The Reader And Purpose
 
 Distinguish learning a system from preparing for a dated goal; confirm starting knowledge and target independence.
+Write a short reader profile: what the reader uses daily, which words they know, and what they have never opened.
 For interview, exam, or onboarding preparation, establish the deadline, study time, and success task.
 Ask when essential context is missing.
 Checkpoint: the reader, purpose, scope, and destination are known.
@@ -31,25 +32,29 @@ For repositories, record the commit and local changes, follow real call paths, a
 file:line evidence. Run suitable examples when authorized.
 For documents, preserve the source's claims and label added explanations.
 For outside topics, follow rumo-research; if unavailable, use primary sources, check applicability, and expose disagreements.
-Checkpoint: each key claim has a source or an explicit unknown label.
+Record each key claim, its source, and its label in `report.md` next to the guide.
+Checkpoint: each key claim has a source or an explicit unknown label in `report.md`.
 
 ### 4. Write The Learning Units
 
-Use question → explanation with adjacent figures → complete example → self-test.
+Read [references/voice.md](references/voice.md) before drafting; the text is written for the reader in the profile, not for an auditor.
+Use why care → explanation with adjacent figures → complete example → self-test.
 Read [references/components.md](references/components.md) when choosing markup.
 Distribute self-tests across chapters; the reader answers before the explanation unfolds, and each answer links back to its section.
 Follow examples with similar tasks and add a reusable review question set.
 Use prediction and experiments for mechanisms, code walkthroughs for code, and open retelling for synthesis.
 For sprints, include priorities, estimated time, and a self-reported review list.
-Label implemented behavior, inference, proposals, teaching-only examples, unchecked excerpts, and unresolved claims locally.
-Checkpoint: answers explain why and retain the source's limits.
+Keep evidence labels in `report.md`; in the text, state a limit plainly only where the reader would otherwise be misled.
+After drafting, trim with rumo-prose when it is installed.
+Checkpoint: answers explain why, terms are explained at first use, and the source's limits that matter to the reader remain.
 
-### 5. Build One Offline HTML File
+### 5. Design, Then Build One Offline HTML File
 
-Adapt [assets/template.html](assets/template.html); replace its demonstration content.
-Keep the left contents column, inline learning components, and component switches.
-Inline all styling, scripts, and illustrations; load no external resources.
-Keep system/manual themes, presentation size, print styles, narrow layout, no-JavaScript reading and answers, and guarded localStorage.
+Start from [assets/template.html](assets/template.html): a skeleton with the script hooks and functional rules, and no visual design.
+Before writing markup, add a short design plan to `report.md`: the visual direction and why it fits this subject and reader, four to six color tokens and the type, how wide screens are used with text and figures side by side and how narrow screens stack, and the figure each chapter needs.
+Follow the new-design process in rumo-frontend when it is installed; do not reuse an earlier guide's look by default.
+Keep the script hooks listed in [references/components.md](references/components.md).
+Whatever the look, the page must work offline with everything inlined, follow system and manual themes, offer presentation size, print light, fit a 390-pixel screen, show the lesson and answers without JavaScript, and survive blocked localStorage.
 Give each guide its own storage key; self-reports never certify mastery.
 Checkpoint: the entire core lesson is available offline without scripting.
 
@@ -63,10 +68,14 @@ Resolve bundled `scripts/...` paths from this installed skill directory; run bui
    Read [references/components.md](references/components.md) for link templates and options.
 3. `python scripts/verify_refs.py <guide.html> --root <dir> [--alias X=prefix/]... [--allow-empty]`
    on the built file, where `--root` is the source repository; require references unless the material truly contains none.
-4. `node scripts/check_render.mjs <guide.html> [--out <dir>]` on the final file.
+4. `node scripts/check_render.mjs <guide.html> --out <dir>` on the final file.
+Look at the saved screenshots against the design plan: no large empty areas on a wide screen, every figure beside the text it explains, figures legible in both themes.
 It checks widths/themes, errors, anchors, ids, external requests, initialization, expanded narrow layout, no-JS content, blocked storage, dark print colors, and source-switch persistence when links exist.
 If Playwright is absent, report exit 2; obtain approval before any installation.
-Manually check answer correctness, explanation clarity, agreement between figures and text, and evidence/review links.
+Cold read: give a fresh agent that has not seen the sources only the page text and the reader profile.
+It reads as that reader and lists every sentence it cannot follow, every term not yet explained, and every place that needs a picture; revise until the list is empty.
+When no fresh agent is available, say the cold read was not done and ask the user to read first.
+Manually check answer correctness, agreement between figures and text, and review links.
 Readability is not proof of learning.
 
 ### 7. Deliver With Evidence Boundaries
@@ -86,5 +95,5 @@ passing scripts. List files, exact checks, failures, and remaining uncertainties
 
 ## Evidence And Output
 
-Deliver the single HTML file and a concise account of its sources and four verification layers.
+Deliver the single HTML file and `report.md` with the evidence record, the cold-read result, and the four verification layers.
 Include the source revision or document date, checks actually run, and anything still requiring feedback or source checking.
