@@ -433,12 +433,23 @@ REFERENCE_RULES = {
 
 # Optional skills under extras/ whose rules guard the user's authority.
 EXTRA_RULES: dict[str, tuple[str, ...]] = {
+    "rumo-study-guide": (
+        "Stop before examples that need dependency installation or external services; get the user's approval first.",
+        "Mark insufficient evidence as unresolved; never invent a missing fact.",
+        "Do not add automatic grading, pretend AI feedback, or mastery claims based on scrolling or clicks.",
+        "Stop the affected check when a bundled helper or required runtime is missing; report the missing boundary rather than a pass.",
+        "Only reader feedback can support the last layer; do not infer it from passing scripts.",
+    ),
     "rumo-offline-delivery-audit": (
         "A review or audit is static and read-only by default",
         "never substitute static inspection for installation evidence",
     ),
 }
 EXTRA_REFERENCE_RULES: dict[str, tuple[str, ...]] = {
+    "rumo-study-guide/references/sources.md": (
+        "It does not establish call order, meaning, correctness, deployment, or learning.",
+        "Do not execute untrusted or state-changing material merely to obtain an output.",
+    ),
     "rumo-diagram/references/mermaid.md": (
         "get the user's agreement before installing it",
         "stop before PNG export",

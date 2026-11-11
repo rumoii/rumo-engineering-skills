@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rumo Study Guide"
+  short_description: "把仓库、文档或调研主题做成可保存、反复学习的 HTML 讲义，带自测与复习"
+  default_prompt: "Use $rumo-study-guide to build an offline HTML study guide with sourced explanations, worked examples, self-tests, and review questions."

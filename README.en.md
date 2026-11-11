@@ -184,6 +184,7 @@ Not installed by default, and available only through the installer; the plugin h
 | Skill | Purpose |
 | --- | --- |
 | `rumo-diagram` | Mermaid business flowcharts and confirmed engineering topology diagrams with preview and export |
+| `rumo-study-guide` | Reusable offline HTML study guides with sourced explanations, examples, self-tests, and review |
 | `rumo-document-writing` | Formal Word delivery documents |
 | `rumo-offline-delivery-audit` | Offline package integrity, provenance, installation, rollback, and acceptance limits |
 | `rumo-daily-report` | Incremental Chinese daily reports in a dated text file (manual only) |

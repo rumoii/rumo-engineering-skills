@@ -36,6 +36,7 @@ Every skill uses the `rumo-` namespace and stays independent of any company, pro
 | Skill | Purpose |
 | --- | --- |
 | `rumo-diagram` | Mermaid flowcharts and confirmed topology diagrams with preview and export |
+| `rumo-study-guide` | Reusable offline HTML study guides with sourced explanations, examples, self-tests, and review |
 | `rumo-document-writing` | Formal Word delivery documents |
 | `rumo-offline-delivery-audit` | Offline package integrity, provenance, installation, rollback, and acceptance limits |
 | `rumo-daily-report` | Incremental Chinese daily reports (manual only) |

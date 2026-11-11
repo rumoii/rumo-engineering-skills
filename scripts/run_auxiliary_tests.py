@@ -22,6 +22,8 @@ def main() -> int:
         (node, "extras/rumo-diagram/scripts/test-topology-skill.mjs"),
         (node, "extras/rumo-imagegen/scripts/generate.test.mjs"),
         (sys.executable, "extras/rumo-daily-report/scripts/test_daily_report.py"),
+        (sys.executable, "extras/rumo-study-guide/scripts/test_verify_refs.py"),
+        (sys.executable, "extras/rumo-study-guide/scripts/test_build_examples.py"),
         (sys.executable, "skills/rumo-agent-collaboration/scripts/test_agent_run.py"),
         (sys.executable, "skills/rumo-agent-collaboration/scripts/test_agent_config.py"),
         (sys.executable, "skills/rumo-agent-collaboration/scripts/test_orca_wait.py"),

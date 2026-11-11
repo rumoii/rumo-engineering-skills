@@ -184,6 +184,7 @@ agent 可以调用你本机装的其他 AI 编程工具，请它们独立复查�
 | 技能 | 用途 |
 | --- | --- |
 | `rumo-diagram` | Mermaid 业务流程图与经确认的工程拓扑图，含预览与导出 |
+| `rumo-study-guide` | 可保存、反复学习的离线 HTML 讲义，含有出处的讲解、例子、自测与复习 |
 | `rumo-document-writing` | 正式的 Word 交付文档 |
 | `rumo-offline-delivery-audit` | 离线交付包的完整性、溯源、安装、回滚与验收边界 |
 | `rumo-daily-report` | 按日期文本文件增量生成中文日报（仅手动调用） |
