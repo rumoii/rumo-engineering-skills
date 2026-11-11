@@ -149,13 +149,48 @@ definitions inside an optional component.
 
 Replace the example path, line, and substring with checked evidence. All three
 attributes must occur on the same element. Visible text remains useful when
-editor links are unavailable. The template displays this syntax as escaped
-instruction text rather than pretending it references a real repository.
+editor links are unavailable. The template's live example uses a clearly labeled
+placeholder path; replace it before delivering a guide.
 
 ```html
-<span class="ref" data-p="src/example.py" data-l="3" data-s="total">src/example.py:3</span>
-<span class="ref" data-p="LIB:helpers.py" data-l="8" data-s="def combine">LIB:helpers.py:8</span>
+<a class="ref" href="vscode://file//path/to/repo/src/example.py:3" data-p="src/example.py" data-l="3" data-s="total">src/example.py:3</a>
+<a class="ref" href="vscode://file//path/to/repo/lib/helpers.py:8" data-p="LIB:helpers.py" data-l="8" data-s="def combine">LIB:helpers.py:8</a>
 ```
+
+After building examples, run the linker from the installed skill directory:
+
+```sh
+python scripts/link_refs.py <guide.html> --root <dir> [--alias X=prefix/]...
+```
+
+It overwrites each `a[data-p]` href and adds a forward-slash `data-abs` path.
+Other attributes and text stay unchanged; bytes outside those start tags stay
+unchanged. Aliases follow the verifier's rules: `LIB:helpers.py` with
+`--alias LIB=lib/` expands to `lib/helpers.py`; later definitions win.
+Paths outside root, missing files, non-positive-integer lines, or `data-p` on
+anything except an anchor exit 1 without writing the guide. Success prints
+`ok: N links`. The linker does not check line contents; run the verifier next.
+
+Two common href templates are `vscode://file/{abs}:{line}` (the default for
+local code) and `https://host/owner/repo/blob/{commit}/{path}#L{line}` (web).
+Available placeholders are `{abs}`, `{path}` (expanded relative path), `{line}`,
+and `{commit}`; using `{commit}` requires `--commit` or exits 1 without writing.
+Choose a fixed commit, not a moving branch. For readers without local code,
+make the web URL the default href as well as the optional web target:
+
+```sh
+python scripts/link_refs.py <guide.html> --root <dir> --template "https://host/owner/repo/blob/{commit}/{path}#L{line}" --web-template "https://host/owner/repo/blob/{commit}/{path}#L{line}" --commit <sha>
+```
+
+For readers with local code, keep the default template and optionally supply
+`--web-template` and `--commit` to add `data-web`. Ask if the reader's setup is
+unknown. The toolbar's “打开源码用” selector rewrites `a[data-abs]` links to
+VS Code or Cursor; “网页” appears only when at least one reference has `data-web`.
+Web mode uses each available `data-web`; references without it retain their
+current href. The initial choice follows a default web href when available,
+otherwise VS Code; the saved choice takes precedence. Storage reads and writes
+are guarded. Without JavaScript, the linker's default href remains clickable.
+Only the VS Code and Cursor editor protocols are supported by the selector.
 
 From the installed skill directory, run
 `python scripts/verify_refs.py <guide.html> --root <dir> [--alias X=prefix/]... [--allow-empty]`.
@@ -187,8 +222,24 @@ before running and observe the skill body's installation/external-service gate.
 
 For final page checks, run `node scripts/check_render.mjs <guide.html> [--out <dir>]`.
 It checks 1366/390 widths in both themes for overflow, page/console errors,
-broken internal anchors, duplicate ids, and external requests. JSON plus PASS
-or FAIL corresponds to exit 0 or 1; missing Playwright exits 2. Normal Node
+broken internal anchors, duplicate ids, and external requests. It also checks:
+
+- The `html.js` initialization marker.
+- All details expanded at 390 pixels without horizontal overflow.
+- No-JavaScript body text and nonempty answers, with the same answer count.
+- Initialization and a theme save while storage reads and writes throw.
+- White print backgrounds and dark text on the body and first answer under
+  manual and system dark themes. Transparent layers are composited over their
+  ancestors and white paper; relative sRGB luminance must equal white for the
+  background and be no greater than `#555` for text.
+- Cursor source links and the selected value/href retained after reload.
+  Pages without `a[data-abs]` explicitly report this check as skipped.
+
+JSON reports each interaction separately. PASS/FAIL corresponds to exit 0/1;
+missing Playwright exits 2. Normal Node
 resolution or `PLAYWRIGHT_MODULE` locates Playwright; do not embed machine paths
-in the guide. Manually exercise answering, reveal, evidence links, and self-report
-persistence as well; this check does not establish learning.
+in the guide. `node --test scripts/test_check_render.mjs` uses temporary fixtures
+to check regressions; it explicitly skips when existing Playwright or Chromium
+is unavailable, without installing anything. Manually check answer correctness,
+explanation clarity, figure/text agreement, evidence links and self-report
+persistence; these browser checks do not establish learning.

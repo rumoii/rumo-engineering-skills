@@ -30,7 +30,7 @@
   <p class="muted">示例读者：会读简单代码，想练习追踪计算。所有数字与代码都是教学示例，非项目实测；没有关联实际仓库或服务。</p>
 </header>
 <div class="toolbar js-only" aria-label="阅读设置">
-  <div class="row"><label for="theme">显示主题 <select id="theme"><option value="system">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label><button id="present" type="button" aria-pressed="false">投屏字号</button></div>
+  <div class="row"><label for="theme">显示主题 <select id="theme"><option value="system">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label><button id="present" type="button" aria-pressed="false">投屏字号</button><label for="source-opener">打开源码用 <select id="source-opener"><option value="vscode">VS Code</option><option value="cursor">Cursor</option></select></label></div>
   <details><summary>学习组件（可分别开关）</summary><fieldset><legend>开关只改变显示，不代表学习结果。</legend>
     <label><input type="checkbox" data-toggle="quiz" checked> 分章自测</label>
     <label><input type="checkbox" data-toggle="predict" checked> 先预测再揭晓</label>
@@ -71,7 +71,7 @@ print(total)</code></pre><figcaption>Python 教学片段，未运行。预期结
   <div class="open" data-component="open"><h3>先自己讲一遍再看</h3><p>向一个没看过本页的人解释：循环怎样保留前面的和？为什么终点加 1，总数会增加新的终点？</p><details class="answer"><summary>参考讲法与自评要点</summary><p>total 保留到上一步的总数，每轮再加入当前整数。n 从 4 到 5 时，前四项仍是 10，新增一项 5，总数为 15。自评时检查是否说清“保留旧总数”“加入当前项”“包含终点”。措辞可以不同。<a href="#example">回看例子</a>。</p></details></div>
   <section class="review" data-component="review" aria-labelledby="review-title"><h3 id="review-title">下次打开，合上正文再试</h3><p>这是你自己的“会 / 不会”记录。下次可先重答，再调整标记；标“会”不代表已通过独立测验。</p><article class="review-card" data-review="g2"><p>n 从 6 变成 7，总数怎样变化？先说规则，再给结果。</p><fieldset class="mark js-only"><legend>我的自评</legend><label><input type="radio" name="review-g2" value="yes"> 会</label><label><input type="radio" name="review-g2" value="no"> 不会</label></fieldset><details class="answer"><summary>重答后查看解释</summary><p>增加新的一项 7，从 21 变成 28。<a href="#principle">回看规则</a>，再换一个终点重新试。</p></details></article></section>
 </section>
-<footer class="footer" id="sources"><h2>来源与验证边界</h2><p>本页是待替换的通用模板，数学、代码和问题均为教学编排。没有实际项目引用；代码片段未运行。真实讲义应填写素材版本、来源与检查记录。</p><p>源码标注示意（替换为真实引用后再检查）：</p><pre><code>&lt;span class="ref" data-p="src/example.py" data-l="3" data-s="total"&gt;src/example.py:3&lt;/span&gt;</code></pre><p>示例构建占位符（下面为可见说明，不会运行）：</p><pre><code>&lt;!--CODE:examples/sum.py--&gt;
+<footer class="footer" id="sources"><h2>来源与验证边界</h2><p>本页是待替换的通用模板，数学、代码和问题均为教学编排。没有实际项目引用；代码片段未运行。真实讲义应填写素材版本、来源与检查记录。</p><p>源码标注示意（路径为占位，替换为真实引用后再检查）：<a class="ref" href="vscode://file//path/to/repo/src/example.py:3" data-p="src/example.py" data-l="3" data-s="total" data-abs="/path/to/repo/src/example.py">src/example.py:3</a></p><p>示例构建占位符（下面为可见说明，不会运行）：</p><pre><code>&lt;!--CODE:examples/sum.py--&gt;
 &lt;!--SNIPPET:examples/sum.py--&gt;
 &lt;!--OUT:examples/sum.py--&gt;</code></pre><p>交付时分别记录：引用定位、内容核对、页面可用、学习效果。学习效果等待读者反馈，不能从页面运行正常推定。</p></footer>
 </main></div></div>
@@ -83,6 +83,12 @@ print(total)</code></pre><figcaption>Python 教学片段，未运行。预期结
   const all = selector => [...document.querySelectorAll(selector)];
   // Replace this key for each delivered guide and content revision.
   const KEY = 'study-guide-generic-sum-v1';
+  const refs = all('a[data-abs]');
+  const sourceChoices = ['vscode', 'cursor'];
+  if (refs.some(el => el.hasAttribute('data-web'))) {
+    sourceChoices.push('web');
+    one('#source-opener').add(new Option('网页', 'web'));
+  }
   const notice = () => { one('#storage-status').textContent = '本地保存不可用；阅读与操作照常，本次选择仅在当前页面有效。'; };
   let saved = {};
   try {
@@ -91,6 +97,8 @@ print(total)</code></pre><figcaption>Python 教学片段，未运行。预期结
   } catch { notice(); }
   const state = {
     theme: ['system', 'light', 'dark'].includes(saved.theme) ? saved.theme : 'system',
+    source: sourceChoices.includes(saved.source) ? saved.source :
+      (refs[0]?.dataset.web && /^https?:/.test(refs[0].getAttribute('href')) ? 'web' : 'vscode'),
     present: saved.present === true,
     toggles: {}, review: {}
   };
@@ -105,6 +113,14 @@ print(total)</code></pre><figcaption>Python 教学片段，未运行。预期结
   function apply() {
     root.dataset.theme = state.theme;
     one('#theme').value = state.theme;
+    one('#source-opener').value = state.source;
+    for (const el of refs) {
+      if (state.source === 'web') {
+        if (el.dataset.web) el.setAttribute('href', el.dataset.web);
+      } else {
+        el.setAttribute('href', `${state.source}://file/${el.dataset.abs}:${el.dataset.l}`);
+      }
+    }
     document.body.classList.toggle('present', state.present);
     one('#present').setAttribute('aria-pressed', String(state.present));
     for (const el of all('[data-toggle]')) {
@@ -116,6 +132,7 @@ print(total)</code></pre><figcaption>Python 教学片段，未运行。预期结
     }
   }
   one('#theme').addEventListener('change', event => { state.theme = event.target.value; apply(); save(); });
+  one('#source-opener').addEventListener('change', event => { state.source = event.target.value; apply(); save(); });
   one('#present').addEventListener('click', () => { state.present = !state.present; apply(); save(); });
   for (const el of all('[data-toggle]')) el.addEventListener('change', () => { state.toggles[el.dataset.toggle] = el.checked; apply(); save(); });
   for (const el of all('[data-review] input[type="radio"]')) el.addEventListener('change', () => { state.review[el.closest('[data-review]').dataset.review] = el.value; save(); });

@@ -24,6 +24,8 @@ def main() -> int:
         (sys.executable, "extras/rumo-daily-report/scripts/test_daily_report.py"),
         (sys.executable, "extras/rumo-study-guide/scripts/test_verify_refs.py"),
         (sys.executable, "extras/rumo-study-guide/scripts/test_build_examples.py"),
+        (sys.executable, "extras/rumo-study-guide/scripts/test_link_refs.py"),
+        (node, "--test", "extras/rumo-study-guide/scripts/test_check_render.mjs"),
         (sys.executable, "skills/rumo-agent-collaboration/scripts/test_agent_run.py"),
         (sys.executable, "skills/rumo-agent-collaboration/scripts/test_agent_config.py"),
         (sys.executable, "skills/rumo-agent-collaboration/scripts/test_orca_wait.py"),

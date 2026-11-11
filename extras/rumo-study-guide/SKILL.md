@@ -5,8 +5,7 @@ description: Use when creating a saveable HTML handout or study guide for repeat
 
 # Rumo Study Guide
 
-Produce an evidence-backed, reusable HTML guide for explaining, applying, and revisiting material.
-Keep one reading layout; choose teaching components within each section.
+Produce an evidence-backed, reusable HTML guide for explaining, applying, and revisiting material; keep one reading layout with teaching components within each section.
 
 ## Workflow With Checkpoints
 
@@ -56,15 +55,18 @@ Checkpoint: the entire core lesson is available offline without scripting.
 
 ### 6. Verify The Artifact
 
-Resolve all bundled `scripts/...` paths from this installed skill directory.
-Run the checks in this order:
+Resolve bundled `scripts/...` paths from this installed skill directory; run build_examples → link_refs → verify_refs → check_render:
 1. When embedding examples, `python scripts/build_examples.py <template.html> --out <guide.html> [--root <dir>]`,
    where `--root` is the directory the example paths are relative to. Inspect code first; allow only authorized, bounded local runs. Failure or timeout blocks verified output.
-2. For code guides, `python scripts/verify_refs.py <guide.html> --root <dir> [--alias X=prefix/]... [--allow-empty]`
+2. For code guides, `python scripts/link_refs.py <guide.html> --root <dir> [--alias X=prefix/]...`.
+   Use editor links for readers with local code, switching between VS Code and Cursor; otherwise use fixed-commit web links. Ask when the setup is unknown.
+   Read [references/components.md](references/components.md) for link templates and options.
+3. `python scripts/verify_refs.py <guide.html> --root <dir> [--alias X=prefix/]... [--allow-empty]`
    on the built file, where `--root` is the source repository; require references unless the material truly contains none.
-3. `node scripts/check_render.mjs <guide.html> [--out <dir>]` on the final file.
+4. `node scripts/check_render.mjs <guide.html> [--out <dir>]` on the final file.
+It checks widths/themes, errors, anchors, ids, external requests, initialization, expanded narrow layout, no-JS content, blocked storage, dark print colors, and source-switch persistence when links exist.
 If Playwright is absent, report exit 2; obtain approval before any installation.
-Try answering, revealing feedback, and following evidence/review links; inspect key claims and diagrams manually.
+Manually check answer correctness, explanation clarity, agreement between figures and text, and evidence/review links.
 Readability is not proof of learning.
 
 ### 7. Deliver With Evidence Boundaries
