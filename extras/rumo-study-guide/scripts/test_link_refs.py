@@ -19,7 +19,8 @@ class LinkRefsTest(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.base = Path(self.tmp.name)
+        # link_refs resolves paths; Windows runners give TEMP as an 8.3 short path.
+        self.base = Path(self.tmp.name).resolve()
         self.root = self.base / "source"
         self.root.mkdir()
         self.source = self.root / "sample.py"
