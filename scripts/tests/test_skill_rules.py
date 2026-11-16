@@ -78,8 +78,8 @@ RULES = {
         "Verify each fact now; do not copy it from memory.",
         "Never include passwords, tokens, keys, or private certificate material",
         "A handoff does not transfer approval for actions the user has not granted.",
-        "## Tried And Dropped",
-        "Copy the plan's decisions and dead ends",
+        "point to its decisions and dead ends instead of copying them",
+        "Read [references/handoff-document.md](references/handoff-document.md) before writing one",
         "never reads another project's",
         "Where they disagree, the repository wins; say so.",
         "Stop after the report unless the user asked to continue.",
@@ -89,6 +89,8 @@ RULES = {
         "An unmerged, dirty, linked-to, or unprovable worktree: keep it, say why, and ask what to do.",
         "Do not repair links during a wrap-up.",
         "A decision the agent made stays marked unconfirmed until the user confirms it.",
+        "When work remains open and the project has no status card, write one without asking",
+        "When the project has a status card, list the handoff path under its Details.",
     ),
     "rumo-interface": (
         "A search is discovery, not proof of absence.",
@@ -250,6 +252,13 @@ PINNED_ELSEWHERE = {"rumo-clarify"}
 # demand. rumo-coding-guidelines/references/high-assurance.md and rumo-review/references/loop.md
 # are pinned in test_skill_boundaries.py.
 REFERENCE_RULES = {
+    "rumo-plan/references/decision-records.md": (
+        "Do not edit the record or the code; the user decides which side changes",
+        "For a `proposed` record, missing code is expected; report only code that contradicts it.",
+    ),
+    "rumo-handoff/references/handoff-document.md": (
+        "## Tried And Dropped",
+    ),
     "rumo-plan/references/architecture.md": (
         "Cite the source or runtime evidence for current behavior; label assumptions and proposed behavior separately.",
         "Avoid scoring categories that do not affect this decision or treating unsupported numbers as measurements.",

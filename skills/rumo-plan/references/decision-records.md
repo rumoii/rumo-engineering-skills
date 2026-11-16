@@ -55,6 +55,16 @@ Add sections for wire fields, schema transitions, authorization matrices, or top
 - Keep a rejected record only while it prevents a plausible repeat mistake.
 - Update affected README, API, migration, deployment, and rollback docs alongside the record.
 
+## Drift Check
+
+Run it when the user asks whether records still match the code, and for the one record you are updating after its mechanism changed.
+
+1. Scope: the records the user names; otherwise every `proposed` and `implemented` record. Skip rejected records.
+2. From each record, list the obligations a reader can check: named files, symbols, fields, defaults, failure behavior, and rollout scope. Take them from Decision or Proposal, Verification, and Rollback; Problem describes the situation before the decision and is context, not an obligation.
+3. Find each one in the current code. When the record names no path, search for it and suggest adding the path to the record.
+4. Sort each mismatch into one kind: the code departs from the record; the record is stale because a path, name, or default moved; or code inside the record's scope does something the record does not mention. For a `proposed` record, missing code is expected; report only code that contradicts it.
+5. Report only mismatches, each with the record's line and the code's `file:line`, and one "no drift" line for each clean record. List claims the repository cannot settle, such as test counts, timings, or figures from outside reports, separately as unverifiable; they count as neither drift nor no drift. Do not edit the record or the code; the user decides which side changes, and the record is then updated as Maintenance says.
+
 ## Validation
 
 For the default layout, run the bundled validator from the installed skill directory:

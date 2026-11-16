@@ -23,7 +23,7 @@ Use when the user says "wrap up" or "收尾", including "先收尾，明天继�
 Asking to wrap up authorizes the cleanup below and nothing else. It never commits, pushes, merges, or deploys; list what is uncommitted or unpushed.
 
 1. **Inventory.** For each repository involved: branch, HEAD, upstream, dirty files, and worktrees. Also the terminals, agents, servers, and processes this task started, and any temporary settings it placed. Only what the session's record proves this task started counts as its own.
-2. **Update records.** Bring the task's existing progress records, plan file, and the project's status card up to date: task status, decisions and dead ends, what remains. Do not create new records; when the project has no status card, offer to start one and write it once the user agrees.
+2. **Update records.** Bring the task's existing progress records, plan file, and the project's status card up to date: task status, decisions and dead ends, what remains. Create no other new records. When work remains open and the project has no status card, write one without asking, so a new session that only looks at the workspace finds where things stand; when nothing remains, do not start one.
 3. **Clean up what is provably safe.**
    - An agent still running: leave it and report it.
    - A terminal this task opened, once its agent has ended and its result has been read: close it. Never close this session's own terminal or one the user opened.
@@ -54,7 +54,7 @@ Write the document the next agent needs to continue without this conversation, o
 
 Use the location the user names. Otherwise follow the workspace's convention for task notes; if there is none, ask. Do not commit the document unless asked, and keep it out of product source trees by default.
 
-Make the handoff discoverable without this conversation. When the workspace's own instructions name a task index, status document, or handoff registry that the next agent reads, add a concise link there with the current state and check that it resolves. Do not edit other tracked files, such as a product README, to point at an uncommitted handoff, and do not create a parallel documentation system. Otherwise give the user the exact path to pass to the receiving agent; ask where to link it when the user expects automatic discovery.
+Make the handoff discoverable without this conversation. When the project has a status card, list the handoff path under its Details. When the workspace's own instructions name a task index, status document, or handoff registry that the next agent reads, add a concise link there with the current state and check that it resolves. Do not edit other tracked files, such as a product README, to point at an uncommitted handoff, and do not create a parallel documentation system. Otherwise give the user the exact path to pass to the receiving agent; ask where to link it when the user expects automatic discovery.
 
 ### Gather Facts First
 
@@ -63,39 +63,13 @@ Make the handoff discoverable without this conversation. When the workspace's ow
 - Commits made in this task, and anything staged, unstaged, or untracked that belongs to it.
 - Checks actually run, with commands and results.
 - Running processes, terminals, servers, or remote sessions the next agent must know about.
-- Approaches tried and abandoned. Copy the plan's decisions and dead ends when the task has a plan file, then add any the conversation shows that it does not.
+- Approaches tried and abandoned. When the plan lives in a file, point to its decisions and dead ends instead of copying them, and add only what the conversation shows that it lacks; otherwise record them in the document.
 
 Verify each fact now; do not copy it from memory.
 
 ### Document Structure
 
-```markdown
-# Handoff: <task>
-
-## Goal
-One or two sentences, plus acceptance criteria.
-
-## Decisions
-What the user decided, with the reason when it matters. Mark anything still open.
-
-## State
-Repositories, branches, commits, dirty files, processes, environments.
-
-## Verified / Not Verified
-What was checked and how; what remains unproven and why.
-
-## Next Steps
-Ordered, concrete actions. Mark steps that need user approval.
-
-## Tried And Dropped
-Approaches tried and abandoned, each with why and where the evidence is.
-
-## Pitfalls
-Traps already hit and how they were resolved.
-
-## Resume
-The exact commands or reads to get back to a known-good state.
-```
+Read [references/handoff-document.md](references/handoff-document.md) before writing one; it holds the section template.
 
 ### Rules
 

@@ -44,7 +44,7 @@ If the first two answers are no, leave it out and mention it only when the user 
 - Do not reformat, rename, reorder, or refactor neighboring code. Match the surrounding style even when you would choose differently.
 - Remove only the dead code this change created.
 - Do not keep obsolete paths alive with shims, dual writes, flags, or deprecation periods unless the current contract requires them. Before deleting a path, confirm its callers, generated outputs, and deployment references. Contracts with external, persisted, or deployed consumers follow `rumo-interface`.
-- Do not accept a stopgap whose stated purpose is to be replaced later. Record material architectural choices with `rumo-plan`.
+- Do not accept a stopgap whose stated purpose is to be replaced later. When you knowingly accept a limit, such as a size cap or an unhandled rare case, state the limit and what would make it worth revisiting in a comment beside the code. Record material architectural choices with `rumo-plan`.
 - Keep internal risk notes out of deliverables. Add a disclaimer or warning only when the user asked, a decision depends on it, or leaving it out would make the result false or unsafe.
 - Report unrelated problems you notice instead of fixing them.
 - At these moments read the matching entry in [references/principles.md](references/principles.md): before adding to or restructuring code, after two failed fixes for one symptom, when a requirement only fits through special cases, before writing stateful or heavily branching logic, when writing validation or adapters, when a behavior spans more than three files, before a repetitive edit, and before reporting a measured number.

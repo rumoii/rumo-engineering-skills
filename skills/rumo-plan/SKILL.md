@@ -49,6 +49,7 @@ Read [references/decision-records.md](references/decision-records.md) before wri
 - Search for an existing record that owns the same mechanism. Update it when only facts, paths, or evidence changed; write a new record that links the old one when the decision itself changed.
 - Follow the repository's existing location, naming, numbering, and language. Without one, propose the default layout in the reference and ask before creating it.
 - Do not mark a record implemented because code was drafted or unit tests passed; state the source, artifact, deployment, or field evidence that exists.
+- Check records against the current code with the reference's Drift Check when the user asks, and for the one record you are updating after its mechanism changed. The check reports; it edits neither the record nor the code.
 - A decision record never authorizes database writes, deployments, or other controlled actions.
 - Do not create decision directories or policies during a review-only request.
 
