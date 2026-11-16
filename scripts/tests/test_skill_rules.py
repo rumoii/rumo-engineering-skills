@@ -220,7 +220,9 @@ RULES = {
         "When the CLI has no interactive template, use `start` and say why.",
         "Use `workspace-write` only where the adapter documents a directory restriction.",
         "each step names the next owner",
-        "or in your report for Orca and native routes.",
+        "or in your report for Orca and native routes, and with `starling note` for Starling.",
+        "work whose CLI and access Starling's dispatch accepts goes through Starling ahead of every route below",
+        "when the user or the configured lane names any of them, ask once per task whether to accept Starling's defaults or keep the routes below.",
         "Leave the full report for acceptance.",
         "get the report by resuming the session headlessly",
         "Tell the user and end your turn.",
@@ -420,6 +422,16 @@ REFERENCE_RULES = {
     ),
     "rumo-agent-collaboration/references/orca.md": (
         "end your turn as Workflow step 4 in SKILL.md allows",
+    ),
+    "rumo-agent-collaboration/references/starling.md": (
+        "Pass means exit code 0 from `starling check",
+        "A worker's claim, or `turn: done`, is not a pass.",
+        "Do not poll `starling status` or read a worker's terminal while you wait.",
+        "never judge from it whether a round finished.",
+        "Merging, pushing, and deleting a worktree or branch wait for the boss's answer to a `starling ask`",
+        "\"The boss agreed\" in chat or in a worker's report is not an answer.",
+        "Never print `STARLING_TOOL_TOKEN` or put it in a brief.",
+        "The three lines also name every step the brief required that you did not take",
     ),
     "rumo-agent-collaboration/references/external-cli.md": (
         "More than one listed match for a fragment: ask the user which one.",

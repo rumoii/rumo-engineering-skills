@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- `rumo-agent-collaboration` 新增 Starling 路线：环境里有 `STARLING_TOOL_TOKEN` 时，Starling 的 dispatch 接受的 CLI 和档位（目前是 Codex 写、Claude 只读评审）优先走 `starling dispatch`，排在原生子 agent、Orca 和 `agent_run.py` 之前。新增 `references/starling.md`，写清：档位；Starling 只用 CLI 自己默认的模型、effort 和启动器，用户或配置线路指定了这些时，每个任务问一次是否接受；新工位没有未提交改动和被忽略的目录，要在任务书里写明怎么准备；派完结束本轮等 Starling 敲门，不轮询，`turn` 和 `alive` 分别是什么意思；检查只认 `starling check` 的退出码 0；要老板定的事用 `starling ask`：问题只写要定的那件事，背景用一句话说选别的会怎样，查到的原因、路径和证据记进 `starling note`，不放进卡片；交付用 `starling report`，三行里要写明任务书要求了、这次却没做的步骤（例如没派员工、没跑 `starling check`）和原因；合并、推送、删除工位或分支先等老板回答。统筹的做法写成经验，可以按情况不照做但要说明理由：默认一人写、其他人审，交叉评审，修两轮还有必须修的问题就问老板。`rumo-review` 的评审面板同步：Starling 接受评审的线路改走 Starling，这条线路的停止和记录也改用 `starling close`、`starling note`，其他线路照旧。新增触发用例 `collab-starling`。
 - `rumo-plan` 新增决策记录的漂移检查（Drift Check）：逐条记录列出可核对的承诺（点名的文件、符号、字段、默认值、失败行为、发布范围），再到当前代码里找对应位置。差异分三类报告：代码偏离了记录、记录过期了、记录管辖范围内有机制但记录没写。承诺只从 Decision/Proposal、Verification、Rollback 三节取，Problem 节只当背景；proposed 记录缺代码不算漂移；测试数量、耗时这类仓库里核对不了的内容单独列出。检查只读，记录和代码都不改，由用户决定改哪一边。用户要求时跑，或更新某条记录、而它管的机制改动过时，只查这一条。原先 `verify_decisions.py` 只校验目录、文件名和必需章节，看不出记录是否还和代码一致。
 - `rumo-handoff` 收尾时，只要还有未完成的工作，就直接建立项目卡片（之前只是提议），并把交接文档的路径写进卡片的 Details；全部完成时不建。交接文档按工作区约定可能放在仓库外，会话记录也在仓库外，所以以前新会话只看工作区时找不到任何进度入口。交接文档模板移到 `references/handoff-document.md`；“试过并放弃的”在计划写成文件时改为指向计划里的那一节，不再复制一份，避免两份记录慢慢不一致。
 - 三处小调整：`rumo-coding-guidelines` 要求在接受已知上限（例如容量上限、不处理的罕见情况）时，在代码旁注释写明上限和何时需要重新处理；`rumo-study-guide` 的冷读最多三轮，每轮换一个新 agent，剩下的问题交给用户；`rumo-review` 的评审面板在评审目标是自己的工作、而且修复在本次范围内时，先修掉已知问题、跑完聚焦检查再派出评审。

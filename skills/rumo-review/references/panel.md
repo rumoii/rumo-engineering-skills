@@ -21,6 +21,7 @@ Never start another CLI on your own. Before launching, state in one line which l
 - Use the lanes the user names; otherwise run `agent_config.py lanes review`. It and `agent_run.py` live in `../rumo-agent-collaboration/scripts/`, resolved from this skill's directory. Exit 3 means none are configured: ask once which CLI to use and mention that `rumo-setup` saves the choice.
 - Prefer providers other than your own; another run of your own model adds little independence.
 - Run every lane through `agent_run.py` with `--access read-only`, which checks the CLI itself. If that skill is unavailable, run a CLI directly only after its `--help` confirms a non-interactive mode and a read-only setting; without a confirmed read-only setting, do not use that CLI. A disabled adapter cannot be used, directly or not.
+- In Starling, whose sessions have `STARLING_TOOL_TOKEN` in the environment, a lane whose CLI Starling's dispatch accepts for review runs through Starling instead, whose review tier keeps it read-only. Starling runs the CLI's own model, effort, and executable: when the lane names any of them, ask before using Starling. For that lane, launching, waiting, stopping (`starling close`, not `agent_run.py cancel`), and recording (`starling note`, not `agent_run.py record`) follow `../rumo-agent-collaboration/references/starling.md`. Other lanes still run through `agent_run.py`; never replace a lane to fit Starling.
 
 ## Run
 
