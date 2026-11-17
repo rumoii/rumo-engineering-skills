@@ -56,6 +56,8 @@ WINDOW_GROUP = "rumo-agents"
 # record whose process is gone before reporting it unreconciled.
 DETACH_WAIT = 60
 WATCH_GRACE = 60
+# How long a CLI may keep running after the event its adapter declares as `output.end` before it is stopped.
+END_GRACE = 30
 PROGRESS_WIDTH = 300
 # Substrings that mark a flag or setting which bypasses a CLI's sandbox, approvals, or tool limits.
 FORBIDDEN = ("dangerous", "bypass", "yolo", "danger-full", "skip-permission", "skip_permissions", "--force", "auto-approve", "always-approve", "approve-mcps", "--allow-all", "--no-sandbox")
@@ -204,6 +206,12 @@ def validate_adapter(adapter: object) -> list[str]:
     errors = errors if isinstance(errors, list) else [errors]
     if not all(valid_rule(rule) for rule in errors):
         problems.append("output.error rules are invalid")
+    end = output.get("end")
+    if end is not None and not (
+        isinstance(end, dict) and isinstance(end.get("match"), dict) and end["match"]
+        and all(isinstance(k, str) and all(k.split(".")) for k in end["match"])
+    ):
+        problems.append("output.end must be a nonempty match rule")
     progress = adapter.get("progress", [])
     if not isinstance(progress, list) or not all(
         valid_rule(rule) and isinstance(rule.get("label"), str) and rule["label"].strip()
@@ -788,6 +796,9 @@ def run_turn(run_dir: Path, meta: dict, kind: str, prompt: str, timeout: float |
     preassigned = meta.get("session_id") if adapter["session"]["source"] == "preassign" else None
     proc, pid_started = None, None
     started, timed_out, session = time.monotonic(), False, None
+    end_rule = adapter["output"].get("end")
+    # When the end event appeared, the output size last scanned for it, and whether the CLI was stopped after it.
+    end_seen, scanned, lingered = None, -1, False
     try:
         # Reservation and PID publication share the lock with cancel and resume.
         with record_lock(run_dir):
@@ -826,6 +837,17 @@ def run_turn(run_dir: Path, meta: dict, kind: str, prompt: str, timeout: float |
                     session = preassigned or (extract(events, adapter["session"]) if adapter["session"]["source"] == "event" else None)
                     if session:
                         update_turn(run_dir, number, state="session-known", session_id=session)
+            if end_rule and end_seen is None:
+                size = stdout_path.stat().st_size if stdout_path.is_file() else 0
+                if size != scanned:
+                    scanned = size
+                    if any(matches(event, end_rule) for event in read_events(stdout_path)[0]):
+                        end_seen = time.monotonic()
+            elif end_seen is not None and time.monotonic() - end_seen >= END_GRACE:
+                # Some CLIs print their final result and then never exit.
+                lingered = True
+                stop_tree(proc.pid, pid_started)
+                break
             time.sleep(0.1)
         try:
             code = proc.wait(timeout=30)
@@ -857,13 +879,14 @@ def run_turn(run_dir: Path, meta: dict, kind: str, prompt: str, timeout: float |
         private_write(turn_dir / "final.md", parsed["final"].encode("utf-8"))
     if timed_out:
         state, result = "timed-out", 3
-    elif code == 0 and parsed["final"] is not None and not parsed["error"]:
+    elif (code == 0 or lingered) and parsed["final"] is not None and not parsed["error"]:
         state, result = "exited", 0
     else:
         state, result = "failed", 1
     final_meta = update_turn(
         run_dir, number, state=state, exit_code=code, ended_at=now(), malformed_lines=malformed,
         final_found=parsed["final"] is not None, error=parsed["error"], **({"session_id": session} if session else {}),
+        **({"stopped_after_end": True} if lingered else {}),
     )
     return result if final_meta["turns"][number - 1]["state"] == state else 1
 

@@ -2,8 +2,8 @@
   "name": "grok",
   "executable": "grok",
   "verified": {
-    "version": "grok 1.0.41",
-    "on": "2026-10-23",
+    "version": "grok 1.0.70",
+    "on": "2026-11-17",
     "live_run": true
   },
   "help": [
@@ -19,7 +19,8 @@
         "--resume",
         "--no-subagents",
         "--model",
-        "--reasoning-effort"
+        "--reasoning-effort",
+        "--disallowed-tools"
       ]
     }
   ],
@@ -27,7 +28,9 @@
   "access": {
     "read-only": [
       "--permission-mode",
-      "plan"
+      "plan",
+      "--disallowed-tools",
+      "run_terminal_command"
     ]
   },
   "model": [
@@ -109,11 +112,16 @@
           "subtype"
         ]
       }
-    ]
+    ],
+    "end": {
+      "match": {
+        "type": "result"
+      }
+    }
   },
   "interactive": [
     "--resume",
     "{session}"
   ],
-  "notes": "Read-only only: the write level would need grok's --sandbox profile, which is not confirmed on every platform. On 1.0.41 one signed-in read-only turn with --reasoning-effort ran; the signed-out error event shape is also real."
+  "notes": "Read-only only: the write level would need grok's --sandbox profile, which is not confirmed on every platform. Read-only removes run_terminal_command: in plan mode a refused shell command cancels the whole headless turn, while grep, read_file, and list_dir remain. On 1.0.70 a read-only turn asked to run a command answered without one, and a resume turn ran; both exited on their own. A resume on 1.0.70 once printed its result and never exited, so output.end stops it. The model list comes from a local cache that opening grok refreshes; an 'unknown model id' error can mean a stale cache. The signed-out error event shape is from 1.0.41."
 }

@@ -46,11 +46,12 @@ FAKE = textwrap.dedent(
     dialect, mode, argv = os.environ["FAKE_DIALECT"], os.environ.get("FAKE_MODE", "ok"), sys.argv[1:]
     cli = os.environ.get("FAKE_CLI", "claude" if dialect == "claude" else dialect)
     flags = {
-        "codex": "-c --config --json --sandbox --cd --model",
+        "codex": "-c --config --json --sandbox --cd --model --skip-git-repo-check",
         "claude": "-p --print --output-format --verbose --permission-mode --session-id --resume --model --effort --name",
         "pi": "-p --print --mode --tools --session-id --session --model --no-mcp --no-extensions --thinking --name",
         "qwen": "-o --output-format --approval-mode --session-id --resume --model --prompt-interactive",
-        "grok": "-s --session-id --prompt-file --output-format --no-subagents --permission-mode --resume --model --reasoning-effort",
+        "grok": "-s --session-id --prompt-file --output-format --no-subagents --permission-mode --resume --model --reasoning-effort "
+                "--disallowed-tools",
         "cursor": "-p --print --output-format --mode --sandbox --trust --resume --model",
         "gemini": "-o --output-format --approval-mode --resume --model",
         "opencode": "--format --session --model --title --standalone --agent",
@@ -158,6 +159,8 @@ FAKE = textwrap.dedent(
     elif dialect == "goose":
         emit({"type": "message", "message": {"role": "assistant", "content": [{"type": "text", "text": reply}]}})
         emit({"type": "complete", "total_tokens": 1})
+    if mode == "linger":
+        time.sleep(120)
     '''
 )
 
@@ -259,7 +262,7 @@ class BundledAdapterTest(unittest.TestCase):
             ("pi", "native-write", ["--tools", "read,grep,find,ls,edit,write"]),
             ("qwen", "read-only", ["--approval-mode", "plan"]),
             ("qwen", "workspace-write", ["--approval-mode", "auto-edit"]),
-            ("grok", "read-only", ["--permission-mode", "plan"]),
+            ("grok", "read-only", ["--permission-mode", "plan", "--disallowed-tools", "run_terminal_command"]),
             ("cursor", "read-only", ["--mode", "ask", "--sandbox", "enabled"]),
             ("gemini", "read-only", ["--approval-mode", "plan"]),
         ):
@@ -299,6 +302,11 @@ class BundledAdapterTest(unittest.TestCase):
         argv = agent_run.render(BUNDLED["codex"], "resume", "read-only", "/w", None, "thread-1", None)
         self.assertIn('sandbox_mode="read-only"', argv)
         self.assertEqual(argv[-2:], ["thread-1", "-"])
+
+    def test_codex_runs_outside_a_git_repository_on_both_turns(self) -> None:
+        for kind in ("start", "resume"):
+            argv = agent_run.render(BUNDLED["codex"], kind, "read-only", "/w", None, "thread-1", None)
+            self.assertIn("--skip-git-repo-check", argv)
 
     def test_pi_disables_mcp_and_extensions_on_both_turns(self) -> None:
         for kind in ("start", "resume"):
@@ -426,6 +434,28 @@ class RunTest(Harness):
                 result = self.start("codex", "ok", "read-only", "--timeout", value)
                 self.assertEqual(result.returncode, 2)
                 self.assertFalse(self.runs.exists())
+
+    def test_cli_that_lingers_after_its_end_event_is_stopped_and_counts_as_finished(self) -> None:
+        args = argparse.Namespace(cli="grok", cwd=str(self.cwd), prompt_file=str(self.prompt), access="read-only", model=None,
+                                  effort=None, timeout=None, executable=str(self.fake), runs_dir=str(self.runs), detach=False,
+                                  window=False)
+        with patch.dict(os.environ, {**self.env("claude", "linger"), "FAKE_CLI": "grok"}), \
+                patch.object(agent_run, "END_GRACE", 1), contextlib.redirect_stdout(io.StringIO()):
+            started = time.monotonic()
+            code = agent_run.cmd_start(args)
+        self.assertEqual(code, 0)
+        self.assertLess(time.monotonic() - started, 60)
+        turn = self.meta(self.only_run())["turns"][0]
+        self.assertEqual(turn["state"], "exited")
+        self.assertTrue(turn["stopped_after_end"])
+        self.assertTrue((self.only_run() / "turns/1/final.md").is_file())
+
+    def test_end_rule_must_be_a_nonempty_match(self) -> None:
+        for end in ({}, {"match": {}}, {"match": {"": "result"}}, ["result"]):
+            with self.subTest(end=end):
+                adapter = copy.deepcopy(BUNDLED["grok"])
+                adapter["output"]["end"] = end
+                self.assertIn("output.end must be a nonempty match rule", agent_run.validate_adapter(adapter))
 
     def test_records_and_markdown_are_utf8_lf(self) -> None:
         result = self.start("grok")

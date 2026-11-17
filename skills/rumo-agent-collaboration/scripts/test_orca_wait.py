@@ -36,10 +36,13 @@ def moving_screen() -> list:
     return [screen("." * i) for i in range(1, 100)]
 
 
-def ps(state: str | None, started: int = 5, pane: str = "tab:leaf", tool: str = "WebFetch") -> dict:
+def ps(state: str | None, started: int = 5, pane: str = "tab:leaf", tool: str = "WebFetch",
+       updated: int | None = None, program: dict | None = None) -> dict:
     """A `worktree ps` reply; state None leaves the pane out."""
     agents = [] if state is None else [{"paneKey": pane, "state": state, "toolName": tool,
-                                        "toolInput": {"url": "https://example.com"}, "stateStartedAt": started}]
+                                        "toolInput": {"url": "https://example.com"}, "stateStartedAt": started,
+                                        **({"updatedAt": updated} if updated is not None else {}),
+                                        **({"programStatus": program} if program is not None else {})}]
     return {"ok": True, "result": {"worktrees": [{"agents": [{"paneKey": "other:pane", "state": "blocked"}]},
                                                  {"agents": agents}]}}
 
@@ -272,6 +275,21 @@ class WaitTest(unittest.TestCase):
         code, _ = self.run_wait(Orca([screen("Allow WebFetch?")], states=[ps("blocked", started=5)]), seen="5")
         self.assertEqual(code, orca_wait.EXIT_IDLE)
         self.assertEqual(self.clock.now - 1000.0, 210)
+
+    def test_program_idle_seen_after_a_stuck_working_state_ends_the_turn(self) -> None:
+        # Kimi: the hook state stays working after the turn, while Orca later observes the program idle.
+        self.write_report(time.time() + 5)
+        state = ps("working", updated=1000, program={"state": "idle", "observedAt": 1015})
+        code, line = self.run_wait(Orca([screen("KIMI-FIX-DONE")], states=[state]), self.report, "KIMI-FIX-DONE")
+        self.assertEqual(code, orca_wait.EXIT_DONE)
+        self.assertIn("KIMI-FIX-DONE", line)
+        self.assertEqual(self.clock.now - 1000.0, 0)
+
+    def test_program_idle_older_than_the_hook_state_does_not_end_the_turn(self) -> None:
+        self.write_report(time.time() + 5)
+        state = ps("working", updated=1015, program={"state": "idle", "observedAt": 1000})
+        code, _ = self.run_wait(Orca([screen("KIMI-FIX-DONE")], states=[state]), self.report, "KIMI-FIX-DONE")
+        self.assertEqual(code, orca_wait.EXIT_IDLE)
 
     def test_turn_ended_without_the_done_check_exits_idle_early(self) -> None:
         # Orca marks the turn done while the screen still moves, e.g. a pause report without the marker.

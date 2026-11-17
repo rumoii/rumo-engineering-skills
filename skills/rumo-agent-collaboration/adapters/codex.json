@@ -17,7 +17,8 @@
         "--sandbox",
         "--cd",
         "--model",
-        "--config"
+        "--config",
+        "--skip-git-repo-check"
       ]
     },
     {
@@ -29,7 +30,8 @@
       "flags": [
         "--json",
         "--model",
-        "--config"
+        "--config",
+        "--skip-git-repo-check"
       ]
     }
   ],
@@ -90,6 +92,7 @@
   "start": [
     "exec",
     "--json",
+    "--skip-git-repo-check",
     "-c",
     "approval_policy=\"never\"",
     "{model}",
@@ -103,6 +106,7 @@
     "exec",
     "resume",
     "--json",
+    "--skip-git-repo-check",
     "-c",
     "approval_policy=\"never\"",
     "{model}",
@@ -159,5 +163,5 @@
     "resume",
     "{session}"
   ],
-  "notes": "`exec resume` has no --sandbox flag, so resume keeps the level through the sandbox_mode config key. approval_policy=never refuses anything outside the sandbox instead of prompting."
+  "notes": "`exec resume` has no --sandbox flag, so resume keeps the level through the sandbox_mode config key. approval_policy=never refuses anything outside the sandbox instead of prompting. --skip-git-repo-check skips only the git repository check, not the sandbox; on 0.165.0 one read-only turn ran in a directory outside any git repository."
 }

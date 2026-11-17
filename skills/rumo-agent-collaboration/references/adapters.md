@@ -13,11 +13,11 @@ An adapter is a JSON file that tells `agent_run.py` how to drive one CLI: how to
 
 | CLI | Status | Access levels |
 |---|---|---|
-| codex | one read-only turn with model and effort run on 0.162.0 | read-only, workspace-write |
+| codex | one read-only turn with model and effort run on 0.162.0; `--skip-git-repo-check` lets it run outside a git repository without widening the sandbox | read-only, workspace-write |
 | claude | one read-only turn with model and effort run on 2.1.309 | read-only, workspace-write |
 | pi | one read-only turn with effort run on 1.3.0 | read-only, native-write (no shell) |
 | qwen | flags checked and one read-only turn run on 0.25.2 | read-only, workspace-write |
-| grok | one read-only turn with effort run on 1.0.41 | read-only |
+| grok | one read-only turn with model and effort, and a resume, run on 1.0.70; read-only has no shell tool; the model list is a local cache that opening grok refreshes | read-only |
 | cursor (`cursor-agent`) | unverified, from the CLI reference | read-only |
 | gemini | disabled: headless Plan Mode can switch to unrestricted implementation | declared read-only is insufficient |
 | opencode | one read-only turn, one native-write turn, and a resume run on 2.2.2 | read-only, native-write (edit only, no shell) |
@@ -41,7 +41,7 @@ A resume contract mismatch refuses recovery without changing the saved run. When
 ## Not Included
 
 - Amp: its plugins can rewrite its permission settings; a reliable read-only adapter has not been established.
-- Kimi CLI: the documented stdin `--print` mode implicitly enables AFK approval and automatically handles plan-mode switches. The [print-mode reference](https://github.com/MoonshotAI/kimi-cli/blob/main/docs/en/customization/print-mode.md) and the [other published command reference](https://moonshotai.github.io/kimi-code/en/reference/kimi-command) describe different interfaces. No confirmed read-only stdin/file invocation is bundled.
+- Kimi CLI: the documented stdin `--print` mode implicitly enables AFK approval and automatically handles plan-mode switches. The [print-mode reference](https://github.com/MoonshotAI/kimi-cli/blob/main/docs/en/customization/print-mode.md) and the [other published command reference](https://moonshotai.github.io/kimi-code/en/reference/kimi-command) describe different interfaces. No confirmed read-only stdin/file invocation is bundled. Kimi Code 2.6.0 refuses `-p` with `--plan` (`Cannot combine --prompt with --plan.`), and without `--plan` its `-p` follows the user's default permission mode, which may approve everything. Kimi still runs through the Orca route.
 - Crush: the [non-interactive implementation](https://github.com/charmbracelet/crush/blob/main/internal/app/app.go) automatically approves the session. No invocation with a reliable read-only boundary has been confirmed.
 - agy and Devin: their input or output needs code beyond the declarative adapter contract.
 
@@ -67,7 +67,7 @@ These exclusions concern the adapter requirements, not whether each CLI can deve
 | `env` | literal environment variables for the child, such as an inline permission config |
 | `access_env` | optional mapping from an offered access level to environment variables; overrides `env` for that level, in the child only |
 | `session` | `{"source": "preassign"}` (the script passes a new UUID as `{session}`), `{"source": "event", "match", "field"}`, or `{"source": "none"}` (one turn only) |
-| `output` | `{"format": "text"}` (all of stdout is the reply) or `{"format": "jsonl", "final", "error"}` |
+| `output` | `{"format": "text"}` (all of stdout is the reply) or `{"format": "jsonl", "final", "error", "end"}`. Optional `end` is `{"match": {...}}` for the event that ends a turn; a CLI still running 30 seconds after it is stopped, and the turn is judged by its reply and errors, with `stopped_after_end` recorded |
 | `progress` | optional list of rules that `watch` renders as `[label] text` lines; display only |
 | `interactive` | args a person uses to reopen the session, with `{session}` |
 | `interactive_start` | optional argv for `open`: starts the CLI interactively with `{access}`, `{session}`, optional `{model}`, `{effort}`, and `{run_name}`, and `{opening}`, the script's one-line pointer to the brief. Requires a preassigned session; `{opening}` and `{run_name}` are refused anywhere else |
