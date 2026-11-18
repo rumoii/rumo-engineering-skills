@@ -1301,6 +1301,27 @@ class StatusArea:
         sys.stdout.flush()
 
 
+def grok_failure_reason(error: str | None, stderr_path: Path) -> str:
+    recorded = (error or "").casefold()
+    evidence = recorded
+    if recorded in ("", "cancelled", "error_during_execution"):
+        try:
+            with stderr_path.open("rb") as stderr:
+                size = stderr.seek(0, os.SEEK_END)
+                stderr.seek(max(0, size - 8192))
+                evidence += stderr.read(8192).decode("utf-8", errors="replace").casefold()
+        except OSError:
+            pass
+    # Raw diagnostics can contain credentials or URLs with private query parameters.
+    if "unknown model id" in evidence:
+        return "unknown model id · 模型目录缺少指定模型"
+    if "headless run cannot ask for approval" in evidence:
+        return "headless approval required · 工具调用需要审批 (see stderr.log)"
+    if recorded:
+        return "Grok execution error · 执行失败 (see events.jsonl)"
+    return "no usable reply · 未取得回复 (see stderr.log)"
+
+
 class TurnView:
     """Renders one turn's output as progress lines, each prefixed with `label` when several runs share a screen."""
 
@@ -1386,6 +1407,9 @@ class TurnView:
         if self.area:
             title = f"\x1b[1;{32 if state in ('exited', 'closed') else 33 if state == 'timed-out' else 31}m{title}\x1b[0m"
         self.say(f"{title}  {' · '.join(details)}")
+        if state == "failed" and self.meta["cli"] == "grok":
+            reason = grok_failure_reason(turn.get("error"), self.turn_dir / "stderr.log")
+            self.say(f"error 错误: {reason}")
         self.say(f"result 结果: {final if final.is_file() else 'none'}")
         self.say("Tell the agent that started this run · 去告诉发起它的 agent")
         return turn_code(state)

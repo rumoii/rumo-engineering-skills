@@ -135,6 +135,17 @@ FAKE = textwrap.dedent(
         print("not json {", flush=True); sys.exit(0)
     if mode == "fail":
         sys.stderr.write("auth failed\n"); sys.exit(4)
+    if mode in ("grok-model-error", "grok-approval-error", "grok-execution-error"):
+        error = {
+            "grok-model-error": "Couldn't set model 'grok-4.7': unknown model id",
+            "grok-approval-error": "cancelled",
+            "grok-execution-error": "upstream request failed: Authorization: Bearer fixture-secret",
+        }[mode]
+        if mode == "grok-approval-error":
+            sys.stderr.write("permission required: Fetch: https://example.test/?token=fixture-secret "
+                             "was not run, as a headless run cannot ask for approval\n")
+        emit({"type": "result", "is_error": True, "errors": [error], "session_id": session})
+        sys.exit(0 if mode == "grok-approval-error" else 1)
     if dialect == "codex":
         emit({"type": "item.completed", "item": {"type": "agent_message", "text": reply}})
         emit({"type": "turn.completed"})
@@ -861,6 +872,29 @@ class DetachWatchTest(Harness):
         watched = self.run_script("watch", failed["run_id"], "--runs-dir", str(self.runs), dialect="claude")
         self.assertEqual(watched.returncode, 1)
         self.assertIn("turn 1 failed", watched.stdout.decode("utf-8"))
+
+    def test_watch_reports_grok_failures_without_echoing_raw_diagnostics(self) -> None:
+        for mode, exit_code, reason in (
+            ("grok-model-error", 1, "unknown model id"),
+            ("grok-approval-error", 0, "headless approval required"),
+            ("grok-execution-error", 1, "Grok execution error"),
+        ):
+            with self.subTest(mode=mode):
+                info = json.loads(self.start("grok", mode).stdout)
+                watched = self.run_script("watch", info["run_id"], "--runs-dir", str(self.runs), dialect="claude")
+                out = watched.stdout.decode("utf-8")
+                self.assertEqual(watched.returncode, 1, out)
+                self.assertIn(f"turn 1 failed · exit {exit_code}", out)
+                self.assertIn(f"error 错误: {reason}", out)
+                self.assertNotIn("fixture-secret", out)
+
+    def test_watch_of_a_successful_grok_turn_has_no_error_summary(self) -> None:
+        info = json.loads(self.start("grok").stdout)
+        watched = self.run_script("watch", info["run_id"], "--runs-dir", str(self.runs), dialect="claude")
+        out = watched.stdout.decode("utf-8")
+        self.assertEqual(watched.returncode, 0, out)
+        self.assertIn("turn 1 exited", out)
+        self.assertNotIn("error 错误:", out)
 
 
 class TurnSelectionTest(Harness):
