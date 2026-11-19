@@ -117,6 +117,9 @@ RULES = {
         "A decision record never authorizes database writes, deployments, or other controlled actions.",
         "append one line for each fork, failure, or change of direction",
         "never edit or delete an earlier line",
+        "propose answering it with the Prototype flow in `rumo-coding-guidelines/references/task-flows.md`, which needs its own approval",
+        "Do not propose an adversarial or multi-model risk review of a plan that has no code or evidence behind it yet",
+        "when the user asks for one, say so once and then run it.",
     ),
     "rumo-research": (
         "Research is read-only by default.",
@@ -136,6 +139,11 @@ RULES = {
         "Remove the cause with structure",
         "say why each higher level cannot hold it",
         "run it against the real mistake from this session and confirm that it fails",
+        "Group the mistakes into classes; a class needs at least two occurrences.",
+        "When the pattern is already common in existing code, fail only when a change adds more.",
+        "An allowed exception sits on the offending line with a reason, an expiry date, and the approving person.",
+        "when a rule was written after an earlier mistake and nothing enforces it, one more break counts as the second occurrence",
+        "A rule written only as a precaution needs two breaks like any class.",
     ),
     "rumo-project-profile": (
         "It never prints credential values.",

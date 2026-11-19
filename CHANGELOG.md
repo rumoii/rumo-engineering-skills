@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- `rumo-reflect` 新增翻仓库历史的用法：用户问“这个仓库老出什么错”时，读最近的提交、revert、能看到的评审意见、agent 指令文件和解释变通做法的注释，同类错误出现两次才算一类；因为犯过错才写下的规则，在没有检查保证时再被违反一次就算第二次，预防性的规则仍要两次。自动检查这一级补两条：坏模式在老代码里已经很多时只拦新增；允许的破例写在出问题的那一行，带理由、过期日期和批准人。指令文件里维护“规则 ↔ 检查”对照表时，按表提议升级或删除规则。`rumo-plan` 写明：待定问题能靠观察行为回答的，提议走原型流程（另需授权），不在纸面上争；不主动提议对还没有代码或证据的计划做对抗式或多模型风险评审，因为评审者会编出不存在的风险，用户要求时先说一次再做。本仓库 `AGENTS.md` 新增 Rules And Their Checks 表，写明每条规则由哪个检查保证，或者只靠文字。新规则的关键句固定在 `test_skill_rules.py`。
 - `rumo-agent-collaboration` 的 adapters.md 写明 agy 没有 adapter 的实测原因：agy 1.5.12 在 Windows 11 23H2 上找不到可靠的只读边界。用户设置自动放行工具时，`--mode plan --sandbox` 仍能用 `write_file` 建文件，`--sandbox` 在 Windows 11 24H2 之前不生效；`--mode accept-edits` 下，会话级 `--settings` 的 deny 规则拦住了工作区内的写入和命令，拦不住工作区外的写入，关掉 `allowNonWorkspaceAccess` 也一样，`write_file(regex:.*)` 什么都没拦。之前只写了“输入输出超出声明式契约”，而 print 模式其实能靠一行指针读任务书，真正的卡点是只读。
 - `rumo-agent-collaboration` 选路线那一步写明：第 4 步之前先读完所选路线的参考文件，因为第 4 步要告诉用户的内容（例如 `watch` 命令）写在里面。之前正文只在括号里附链接，没说要读，agent 可能跳过参考文件，直接从启动输出里拼凑第 4 步。
 - `agent_run.py` 在 Windows 上开监视窗口或交互窗口前，先查调用进程所在的窗口站和桌面，不是 `WinSta0\Default` 就不开窗口，返回 `opened: false` 并写明桌面名：`start`/`resume` 照常在后台跑，改用 `watch` 跟进；`open` 报启动失败。之前 agy `--sandbox` 里的调用方在隔离桌面（`WinSta0\exebox-*`）上，`wt` 把 Windows Terminal 开到那个桌面，只看退出码就报了 `opened: true`；这个隐藏的 Terminal 实例随后接管了正常桌面发起的 PowerShell 和 BAT 会话，窗口都出现在隔离桌面上。桌面查询在 agy 1.5.10 的 sandbox 里实测返回 `WinSta0\exebox-…`。
