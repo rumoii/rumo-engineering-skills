@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
@@ -33,9 +34,11 @@ def main() -> int:
         (sys.executable, "skills/rumo-review/scripts/test_app_server_review.py"),
         (sys.executable, "extras/rumo-linux-inspect/scripts/remote_memory_inspection.py", "--dry-run", "--host", "<host>"),
     )
+    # Installers link skill directories, so bytecode caches written here would show up in every client.
+    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
     for command in commands:
         print(f"+ {' '.join(command)}", flush=True)
-        result = subprocess.run(command, cwd=REPO_ROOT, check=False)
+        result = subprocess.run(command, cwd=REPO_ROOT, env=env, check=False)
         if result.returncode != 0:
             return result.returncode
     return 0

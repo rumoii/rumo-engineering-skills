@@ -191,6 +191,8 @@ agent 可以调用你本机装的其他 AI 编程工具，请它们独立复查�
 | `rumo-linux-inspect` | 只读采集 Linux 硬件配置或巡检内存（仅手动调用） |
 | `rumo-imagegen` | 通过用户自配的 OpenAI 兼容接口生成单张图片（仅手动调用） |
 
+“仅手动调用”靠 frontmatter 的 `disable-model-invocation` 实现；Hermes 和 OpenCode 不认这个字段，模型仍可能自动选中这三个技能。要求严格手动的，在这两个客户端里不要安装它们。
+
 ```powershell
 .\install.ps1 -NoPull -ListExtras
 .\install.ps1 -NoPull -Extras rumo-diagram,rumo-document-writing

@@ -191,6 +191,8 @@ Not installed by default, and available only through the installer; the plugin h
 | `rumo-linux-inspect` | Read-only Linux hardware inventory or memory inspection (manual only) |
 | `rumo-imagegen` | One image through a user-configured OpenAI-compatible endpoint (manual only) |
 
+"Manual only" relies on the frontmatter field `disable-model-invocation`; Hermes and OpenCode ignore it, so their model may still pick these three skills on its own. If they must stay manual, do not install them in those clients.
+
 ```powershell
 .\install.ps1 -NoPull -ListExtras
 .\install.ps1 -NoPull -Extras rumo-diagram,rumo-document-writing
