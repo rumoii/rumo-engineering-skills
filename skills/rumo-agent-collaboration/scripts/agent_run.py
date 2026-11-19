@@ -1511,9 +1511,41 @@ def cmd_wait(args: argparse.Namespace) -> int:
     return 2 if problem else turn_code(turn["state"])
 
 
+def windows_desktop() -> str | None:
+    """Return this process's window station and desktop, such as WinSta0\\Default, or None when unknown."""
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    user32.GetProcessWindowStation.restype = wintypes.HANDLE
+    user32.GetThreadDesktop.argtypes = [wintypes.DWORD]
+    user32.GetThreadDesktop.restype = wintypes.HANDLE
+    user32.GetUserObjectInformationW.argtypes = [wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD,
+                                                 ctypes.POINTER(wintypes.DWORD)]
+    user32.GetUserObjectInformationW.restype = wintypes.BOOL
+    kernel32.GetCurrentThreadId.restype = wintypes.DWORD
+
+    def name(handle: int | None) -> str | None:
+        # Both handles belong to the process and must not be closed.
+        buffer = ctypes.create_unicode_buffer(256)
+        if not handle or not user32.GetUserObjectInformationW(handle, 2, buffer, ctypes.sizeof(buffer), None):  # UOI_NAME
+            return None
+        return buffer.value
+
+    station = name(user32.GetProcessWindowStation())
+    desktop = name(user32.GetThreadDesktop(kernel32.GetCurrentThreadId()))
+    return f"{station}\\{desktop}" if station and desktop else None
+
+
 def open_window(argv: list[str], cwd: str, title: str) -> dict:
     """Run argv in a terminal window the user can see, without building a shell command string."""
     if os.name == "nt":
+        # A window opens on the caller's desktop; a sandboxed caller's desktop is one the user never sees.
+        desktop = windows_desktop()
+        if desktop and desktop.lower() != "winsta0\\default":
+            return {"opened": False, "via": None,
+                    "reason": f"this process runs on desktop {desktop}, not the user's WinSta0\\Default; follow the run with watch"}
         wt = shutil.which("wt")
         # Windows Terminal splits its own command line on ';', so such argv falls back to a console window.
         if wt and not any(";" in token for token in (title, cwd, *argv)):

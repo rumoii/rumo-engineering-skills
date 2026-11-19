@@ -968,7 +968,8 @@ class WindowTest(Harness):
     @unittest.skipUnless(os.name == "nt", "Windows window launcher")
     def test_windows_terminal_tab_is_preferred_and_semicolons_fall_back_to_a_console(self) -> None:
         argv = [sys.executable, "watch.py", "run-1"]
-        with patch.object(agent_run.shutil, "which", return_value="wt.exe"), \
+        with patch.object(agent_run, "windows_desktop", return_value="WinSta0\\Default"), \
+                patch.object(agent_run.shutil, "which", return_value="wt.exe"), \
                 patch.object(agent_run.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as run, \
                 patch.object(agent_run.subprocess, "Popen") as popen:
             self.assertEqual(agent_run.open_window(argv, str(self.cwd), "pi run-1")["via"], "wt-tab")
@@ -978,6 +979,22 @@ class WindowTest(Harness):
             self.assertEqual(result["via"], "console")
             self.assertEqual(run.call_count, 1)
             self.assertTrue(popen.call_args.kwargs["creationflags"] & subprocess.CREATE_NEW_CONSOLE)
+
+    def test_windows_caller_on_a_hidden_desktop_opens_no_window(self) -> None:
+        # A sandboxed caller, such as agy --sandbox, runs on its own desktop; a window would open there unseen.
+        with patch.object(agent_run.os, "name", "nt"), \
+                patch.object(agent_run, "windows_desktop", return_value="WinSta0\\exebox-42"), \
+                patch.object(agent_run.shutil, "which", return_value="wt.exe"), \
+                patch.object(agent_run.subprocess, "run") as run, patch.object(agent_run.subprocess, "Popen") as popen:
+            result = agent_run.open_window(["watch"], str(self.cwd), "t")
+        self.assertFalse(result["opened"])
+        self.assertIn("WinSta0\\exebox-42", result["reason"])
+        run.assert_not_called()
+        popen.assert_not_called()
+
+    @unittest.skipUnless(os.name == "nt", "Windows desktop query")
+    def test_windows_desktop_names_the_station_and_desktop(self) -> None:
+        self.assertRegex(agent_run.windows_desktop() or "unknown\\unknown", r"^[^\\]+\\[^\\]+$")
 
     def test_linux_without_a_display_reports_why_no_window_opened(self) -> None:
         with patch.object(agent_run.os, "name", "posix"), patch.object(agent_run.sys, "platform", "linux"), \
