@@ -49,9 +49,9 @@ FAKE = textwrap.dedent(
         "codex": "-c --config --json --sandbox --cd --model --skip-git-repo-check",
         "claude": "-p --print --output-format --verbose --permission-mode --session-id --resume --model --effort --name",
         "pi": "-p --print --mode --tools --session-id --session --model --no-mcp --no-extensions --thinking --name",
-        "qwen": "-o --output-format --approval-mode --session-id --resume --model --prompt-interactive",
+        "qwen": "-o --output-format --approval-mode --session-id --resume --model --prompt-interactive --allowed-tools",
         "grok": "-s --session-id --prompt-file --output-format --no-subagents --permission-mode --resume --model --reasoning-effort "
-                "--disallowed-tools",
+                "--disallowed-tools --allow",
         "cursor": "-p --print --output-format --mode --sandbox --trust --resume --model",
         "gemini": "-o --output-format --approval-mode --resume --model",
         "opencode": "--format --session --model --title --standalone --agent",
@@ -271,9 +271,10 @@ class BundledAdapterTest(unittest.TestCase):
             ("claude", "workspace-write", ["--permission-mode", "acceptEdits"]),
             ("pi", "read-only", ["--tools", "read,grep,find,ls"]),
             ("pi", "native-write", ["--tools", "read,grep,find,ls,edit,write"]),
-            ("qwen", "read-only", ["--approval-mode", "plan"]),
-            ("qwen", "workspace-write", ["--approval-mode", "auto-edit"]),
-            ("grok", "read-only", ["--permission-mode", "plan", "--disallowed-tools", "run_terminal_command"]),
+            ("qwen", "read-only", ["--approval-mode", "plan", "--allowed-tools", "web_fetch"]),
+            ("qwen", "workspace-write", ["--approval-mode", "auto-edit", "--allowed-tools", "web_fetch"]),
+            ("grok", "read-only", ["--permission-mode", "plan", "--disallowed-tools", "run_terminal_command",
+                                   "--allow", "WebFetch"]),
             ("cursor", "read-only", ["--mode", "ask", "--sandbox", "enabled"]),
             ("gemini", "read-only", ["--approval-mode", "plan"]),
         ):
@@ -338,6 +339,11 @@ class BundledAdapterTest(unittest.TestCase):
         self.assertEqual(config["share"], "disabled")
         self.assertNotIn("edit", config["permission"])
         self.assertNotIn("shell", config["permission"])
+        # Read-only research may fetch web pages without approval at either level. websearch stays denied: on
+        # 2.2.2 its first use asks a question a headless run cannot answer, which fails the whole turn.
+        for permission in (config["permission"], config["agent"]["build"]["permission"]):
+            self.assertEqual(permission["webfetch"], "allow")
+            self.assertNotIn("websearch", permission)
 
     def test_opencode_native_write_only_adds_edit_permission(self) -> None:
         adapter = BUNDLED["opencode"]

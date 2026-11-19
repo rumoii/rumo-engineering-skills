@@ -16,11 +16,11 @@ An adapter is a JSON file that tells `agent_run.py` how to drive one CLI: how to
 | codex | one read-only turn with model and effort run on 0.162.0; `--skip-git-repo-check` lets it run outside a git repository without widening the sandbox | read-only, workspace-write |
 | claude | one read-only turn with model and effort run on 2.1.309 | read-only, workspace-write |
 | pi | one read-only turn with effort run on 1.3.0 | read-only, native-write (no shell) |
-| qwen | flags checked and one read-only turn run on 0.25.2 | read-only, workspace-write |
-| grok | one read-only turn with model and effort, and a resume, run on 1.0.70; read-only has no shell tool; the model list is a local cache that opening grok refreshes | read-only |
+| qwen | flags checked and one read-only turn run on 0.25.2; one read-only turn fetched a page with `--allowed-tools web_fetch` | read-only, workspace-write |
+| grok | one read-only turn with model and effort, and a resume, run on 1.0.70; read-only has no shell tool; on 1.0.88 one read-only turn fetched a page outside grok's default allowlist and searched | read-only |
 | cursor (`cursor-agent`) | unverified, from the CLI reference | read-only |
 | gemini | disabled: headless Plan Mode can switch to unrestricted implementation | declared read-only is insufficient |
-| opencode | one read-only turn, one native-write turn, and a resume run on 2.2.2 | read-only, native-write (edit only, no shell) |
+| opencode | one read-only turn, one native-write turn, and a resume run on 2.2.2; one read-only turn fetched a page | read-only, native-write (edit only, no shell) |
 | copilot | unverified, from GitHub CLI and SDK event references | read-only, native-write (file tools; no shell) |
 | aider | unverified, from options and chat-mode references | read-only, native-write (code edits; caller runs checks) |
 | cline | unverified, from CLI and Plan/Act references | read-only, native-write (Act defaults auto-approve) |
@@ -79,7 +79,7 @@ A `progress` rule uses the same `match` and `field`, plus a nonempty `label` and
 
 ## Write One
 
-1. Run the installed CLI's `--help` and its non-interactive subcommand's help, or use official documentation when it is unavailable. Record exact source links in `notes`; do not install the CLI without authorization. Find a non-interactive mode, prompt input through stdin or a file, output format, a read-only setting, and session resume if available.
+1. Run the installed CLI's `--help` and its non-interactive subcommand's help, or use official documentation when it is unavailable. Record exact source links in `notes`; do not install the CLI without authorization. Find a non-interactive mode, prompt input through stdin or a file, output format, a read-only setting, how web search and page fetching are approved, and session resume if available.
 2. No confirmed read-only setting: stop. The CLI cannot be used through this skill.
 3. Add `workspace-write` only for a documented working-directory restriction. Otherwise use `native-write` for a documented development mode and disclose the lack of directory isolation, automatic approval defaults, and available tools. Unverified adapters may offer documented write modes, but keep `verified: null` until the local version and help have been checked. Never use a flag that skips approvals or the sandbox. `FORBIDDEN` in the script lists refused strings; checks also reject common short approval aliases, explicit sandbox disabling, and enabled allow-all/auto-approve settings. Use unambiguous long flags instead of `-f` or `-y`.
 4. Without a JSON output, use `"output": {"format": "text"}`. Without session IDs, use `"session": {"source": "none"}`; the run is then one turn only.
@@ -87,6 +87,8 @@ A `progress` rule uses the same `match` and `field`, plus a nonempty `label` and
 6. After a run, compare the real output with the `final`, `error`, and `session` rules and fix them before relying on the adapter.
 
 ## Permission And Output Boundaries
+
+Read-only forbids file writes and shell, not reading the web: research needs search and page fetching. Where a CLI would ask approval for those tools, the read-only level approves them and nothing else: grok `--allow WebFetch`, qwen `--allowed-tools web_fetch`, and OpenCode's `webfetch` permission. Claude Code and grok search without approval. Codex search and page opening come from its built-in `codex_apps` server, so a Codex configuration with `features.apps = false` has no web tools. Pi has no web tools. Qwen search needs a search provider configured in Qwen itself. OpenCode's `websearch` stays denied because on 2.2.2 its first use asks a question a headless turn cannot answer, which fails the turn.
 
 `native-write` permits development through native CLI controls, not an added filesystem sandbox. Use a separate worktree for each parallel writer; the brief still limits authorized files and operations. Approval that the headless turn cannot collect is a blocker, not permission to change modes.
 

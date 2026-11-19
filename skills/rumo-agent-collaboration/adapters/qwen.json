@@ -17,7 +17,8 @@
         "--session-id",
         "--resume",
         "--model",
-        "--prompt-interactive"
+        "--prompt-interactive",
+        "--allowed-tools"
       ]
     }
   ],
@@ -25,11 +26,15 @@
   "access": {
     "read-only": [
       "--approval-mode",
-      "plan"
+      "plan",
+      "--allowed-tools",
+      "web_fetch"
     ],
     "workspace-write": [
       "--approval-mode",
-      "auto-edit"
+      "auto-edit",
+      "--allowed-tools",
+      "web_fetch"
     ]
   },
   "model": [
@@ -99,5 +104,5 @@
     "--resume",
     "{session}"
   ],
-  "notes": "One read-only start turn ran on 0.25.2 and kept the preassigned session ID; resume and the write level are not exercised."
+  "notes": "One read-only start turn ran on 0.25.2 and kept the preassigned session ID; resume and the write level are not exercised. --allowed-tools web_fetch approves page fetching, which a non-interactive turn otherwise refuses; one read-only turn on 0.25.2 fetched a page with it. Web search is absent until a search provider is configured in Qwen."
 }

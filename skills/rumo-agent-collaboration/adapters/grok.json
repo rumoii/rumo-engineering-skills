@@ -20,7 +20,8 @@
         "--no-subagents",
         "--model",
         "--reasoning-effort",
-        "--disallowed-tools"
+        "--disallowed-tools",
+        "--allow"
       ]
     }
   ],
@@ -30,7 +31,9 @@
       "--permission-mode",
       "plan",
       "--disallowed-tools",
-      "run_terminal_command"
+      "run_terminal_command",
+      "--allow",
+      "WebFetch"
     ]
   },
   "model": [
@@ -123,5 +126,5 @@
     "--resume",
     "{session}"
   ],
-  "notes": "Read-only only: the write level would need grok's --sandbox profile, which is not confirmed on every platform. Read-only removes run_terminal_command: in plan mode a refused shell command cancels the whole headless turn, while grep, read_file, and list_dir remain. On 1.0.70 a read-only turn asked to run a command answered without one, and a resume turn ran; both exited on their own. A resume on 1.0.70 once printed its result and never exited, so output.end stops it. The model list comes from a local cache that opening grok refreshes; an 'unknown model id' error can mean a stale cache. The signed-out error event shape is from 1.0.41."
+  "notes": "Read-only only: the write level would need grok's --sandbox profile, which is not confirmed on every platform. Read-only removes run_terminal_command: in plan mode a refused shell command cancels the whole headless turn, while grep, read_file, and list_dir remain. --allow WebFetch approves page fetching: a headless turn cannot ask, and on 1.0.88 a fetch outside grok's default domain allowlist otherwise cancelled the whole turn; web_search needs no approval.On 1.0.70 a read-only turn asked to run a command answered without one, and a resume turn ran; both exited on their own. A resume on 1.0.70 once printed its result and never exited, so output.end stops it. The model list comes from a local cache that opening grok refreshes; an 'unknown model id' error can mean a stale cache. The signed-out error event shape is from 1.0.41."
 }
