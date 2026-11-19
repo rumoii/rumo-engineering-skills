@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- `rumo-agent-collaboration` 的 adapters.md 写明 agy 没有 adapter 的实测原因：agy 1.5.12 在 Windows 11 23H2 上找不到可靠的只读边界。用户设置自动放行工具时，`--mode plan --sandbox` 仍能用 `write_file` 建文件，`--sandbox` 在 Windows 11 24H2 之前不生效；`--mode accept-edits` 下，会话级 `--settings` 的 deny 规则拦住了工作区内的写入和命令，拦不住工作区外的写入，关掉 `allowNonWorkspaceAccess` 也一样，`write_file(regex:.*)` 什么都没拦。之前只写了“输入输出超出声明式契约”，而 print 模式其实能靠一行指针读任务书，真正的卡点是只读。
 - `rumo-agent-collaboration` 选路线那一步写明：第 4 步之前先读完所选路线的参考文件，因为第 4 步要告诉用户的内容（例如 `watch` 命令）写在里面。之前正文只在括号里附链接，没说要读，agent 可能跳过参考文件，直接从启动输出里拼凑第 4 步。
 - `agent_run.py` 在 Windows 上开监视窗口或交互窗口前，先查调用进程所在的窗口站和桌面，不是 `WinSta0\Default` 就不开窗口，返回 `opened: false` 并写明桌面名：`start`/`resume` 照常在后台跑，改用 `watch` 跟进；`open` 报启动失败。之前 agy `--sandbox` 里的调用方在隔离桌面（`WinSta0\exebox-*`）上，`wt` 把 Windows Terminal 开到那个桌面，只看退出码就报了 `opened: true`；这个隐藏的 Terminal 实例随后接管了正常桌面发起的 PowerShell 和 BAT 会话，窗口都出现在隔离桌面上。桌面查询在 agy 1.5.10 的 sandbox 里实测返回 `WinSta0\exebox-…`。
 - README 的可选扩展一节写明：“仅手动调用”靠 `disable-model-invocation`，Hermes 和 OpenCode 不认这个字段，仍可能自动选中这三个技能（依据 NVIDIA SkillEvaluator 1.0.1 的 harness profile）。`run_auxiliary_tests.py` 给子进程设 `PYTHONDONTWRITEBYTECODE=1`：安装器把技能目录链接给各客户端，测试在 `scripts/` 里留下的 `__pycache__` 会被客户端和扫描器看到。
