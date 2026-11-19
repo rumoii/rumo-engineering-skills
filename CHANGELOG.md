@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- `rumo-agent-collaboration` 选路线那一步写明：第 4 步之前先读完所选路线的参考文件，因为第 4 步要告诉用户的内容（例如 `watch` 命令）写在里面。之前正文只在括号里附链接，没说要读，agent 可能跳过参考文件，直接从启动输出里拼凑第 4 步。
 - `agent_run.py` 在 Windows 上开监视窗口或交互窗口前，先查调用进程所在的窗口站和桌面，不是 `WinSta0\Default` 就不开窗口，返回 `opened: false` 并写明桌面名：`start`/`resume` 照常在后台跑，改用 `watch` 跟进；`open` 报启动失败。之前 agy `--sandbox` 里的调用方在隔离桌面（`WinSta0\exebox-*`）上，`wt` 把 Windows Terminal 开到那个桌面，只看退出码就报了 `opened: true`；这个隐藏的 Terminal 实例随后接管了正常桌面发起的 PowerShell 和 BAT 会话，窗口都出现在隔离桌面上。桌面查询在 agy 1.5.10 的 sandbox 里实测返回 `WinSta0\exebox-…`。
 - README 的可选扩展一节写明：“仅手动调用”靠 `disable-model-invocation`，Hermes 和 OpenCode 不认这个字段，仍可能自动选中这三个技能（依据 NVIDIA SkillEvaluator 1.0.1 的 harness profile）。`run_auxiliary_tests.py` 给子进程设 `PYTHONDONTWRITEBYTECODE=1`：安装器把技能目录链接给各客户端，测试在 `scripts/` 里留下的 `__pycache__` 会被客户端和扫描器看到。
 - `rumo-agent-collaboration` 新增 Starling 路线：环境里有 `STARLING_TOOL_TOKEN` 时，Starling 的 dispatch 接受的 CLI 和档位（目前是 Codex 写、Claude 只读评审）优先走 `starling dispatch`，排在原生子 agent、Orca 和 `agent_run.py` 之前。新增 `references/starling.md`，写清：档位；Starling 只用 CLI 自己默认的模型、effort 和启动器，用户或配置线路指定了这些时，每个任务问一次是否接受；新工位没有未提交改动和被忽略的目录，要在任务书里写明怎么准备；派完结束本轮等 Starling 敲门，不轮询，`turn` 和 `alive` 分别是什么意思；检查只认 `starling check` 的退出码 0；要老板定的事用 `starling ask`：问题只写要定的那件事，背景用一句话说选别的会怎样，查到的原因、路径和证据记进 `starling note`，不放进卡片；交付用 `starling report`，三行里要写明任务书要求了、这次却没做的步骤（例如没派员工、没跑 `starling check`）和原因；合并、推送、删除工位或分支先等老板回答。统筹的做法写成经验，可以按情况不照做但要说明理由：默认一人写、其他人审，交叉评审，修两轮还有必须修的问题就问老板。`rumo-review` 的评审面板同步：Starling 接受评审的线路改走 Starling，这条线路的停止和记录也改用 `starling close`、`starling note`，其他线路照旧。新增触发用例 `collab-starling`。
