@@ -9,6 +9,10 @@ calculate a changed example, locate evidence, or compare two cases. Replace
 "understand retries" with "explain which failed operation may safely be retried".
 For each goal, identify its source, explanation, worked example, similar task,
 and answer criteria. Teach prerequisites before their applications.
+Choose practice that makes the reader produce what the goal names: recall for a
+fact, a changed input for a procedure, a prediction or an explanation in the
+reader's own words for a single idea, and a comparison that names the trade-off
+for a judgment. One goal may combine several.
 
 For a sprint, start from the deadline, available time, existing skills, and target
 performance. Distinguish what can realistically improve from what remains out of
@@ -29,6 +33,16 @@ runs short. Estimates are planning judgments, never measured learning speed.
    boundaries before giving a similar problem with one changed condition.
 4. **Self-test:** ask before revealing. Include answer criteria, the reasoning,
    a common misunderstanding, and a link back to the exact explanation.
+   - Use multiple choice only when every wrong option stands for a misconception
+     you can name. Keep wrong and right options alike in length, detail, and
+     wording, and say in the answer why each wrong option fails. Without such
+     options, ask for a direct answer.
+   - Working along with the example is guided practice, and so is an answer the
+     reader can read off the page or a figure. To check the goal, add a task
+     with a changed condition and no hints for the reader to attempt alone.
+   - Call a question original only after checking its source stem and answer.
+     Label the rest adapted or written for this guide, and claim exam-level
+     difficulty only with evidence for it.
 
 Use the same case across chapters when it reduces prerequisites. Put essential
 meaning in text; unfolding details, hovering, or running JavaScript must not be
@@ -70,7 +84,7 @@ Read [components.md](components.md) for markup matching the template.
 | Code walkthrough | Actual code or a clearly labeled teaching snippet explains behavior | The source is unavailable; do not invent repository excerpts |
 | Review list | Readers will revisit core tasks across sessions | A static question list suffices; persistence must remain optional |
 | Priority and time in the kicker | A dated goal forces trade-offs | General learning has no time budget; do not manufacture urgency |
-| Open retelling | The goal combines several mechanisms or requires spoken explanation | A short calculation or precise answer suffices |
+| Open retelling | The goal asks the reader to explain an idea, justify a judgment, combine several mechanisms, or explain aloud | A short calculation or precise answer suffices |
 | Term note | A term the reader may not know appears for the first time | It is central to the lesson; explain it in the paragraph itself |
 | Source link | A reader may want to open the code behind a claim or excerpt | The content is a teaching invention; say so instead of inventing a reference |
 

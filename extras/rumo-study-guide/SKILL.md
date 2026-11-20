@@ -74,6 +74,7 @@ It checks widths/themes, errors, anchors, ids, external requests, initialization
 If Playwright is absent, report exit 2; obtain approval before any installation.
 Cold read: give a fresh agent that has not seen the sources only the page text and the reader profile.
 It reads as that reader and lists every sentence it cannot follow, every term not yet explained, and every place that needs a picture; revise, and repeat with another fresh agent until the list is empty or after three rounds, then give the user what remains.
+When the same passage fails again, or a reader reports it, change the route (a missing prerequisite, another example, or a figure) instead of rewording it.
 When no fresh agent is available, say the cold read was not done and ask the user to read first.
 Manually check answer correctness, agreement between figures and text, and review links.
 Readability is not proof of learning.
