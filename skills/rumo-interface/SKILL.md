@@ -11,7 +11,7 @@ Anything that crosses a process, storage, deployment-version, module, or product
 
 Before editing, identify:
 
-- the authority for names, types, units, nullability, defaults, enum values, identifiers, ordering, and error semantics;
+- the authority for names, types, units, nullability, defaults, enum values, identifiers, ordering, and error semantics; for a command-line tool, its subcommands and options, stdout format in each mode, what goes to stderr, and exit codes are all contract;
 - every production producer and consumer: frontends, services, clients, middleware, reports, imports and exports, scripts, sibling products, supported branches;
 - everything derived from the authority: generated clients, schemas, mappers, fixtures, examples, deployment configuration, docs;
 - instances that outlive one process version: stored rows, queued messages, files, caches;

@@ -30,6 +30,8 @@ Consider, for the affected behavior:
 
 Assert on what matters: the authoritative state, durable side effects, emitted protocol values, user-visible output, completed cleanup, and the absence of forbidden behavior.
 
+A claim that a real integration works needs two assertions. First, the real backend path ran, not a silent fallback. Second, the produced artifact has the requested format and content, checked independently. A success code, a format field in the response, the file extension, or the file's existence proves neither. An export that reports MP3 while writing WAV bytes passes all of those checks.
+
 ## Sizing The Plan
 
 Do not default to the whole repository suite, and do not drop a focused test because CI runs broadly later. Add a broader build or workflow only when module assembly, generated output, packaging, or environment configuration creates behavior the focused checks cannot see.

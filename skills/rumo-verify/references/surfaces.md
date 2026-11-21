@@ -11,7 +11,7 @@ Start from the narrowest command that would fail for the regression, then widen 
 | SQL, schema, or migration | query or migration validation, existing-data behavior, transaction and rollback path, affected service tests |
 | Queue, cache, task, or session lifecycle | producer and consumer route, retry and duplicate handling, durable side effects, convergence after failure |
 | Packaging or deployment script | built artifact contents, selected profile, plan or dry run, target paths, backup and rollback, post-action check |
-| Shared skill | frontmatter and catalog validation, referenced files exist, helper-script tests, cross-platform command review, `git diff --check` |
+| Shared skill | frontmatter and catalog validation, referenced files exist, helper-script tests, cross-platform command review, `git diff --check`; when a helper's invocation or its documented commands change, run the affected documented path once from the installed skill directory, and report any path not run |
 | Documentation or generated file | owner check, render or build when applicable, forbidden-path scan, visual inspection |
 
 Fakes, mocks, and unit tests do not prove an external or field boundary. Source checks do not prove built or deployed artifacts. Package checks do not prove a real platform, terminal, external runtime, or customer environment unless that environment was exercised.
