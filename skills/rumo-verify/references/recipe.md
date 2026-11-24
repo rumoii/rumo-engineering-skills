@@ -52,11 +52,11 @@ Run the recipe as written: launch, doctor, drive one mapped feature, capture evi
 
 When asked to check a recipe, or when the default verify mode finds drift:
 
-1. Read the feature index and fix missing, extra, or dead entries.
+1. Read the feature index and fix missing, extra, or dead entries. To find missing ones, also scan the changes since the commit the recipe was last proven against for user-facing entry points the map does not cover, and when no commit is recorded, state the range you scanned; call one missing only with its source path, and add it or note in `features/README.md` why it stays out of the map.
 2. For each feature, compare the recipe with the current source and note likely drift with file references.
 3. Launch once, run the doctor, and drive every feature, keeping the evidence through every cleanup.
 4. Sort each problem: a wrong description is fixed in the recipe; working behavior the steps cannot drive is a harness gap, fixed in the recipe or its helpers and driven again; broken application behavior is a product defect. A product defect found during maintenance is reported, never written around in the recipe.
-5. Edit only the recipe's own directory. Report one outcome: unchanged, corrected (with the changed files), or blocked (with the reason).
+5. Edit only the recipe's own directory. When the recipe records the commit it was proven against and this pass drove every feature, update that commit to the one this pass proved. Report one outcome: unchanged, corrected (with the changed files), or blocked (with the reason).
 
 A feature that cannot be reached counts as unreachable only when the report names the missing precondition, such as sign-in, entitlement, platform, or external state, and the route attempted.
 

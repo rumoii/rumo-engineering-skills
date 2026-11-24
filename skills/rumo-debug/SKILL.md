@@ -32,7 +32,7 @@ Strip the reproduction to the smallest input and state that still fails, and fin
 
 ## 5. Fix (Only When Requested)
 
-Write a failing regression test first, make the smallest fix, and verify with `rumo-test` and `rumo-verify`. Keep the fix inside the proven cause.
+Write a failing regression test first, make the smallest fix, and verify with `rumo-test` and `rumo-verify`. Keep the fix inside the proven cause. A guard, default value, or retry where the failure surfaces is a fix only when the state it handles can legitimately occur, such as bad input from outside the system or records stored by an older version; otherwise fix where the state first goes wrong. Before finishing, remove every temporary probe and extra log line, and revert speculative patches for hypotheses the evidence refuted; keep a test that still reproduces the real defect.
 
 ## Remote Environments
 

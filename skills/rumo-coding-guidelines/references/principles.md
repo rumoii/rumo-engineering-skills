@@ -46,6 +46,6 @@ Read the entry whose **When:** line matches the moment. Each one changes a speci
 
 ## Explain The Number
 
-**When:** before reporting or acting on a measured result: a speedup, a regression, a throughput, or an evaluation score.
-**Changes:** find what limits the number and rule out that it measured something else, such as a warm cache, a skipped step, or a different input. Report the conditions with the number. Read [measurement.md](measurement.md) before reporting a performance number.
+**When:** before measuring, and before reporting or acting on a measured result: a speedup, a regression, a throughput, or an evaluation score.
+**Changes:** find what limits the number and rule out that it measured something else, such as a warm cache, a skipped step, or a different input. Report the conditions with the number. Read [measurement.md](measurement.md) before measuring or reporting a performance number.
 **Not this:** "40% faster" from one run of each version on a machine that was also building something else.

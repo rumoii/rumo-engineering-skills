@@ -15,7 +15,7 @@ None of these flows commits, pushes, merges, deploys, or writes to a shared envi
 
 ## Measurement
 
-- **Performance problem.** Something is too slow or uses too much memory. Measure a baseline with fixed data, environment, and command; find the hot path with a profiler or trace; fix it; measure again the same way and report both numbers with the method. Repeat the measurement when the numbers vary between runs. Never claim it got faster without a measurement taken the same way before and after. Check the numbers against [measurement.md](measurement.md) before reporting them.
+- **Performance problem.** Something is too slow or uses too much memory. Read [measurement.md](measurement.md) before the first baseline run. Measure a baseline with fixed data, environment, and command; find the hot path with a profiler or trace; fix it; measure again the same way and report both numbers with the method. Repeat the measurement when the numbers vary between runs. Never claim it got faster without a measurement taken the same way before and after. Check the numbers against [measurement.md](measurement.md) before reporting them.
 - **Metric improvement.** Sustained work to move one number toward a target, such as start-up time or bundle size. Fix the measurement first, check it against [measurement.md](measurement.md), and show that it detects a change; record every attempt as one line in the plan's decisions and dead ends, with the hypothesis, the change, the before and after values, and whether it was kept or reverted; revert any attempt that does not help. Stop when the target is met or the remaining ideas are not worth their cost. Never loosen the target to declare success.
 
 ## Diagnosis And Exploration

@@ -1,12 +1,13 @@
 # Measurement
 
-Read this before you report or act on a performance number you measured: a before-and-after for a change, a claimed regression, a comparison between libraries or settings, or the harness for a metric you will improve step by step. Answer each question from a run, not from reading the code.
+Read this before you measure a performance number, and again before you report or act on one: a before-and-after for a change, a claimed regression, a comparison between libraries or settings, or the harness for a metric you will improve step by step. Answer each question from a run, not from reading the code.
 
 For a rough figure the user asked for, one run is enough: still check questions 4 and 7, and say it was one run. A choice between options is never a rough figure.
 
 ## Before Running
 
 - Write the sentence you expect to report, with its unit, percentile, and data set, such as "the export takes 30% less time at p50 on the 60k-row file". The questions below test that sentence.
+- When the number will decide a choice, also write the result that would change it and where that threshold comes from, such as "switch only if p50 drops by at least 15%, which is what the migration cost justifies". This threshold says whether a real difference is worth acting on; question 5 says whether the runs can tell the difference at all. When the threshold is a business trade-off you cannot settle, do not pick one: report the measured difference with its range and list the threshold as the user's decision.
 - Read the measurement script: what it times, what it counts, and what it leaves out.
 - Check whether the machine is busy (load average, core count, running builds). When you cannot quiet it, alternate the two sides so both meet the same noise, and say so.
 
@@ -24,4 +25,5 @@ For a rough figure the user asked for, one run is enough: still check questions 
 
 - Lead with the verdict: faster, slower, no measurable difference, or inconclusive.
 - Then the number with its unit, the run count, the range, and the limit, for example "p50 41 ms → 33 ms, median of 7 runs per side, range 32–35 ms after; limited by JSON parsing on one core".
+- When you wrote a decision threshold before running, say whether the result meets it.
 - Call the verdict inconclusive when you cannot name the limit, when one side ran untuned, or when questions 4 or 7 could not be checked, and name the gap.

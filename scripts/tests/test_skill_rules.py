@@ -291,6 +291,7 @@ REFERENCE_RULES = {
     "rumo-coding-guidelines/references/measurement.md": (
         "A difference smaller than the spread between runs is no measurable difference.",
         "Call the verdict inconclusive when you cannot name the limit",
+        "do not pick one: report the measured difference with its range and list the threshold as the user's decision.",
     ),
     "rumo-remote-ops/references/access-changes-and-recovery.md": (
         "preserving the old route until independent validation succeeds",
