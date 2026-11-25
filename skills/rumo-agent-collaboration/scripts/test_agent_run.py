@@ -272,7 +272,7 @@ class BundledAdapterTest(unittest.TestCase):
             ("pi", "read-only", ["--tools", "read,grep,find,ls"]),
             ("pi", "native-write", ["--tools", "read,grep,find,ls,edit,write"]),
             ("qwen", "read-only", ["--approval-mode", "plan", "--allowed-tools", "web_fetch"]),
-            ("qwen", "workspace-write", ["--approval-mode", "auto-edit", "--allowed-tools", "web_fetch"]),
+            ("qwen", "native-write", ["--approval-mode", "auto-edit", "--allowed-tools", "web_fetch"]),
             ("grok", "read-only", ["--permission-mode", "plan", "--disallowed-tools", "run_terminal_command",
                                    "--allow", "WebFetch"]),
             ("cursor", "read-only", ["--mode", "ask", "--sandbox", "enabled"]),
@@ -284,7 +284,7 @@ class BundledAdapterTest(unittest.TestCase):
                 self.assertEqual(argv[index:index + len(expected)], expected)
 
     def test_levels_an_adapter_does_not_offer_are_refused(self) -> None:
-        for cli in ("grok", "cursor", "gemini", "opencode"):
+        for cli in ("grok", "cursor", "gemini", "opencode", "qwen"):
             with self.subTest(cli=cli), self.assertRaises(agent_run.Refused):
                 agent_run.render(BUNDLED[cli], "start", "workspace-write", "/w", None, "sid", "/p.md")
 

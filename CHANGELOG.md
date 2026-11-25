@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- `rumo-agent-collaboration` 的 qwen adapter：写入档从 `workspace-write` 改为 `native-write`，传给 Qwen 的参数不变（`--approval-mode auto-edit`）。Qwen 0.28.0 实测时，这一档没经审批就在运行目录的上一级建了文件，没有目录隔离，而 `workspace-write` 只给有目录限制的 adapter。以后派 Qwen 写入要用 `--access native-write`，用 `workspace-write` 会被拒绝；之前的运行记录不受影响。`verified` 更新为 0.28.0，adapters.md 同步。
 - 测量、验证配方维护和修 bug 各补几句：
   - `rumo-coding-guidelines`：measurement.md 原来只在报告数字前读，它的 Before Running 一节因此读得太晚。现在 SKILL.md、principles.md、task-flows.md 的性能问题路线都改成测之前读、报告前再对照一遍。Before Running 新增一条：数字要用来做选择时，先写下哪个结果会改变选择、门槛从哪来；这个门槛和第 5 问的运行间噪声分开判断；属于业务取舍、定不下来的门槛不替用户选，报告差异和范围，把门槛列为用户的决定。Report 一节要求说明结果是否达到事先写下的门槛。
   - `rumo-verify` 的 recipe.md：维护配方时，从配方上次验证所在的提交起，反查功能地图没覆盖的用户入口；没有记录提交时写明扫了哪个范围；报缺失要给出源码路径，不收进地图的理由写在 `features/README.md`。配方记录了验证提交、这一轮又驱动了每个功能时，把记录更新为这一轮验证的提交。

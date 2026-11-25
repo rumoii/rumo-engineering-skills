@@ -16,7 +16,7 @@ An adapter is a JSON file that tells `agent_run.py` how to drive one CLI: how to
 | codex | one read-only turn with model and effort run on 0.162.0; `--skip-git-repo-check` lets it run outside a git repository without widening the sandbox | read-only, workspace-write |
 | claude | one read-only turn with model and effort run on 2.1.309 | read-only, workspace-write |
 | pi | one read-only turn with effort run on 1.3.0 | read-only, native-write (no shell) |
-| qwen | flags checked and one read-only turn run on 0.25.2; one read-only turn fetched a page with `--allowed-tools web_fetch` | read-only, workspace-write |
+| qwen | flags checked and one read-only turn run on 0.25.2; one read-only turn fetched a page with `--allowed-tools web_fetch`; on 0.28.0 one read-only and one native-write turn ran | read-only, native-write (edits auto-approved; on 0.28.0 it wrote outside the run directory) |
 | grok | one read-only turn with model and effort, and a resume, run on 1.0.70; read-only has no shell tool; on 1.0.88 one read-only turn fetched a page outside grok's default allowlist and searched | read-only |
 | cursor (`cursor-agent`) | unverified, from the CLI reference | read-only |
 | gemini | disabled: headless Plan Mode can switch to unrestricted implementation | declared read-only is insufficient |

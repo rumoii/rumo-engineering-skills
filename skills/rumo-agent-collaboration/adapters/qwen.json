@@ -2,8 +2,8 @@
   "name": "qwen",
   "executable": "qwen",
   "verified": {
-    "version": "0.25.2",
-    "on": "2026-10-21",
+    "version": "0.28.0",
+    "on": "2026-11-24",
     "live_run": true
   },
   "help": [
@@ -30,7 +30,7 @@
       "--allowed-tools",
       "web_fetch"
     ],
-    "workspace-write": [
+    "native-write": [
       "--approval-mode",
       "auto-edit",
       "--allowed-tools",
@@ -104,5 +104,5 @@
     "--resume",
     "{session}"
   ],
-  "notes": "One read-only start turn ran on 0.25.2 and kept the preassigned session ID; resume and the write level are not exercised. --allowed-tools web_fetch approves page fetching, which a non-interactive turn otherwise refuses; one read-only turn on 0.25.2 fetched a page with it. Web search is absent until a search provider is configured in Qwen."
+  "notes": "One read-only start turn ran on 0.25.2 and kept the preassigned session ID; on 0.28.0 one read-only turn and one native-write turn ran. The write level is auto-edit, which approves edits without asking and has no directory isolation: on 0.28.0 it created a file in the parent of the run directory without approval. Resume is not exercised. --allowed-tools web_fetch approves page fetching, which a non-interactive turn otherwise refuses; one read-only turn on 0.25.2 fetched a page with it. Web search is absent until a search provider is configured in Qwen."
 }
