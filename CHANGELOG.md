@@ -2,7 +2,7 @@
 
 每个版本的完整说明见 [GitHub Releases](https://github.com/rumoii/rumo-engineering-skills/releases)。插件用户只在 `.claude-plugin/plugin.json` 的 `version` 提升后才会收到更新，所以每次发版都要提升版本号，并在这里补一节。
 
-## Unreleased
+## 1.2.0 - 2026-11-26
 
 - `rumo-handoff` 的触发描述加入“看一下当前项目”，删去选中后的工作流程说明。新增触发用例 `handoff-glance`，要求选中 `rumo-handoff` 并跳过 `rumo-explain`。`explain-how`、`reflect-skip-summary` 加了不选 `rumo-handoff` 的断言。此前在 Claude Code 的新会话里只说“你看一下我们当前项目”，没有选中 `rumo-handoff`。
 - `rumo-review` 的评审面板允许质疑意图里由 agent 自行定下的约定、决定和验收方式。这些意见单列在实现问题之后，不参与实现问题的严重度排序，用户明确拍板的决定照旧。任务书注明意图中哪些决定由用户拍板并附原话，哪些约定和验收方式由 agent 自定，汇总时按意图来源、定规则的人和验收证据能否证明目标核对规则或方法问题。指定范围的审计用清单确定重点，也要报告清单外的直接后果。此前一次多轮审计把 agent 定下的规矩和验收方式写成了意图，评审者只检查实现是否照做，漏掉了规矩本身的问题。
