@@ -380,6 +380,7 @@ REFERENCE_RULES = {
         "Never retry it on another model or substitute a close one, and never sign in, copy credentials, or change a CLI's configuration on the user's behalf.",
         "save your findings to a file before reading any lane's output.",
         "Withhold the fix history, earlier findings, and your own conclusions.",
+        "Treat decisions the user explicitly settled as fixed.",
         "launch with `--detach` instead, finish your own review, end your turn",
         "Do not propose one for small or low-risk changes, or when tests and evidence already settle the question.",
         "say in one sentence which of those conditions makes this change worth another model's view",

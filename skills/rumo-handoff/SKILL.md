@@ -1,6 +1,6 @@
 ---
 name: rumo-handoff
-description: Use when the user asks to wrap up ("收尾"), hand off, pause, or package a task so another session, agent, or client can continue it, or when a new session must pick up earlier work, such as asking for current progress, the next step, or where a topic stands ("汇报一下当前进度", "下一步做什么", "接着上次做", "回忆一下 X 做到哪了") or to continue another agent's session. Writes a handoff document when asked or when wrapping up leaves work open; picks up from this project's recent Claude Code, Codex, and Kimi Code sessions, checked against the repository. Do not use for a plain end-of-task summary.
+description: Use when the user asks to wrap up ("收尾"), hand off, pause, or package a task so another session, agent, or client can continue it, or when a new session must pick up earlier work, such as asking for current progress, the next step, or where a topic stands ("看一下当前项目", "汇报一下当前进度", "下一步做什么", "接着上次做", "回忆一下 X 做到哪了") or to continue another agent's session. Do not use for a plain end-of-task summary.
 ---
 
 # Rumo Handoff

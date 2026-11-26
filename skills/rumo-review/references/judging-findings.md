@@ -22,4 +22,4 @@ Read before sorting findings that someone else produced: an independent review p
 
 ## Record
 
-Give every dismissed finding its reason with file, line, test, or documentation evidence, so the decision can be checked later. Report accepted findings in the severity format of SKILL.md, naming which reviewer raised each one.
+Give every dismissed finding its reason with file, line, test, or documentation evidence, so the decision can be checked later. Report accepted findings in the severity format of SKILL.md, naming which reviewer raised each one, with panel issues about rules or methods following the [panel report format](panel.md#report).
