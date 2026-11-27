@@ -13,7 +13,7 @@ Make the work and its reasons explicit before they become code.
 | --- | --- | --- |
 | Plan | The task spans several steps, modules, or sessions | A short spec plus ordered, verifiable tasks |
 | Execute | An agreed plan is ready to implement | Tasks done in order, each with its check result |
-| Decision record | A material choice must outlive this conversation, or an existing record needs updating | A decision record in the repository's convention |
+| Decision record | A material choice must outlive this conversation, an existing record needs updating, the user overturns a decision, or asks whether the project drifted from its goal | A decision record in the repository's convention, an impact inventory, or a drift report |
 
 Unclear goals or acceptance criteria go to `rumo-clarify` first. A decision record can be maintained even for a small change when it owns the affected mechanism.
 
@@ -26,7 +26,7 @@ A design-only request does not authorize implementation, runnable scaffolds, or 
 3. Break the work into tasks. Each task names the files or modules it touches, the check that proves it done, and what it depends on. Prefer thin end-to-end slices over layer-by-layer batches.
 4. Mark tasks that need separate authorization: commits, tags, pushes, deployments, database writes, deletions, credential changes, dependency installs, and paid services.
 5. Show the plan. When the user already authorized this scope and the plan adds no new decision, continue; otherwise wait for approval of that exact version, pausing only the tasks that depend on the open decision or authorization. A clarifying answer revises the plan; it is not approval.
-6. While implementing, stop and revise the plan when a task turns out wrong or a hidden requirement appears; do not silently drift.
+6. While implementing, stop and revise the plan when a task turns out wrong or a hidden requirement appears; do not silently drift. When the user overturns an earlier decision, trace it as Decision Record Mode says, even without a record.
 
 Save the plan where the user or repository wants it. Without a convention, keep it in the conversation rather than inventing a directory.
 
@@ -44,12 +44,13 @@ Run tasks in parallel or in separate worktrees only after the user agrees, and n
 
 ## Decision Record Mode
 
-Read [references/decision-records.md](references/decision-records.md) before writing or moving a record.
+Read [references/decision-records.md](references/decision-records.md) before writing or moving a record, before tracing an overturned decision, and before checking a project against its goal.
 
 - Search for an existing record that owns the same mechanism. Update it when only facts, paths, or evidence changed; write a new record that links the old one when the decision itself changed.
+- When the user overturns a decision, with or without a record, follow the reference's Superseding A Decision: inventory what still carries the old decision read-only, show it, and change only the scope the user approves. Each instruction or memory file needs its own approval, and superseding never authorizes database writes, deployments, or other controlled actions.
 - Follow the repository's existing location, naming, numbering, and language. Without one, propose the default layout in the reference and ask before creating it.
 - Do not mark a record implemented because code was drafted or unit tests passed; state the source, artifact, deployment, or field evidence that exists.
-- Check records against the current code with the reference's Drift Check when the user asks, and for the one record you are updating after its mechanism changed. The check reports; it edits neither the record nor the code.
+- Check records against the current code with the reference's Drift Check when the user asks, and for the one record you are updating after its mechanism changed. When the user asks whether the project has drifted from its goal, check against that goal as the reference's Against A Goal says; when the goal cannot be found or its sources conflict, stop and ask which one holds. Both checks report; they edit neither the records nor the code.
 - A decision record never authorizes database writes, deployments, or other controlled actions.
 - Do not create decision directories or policies during a review-only request.
 

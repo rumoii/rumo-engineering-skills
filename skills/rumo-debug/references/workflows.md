@@ -4,7 +4,7 @@
 
 Write down the symptom, the expected behavior, the suspected owner, the evidence that would confirm it, and the observation that would rule it out.
 
-Search source and runtime separately. Source shows what was intended; deployed artifacts and logs show what ran. When they disagree, find what separates them: version, environment, proxy, cache, asynchronous handoff, or stored state.
+Search source and runtime separately. Source shows what the code was written to do; deployed artifacts and logs show what ran. When they disagree, find what separates them: version, environment, proxy, cache, asynchronous handoff, or stored state.
 
 ## Routes
 

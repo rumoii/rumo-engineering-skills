@@ -9,9 +9,10 @@ import sys
 from pathlib import Path
 
 
-LIFECYCLES = {"proposed", "implemented", "rejected"}
+LIFECYCLES = {"proposed", "implemented", "rejected", "superseded"}
 FILE_NAME_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$")
 LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+URL_SCHEME_RE = re.compile(r"^[a-z][a-z0-9+.-]*:", re.IGNORECASE)
 PERSONAL_PATH_RE = re.compile(r"(?:/Users/[^/\s]+|[A-Za-z]:\\Users\\[^\\\s]+)")
 REQUIRED_SECTIONS = {
     "proposed": (
@@ -95,7 +96,7 @@ def validate_links(path: Path, text: str, repo_root: Path, errors: list[str]) ->
     label = display_path(path, repo_root)
     for raw_target in LINK_RE.findall(text):
         target = raw_target.strip().split("#", 1)[0]
-        if not target or re.match(r"^[a-z][a-z0-9+.-]*:", target, re.IGNORECASE):
+        if not target or URL_SCHEME_RE.match(target):
             continue
         resolved = (path.parent / target).resolve()
         try:
@@ -107,7 +108,9 @@ def validate_links(path: Path, text: str, repo_root: Path, errors: list[str]) ->
             errors.append(f"{label}: broken relative link: {target}")
 
 
-def validate_decision(path: Path, lifecycle: str, repo_root: Path, errors: list[str]) -> None:
+def validate_decision(
+    path: Path, lifecycle: str, repo_root: Path, errors: list[str], superseded_links: dict[Path, Path]
+) -> None:
     """Validate one lifecycle-owned decision record."""
     label = display_path(path, repo_root)
     if not FILE_NAME_RE.fullmatch(path.name):
@@ -130,13 +133,25 @@ def validate_decision(path: Path, lifecycle: str, repo_root: Path, errors: list[
     if lifecycle == "rejected":
         if not re.fullmatch(r"Status: rejected - \S.*", status_line):
             errors.append(f"{label}: rejected status must include a one-line reason")
+    elif lifecycle == "superseded":
+        status_link = re.fullmatch("Status: superseded - " + LINK_RE.pattern, status_line)
+        target = status_link[1].strip().split("#", 1)[0] if status_link else ""
+        target_path = Path(target)
+        if not target or target_path.anchor or URL_SCHEME_RE.match(target):
+            errors.append(
+                f"{label}: superseded status must be 'Status: superseded - [<title>](<relative path>)' "
+                "linking the replacing record"
+            )
+        else:
+            superseded_links[path.resolve()] = (path.parent / target_path).resolve()
     elif status_line != f"Status: {lifecycle}":
         errors.append(f"{label}: status must match the {lifecycle} directory")
     if lines[3] != "":
         errors.append(f"{label}: status must be followed by one blank line")
 
     positions = section_positions(lines)
-    required = REQUIRED_SECTIONS[lifecycle]
+    section_lifecycle = "implemented" if lifecycle == "superseded" else lifecycle
+    required = REQUIRED_SECTIONS[section_lifecycle]
     missing = [section for section in required if section not in positions]
     if missing:
         errors.append(f"{label}: missing sections: {', '.join(missing)}")
@@ -148,7 +163,7 @@ def validate_decision(path: Path, lifecycle: str, repo_root: Path, errors: list[
             if not section_has_content(lines, positions[section]):
                 errors.append(f"{label}: section '{section}' must contain content")
 
-    forbidden = sorted(FORBIDDEN_SECTIONS[lifecycle] & positions.keys())
+    forbidden = sorted(FORBIDDEN_SECTIONS[section_lifecycle] & positions.keys())
     if forbidden:
         errors.append(f"{label}: sections do not match {lifecycle}: {', '.join(forbidden)}")
 
@@ -157,6 +172,49 @@ def validate_decision(path: Path, lifecycle: str, repo_root: Path, errors: list[
     if PERSONAL_PATH_RE.search(text):
         errors.append(f"{label}: personal absolute path is not allowed")
     validate_links(path, text, repo_root, errors)
+
+
+def validate_superseded_chains(
+    superseded_links: dict[Path, Path], repo_root: Path, errors: list[str]
+) -> None:
+    """Follow replacement links after each decision has been validated."""
+    decisions_root = (repo_root / "docs" / "decisions").resolve()
+    superseded_dir = decisions_root / "superseded"
+    allowed_dirs = {decisions_root / lifecycle for lifecycle in ("proposed", "implemented", "superseded")}
+    # Missing Markdown targets already get the broken-link error from validate_links.
+    invalid_targets = {
+        target
+        for target in superseded_links.values()
+        if target.parent not in allowed_dirs
+        or target.suffix != ".md"
+        or (target.exists() and (not target.is_file() or not FILE_NAME_RE.fullmatch(target.name)))
+    }
+
+    for source, direct_target in superseded_links.items():
+        target = direct_target
+        visited = {source}
+        while True:
+            if target in invalid_targets:
+                if target == direct_target:
+                    message = "superseded record must link a proposed, implemented, or superseded record"
+                else:
+                    message = (
+                        "superseded chain must end at a proposed or implemented record "
+                        f"(reached {display_path(target, repo_root)})"
+                    )
+                errors.append(f"{display_path(source, repo_root)}: {message}")
+                break
+            # An invalid intermediate status has already been reported and adds no link.
+            if target.parent != superseded_dir or target not in superseded_links:
+                break
+            if target in visited:
+                errors.append(
+                    f"{display_path(source, repo_root)}: superseded chain loops back to "
+                    f"{display_path(target, repo_root)}"
+                )
+                break
+            visited.add(target)
+            target = superseded_links[target]
 
 
 def validate_repository(repo_root: Path) -> list[str]:
@@ -177,13 +235,15 @@ def validate_repository(repo_root: Path) -> list[str]:
             continue
         if not child.is_dir() or child.name not in LIFECYCLES:
             errors.append(
-                f"{display_path(child, repo_root)}: only proposed, implemented, and rejected directories are allowed"
+                f"{display_path(child, repo_root)}: "
+                "only proposed, implemented, rejected, and superseded directories are allowed"
             )
 
     seen_names: dict[str, Path] = {}
+    superseded_links: dict[Path, Path] = {}
     for lifecycle in sorted(LIFECYCLES):
         lifecycle_dir = decisions_root / lifecycle
-        if not lifecycle_dir.exists():
+        if not lifecycle_dir.is_dir():
             continue
         for path in sorted(lifecycle_dir.iterdir()):
             if not path.is_file() or path.suffix != ".md":
@@ -197,8 +257,9 @@ def validate_repository(repo_root: Path) -> list[str]:
                 )
             else:
                 seen_names[path.name] = path
-            validate_decision(path, lifecycle, repo_root, errors)
+            validate_decision(path, lifecycle, repo_root, errors, superseded_links)
 
+    validate_superseded_chains(superseded_links, repo_root, errors)
     if not seen_names:
         errors.append("docs/decisions: at least one decision record is required")
     return list(dict.fromkeys(errors))

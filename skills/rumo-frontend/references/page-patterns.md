@@ -1,6 +1,6 @@
 # Page Patterns
 
-Use the target application's existing patterns as the authority. Compare at least one adjacent page with the same interaction shape before introducing a new layout.
+Use the target application's existing patterns as the authority for layout, components, and interaction conventions, not for missing states, accessibility gaps, or defects. Compare at least one adjacent page with the same interaction shape before introducing a new layout.
 
 Every pattern preserves loading, empty, error, permission, disabled, validation, and responsive states. The notes below add what each pattern must handle and where it usually breaks.
 

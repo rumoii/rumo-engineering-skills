@@ -41,17 +41,20 @@ If the first two answers are no, leave it out and mention it only when the user 
 
 - Build the thinnest version that works end to end through the real entry point, then add capability in layers that each still work.
 - Do not add generic abstractions, plugin points, configuration switches, or fallback frameworks for a single use.
-- Do not reformat, rename, reorder, or refactor neighboring code. Match the surrounding style even when you would choose differently.
+- Do not reformat, rename, reorder, or refactor neighboring code. Match the surrounding style and conventions even when you would choose differently, but do not copy a defect from neighboring code into new code; report the old one instead.
 - Remove only the dead code this change created.
 - Do not keep obsolete paths alive with shims, dual writes, flags, or deprecation periods unless the current contract requires them. Before deleting a path, confirm its callers, generated outputs, and deployment references. Contracts with external, persisted, or deployed consumers follow `rumo-interface`.
 - Do not accept a stopgap whose stated purpose is to be replaced later. When you knowingly accept a limit, such as a size cap or an unhandled rare case, state the limit and what would make it worth revisiting in a comment beside the code. Record material architectural choices with `rumo-plan`.
 - Keep internal risk notes out of deliverables. Add a disclaimer or warning only when the user asked, a decision depends on it, or leaving it out would make the result false or unsafe.
 - Report unrelated problems you notice instead of fixing them.
 - At these moments read the matching entry in [references/principles.md](references/principles.md): before adding to or restructuring code, after two failed fixes for one symptom, when a requirement only fits through special cases, before writing stateful or heavily branching logic, when writing validation or adapters, when a behavior spans more than three files, before a repetitive edit, and before taking or reporting a measurement.
+- When the user says the direction is wrong, follow the Backtrack flow at once. When you notice it yourself, because a premise of the approach, plan, or decision is disproved, for example by Test The Premise in principles.md, or fixes keep patching earlier fixes, stop widening the change, name the conflict in one sentence, and propose Backtrack. Propose it once per conflict in a task; after the user declines, raise it again only with new evidence. This is separate from the session-review offer under Before Handing Back; never make both offers in one reply. Authorization below sets what agreeing to it allows.
 
 ## Authorization
 
 Treat review, explanation, and monitoring requests as read-only until the user asks for a change. When the request changes mode or scope, re-read it rather than carrying old assumptions forward. Stop searching, testing, or reviewing once the evidence answers the question.
+
+Agreeing to backtrack approves a read-only review. Undo or rebuild only what the user approves, and undo only changes this task made and can attribute; keep anything whose origin is unclear. Retry only when the user approves it. Backtracking never approves a tree reset, discarding another person's changes, reverting commits, or a database rollback; those keep their own skills and approvals.
 
 ## Working With Other Skills
 
@@ -81,6 +84,7 @@ Match the task to one of these routes. For any route except a small edit or an i
 | Skill or prompt change | `rumo-prose`, repository validators, and the repository's acceptance policy |
 | Pull request follow-up | On request: conflicts, review comments, then checks (`rumo-git-commit`); never merge |
 | Pause | Stop at a safe boundary, nothing irreversible, resume note; commit only on request |
+| Backtrack | Name what overturned the route, last verified point, undo only approved changes, re-check |
 
 ## Close With Evidence
 
