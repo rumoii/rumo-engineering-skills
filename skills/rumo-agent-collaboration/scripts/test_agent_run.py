@@ -74,7 +74,14 @@ FAKE = textwrap.dedent(
     if "--fake-interactive" in argv:
         with open(os.environ["FAKE_LOG"], "a", encoding="utf-8") as log:
             log.write(json.dumps({"argv": argv, "cwd": os.getcwd(), "interactive": True}, ensure_ascii=False) + "\n")
-        sys.exit(0)
+        if report := os.environ.get("FAKE_REPORT"):
+            with open(report, "wb") as handle:
+                handle.write(bytes.fromhex(os.environ["FAKE_REPORT_HEX"]))
+            if mode == "stale":
+                os.utime(report, (946684800, 946684800))
+        if mode == "hold-open":
+            sys.stdin.readline()
+        sys.exit(4 if mode == "fail" else 0)
     for token in argv:
         if token.startswith("-") and token != "-" and token.split("=", 1)[0] not in FLAGS.split():
             sys.stderr.write("unknown option: " + token); sys.exit(2)
@@ -1211,6 +1218,116 @@ class InteractiveTest(Harness):
         self.assertIn("no interactive_start template", result.stderr.decode("utf-8"))
         self.assertFalse(self.runs.exists())
 
+    def test_open_validates_report_and_markers_together(self) -> None:
+        self.write_adapter(self.interactive_adapter())
+        for options, error in ((("--marker", "DONE"), "--marker requires --report"),
+                               (("--report", str(self.cwd / "report.md")), "--report requires --marker"),
+                               (("--report", "report.md", "--marker", "DONE"), "--report must be an absolute path")):
+            with self.subTest(options=options):
+                result = self.run_script("open", "inter", "--cwd", str(self.cwd), "--prompt-file", str(self.prompt),
+                                         "--access", "read-only", "--executable", str(self.fake),
+                                         "--runs-dir", str(self.runs), *options)
+                self.assertEqual(result.returncode, 2)
+                self.assertIn(error, result.stderr.decode("utf-8"))
+                self.assertFalse(self.runs.exists())
+
+    def test_wait_returns_after_the_report_while_the_fake_cli_is_open(self) -> None:
+        self.write_adapter(self.interactive_adapter())
+        environment = {**self.env("claude", "hold-open"), "FAKE_CLI": "claude",
+                       "FAKE_REPORT": str(self.cwd / "report.md"), "FAKE_REPORT_HEX": b"Report\n  STOPPED  \n \n".hex()}
+        out = io.StringIO()
+        host = None
+
+        def launch(argv: list[str], cwd: str, title: str) -> dict:
+            nonlocal host
+            host = subprocess.Popen(argv, cwd=cwd, env=environment, stdin=subprocess.PIPE,
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return {"opened": True, "via": "test", "reason": None}
+
+        try:
+            with contextlib.chdir(self.cwd), patch.dict(os.environ, environment), \
+                    patch.object(agent_run, "open_window", side_effect=launch), \
+                    contextlib.redirect_stdout(out):
+                self.assertEqual(agent_run.main(["open", "inter", "--cwd", str(self.cwd), "--prompt-file", str(self.prompt),
+                                                 "--access", "read-only", "--executable", str(self.fake),
+                                                 "--runs-dir", str(self.runs), "--report", environment["FAKE_REPORT"],
+                                                 "--marker", "DONE", "--marker", "STOPPED"]), 0)
+            info = json.loads(out.getvalue())
+            result = subprocess.run(info["wait"], capture_output=True, env=environment, timeout=5)
+            self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8"))
+            delivered = json.loads(result.stdout)
+            self.assertEqual(delivered["state"], "interactive")
+            self.assertEqual(delivered["reported_marker"], "STOPPED")
+            self.assertIsNone(host.poll())
+            self.assertEqual(delivered["process_status"], "owned")
+            turn = self.meta(Path(info["run_dir"]))["turns"][0]
+            self.assertEqual((turn["report"], turn["markers"]), (environment["FAKE_REPORT"], ["DONE", "STOPPED"]))
+            self.assertEqual(turn["reported_at"], delivered["reported_at"])
+            status = self.run_script("status", info["run_id"], "--runs-dir", str(self.runs), env=environment)
+            self.assertEqual(json.loads(status.stdout)["reported_at"], delivered["reported_at"])
+            self.assertEqual(json.loads(status.stdout)["reported_marker"], "STOPPED")
+            resumed = self.resume(info["run_id"], cli="claude")
+            self.assertEqual(resumed.returncode, 2)
+            self.assertIn(b"still running", resumed.stderr)
+            # Delivery is recorded once even if the report is rewritten while the CLI is open.
+            Path(environment["FAKE_REPORT"]).write_text("DONE\n", encoding="utf-8")
+        finally:
+            if host is not None:
+                try:
+                    host.communicate(input=b"\n", timeout=10)
+                except subprocess.TimeoutExpired:
+                    host.kill()
+                    host.communicate()
+        watched = self.run_script("watch", info["run_id"], "--runs-dir", str(self.runs), env=environment)
+        self.assertEqual(watched.returncode, 0, watched.stderr.decode("utf-8"))
+        self.assertEqual(watched.stdout.count(b"report delivered: STOPPED"), 1)
+        self.assertNotIn(b"report delivered: DONE", watched.stdout)
+
+    def test_open_ignores_reports_without_a_new_exact_final_marker(self) -> None:
+        self.write_adapter(self.interactive_adapter())
+        cases = (("ok", b"DONE\nMore text\n"), ("ok", b"prefix DONE\n"), ("stale", b"DONE\n"),
+                 ("ok", b"\xff\nDONE\n"), ("ok", None))
+        for index, (mode, content) in enumerate(cases):
+            with self.subTest(mode=mode, content=content):
+                report = self.cwd / f"report-{index}.md"
+                args = self.open_args()
+                args.report, args.marker = str(report), ["DONE"]
+                self.environment = {**self.env("claude", mode), "FAKE_CLI": "claude"}
+                if content is not None:
+                    self.environment.update(FAKE_REPORT=str(report), FAKE_REPORT_HEX=content.hex())
+                out = io.StringIO()
+                with patch.dict(os.environ, self.environment), patch.object(agent_run, "open_window", side_effect=self.run_host), \
+                        contextlib.redirect_stdout(out):
+                    self.assertEqual(agent_run.cmd_open(args), 0)
+                info = json.loads(out.getvalue())
+                turn = self.meta(Path(info["run_dir"]))["turns"][0]
+                self.assertNotIn("reported_at", turn)
+                self.assertNotIn("reported_marker", turn)
+
+    def test_a_failed_delivery_write_does_not_stop_the_host(self) -> None:
+        # The host must keep following the CLI even when the record cannot be updated.
+        run_dir = self.runs / "delivery-run"
+        run_dir.mkdir(parents=True)
+        (run_dir / "meta.json").write_text(json.dumps({"turns": [{"number": 1, "state": "interactive"}]}), encoding="utf-8")
+        with patch.object(agent_run, "write_json", side_effect=OSError("disk full")):
+            agent_run.record_delivery(run_dir, 1, "DONE")
+        self.assertNotIn("reported_at", self.meta(run_dir)["turns"][0])
+
+    def test_closed_interactive_turn_with_nonzero_cli_exit_fails_wait_and_watch(self) -> None:
+        self.write_adapter(self.interactive_adapter())
+        self.environment = {**self.env("claude", "fail"), "FAKE_CLI": "claude"}
+        out = io.StringIO()
+        with patch.dict(os.environ, self.environment), patch.object(agent_run, "open_window", side_effect=self.run_host), \
+                contextlib.redirect_stdout(out):
+            code = agent_run.cmd_open(self.open_args())
+        info = json.loads(out.getvalue())
+        self.assertEqual((info["state"], info["exit_code"]), ("closed", 4))
+        for command in ("wait", "watch"):
+            with self.subTest(command=command):
+                result = self.run_script(command, info["run_id"], "--runs-dir", str(self.runs), env=self.environment)
+                self.assertEqual(result.returncode, 1)
+        self.assertEqual(code, 1)
+
     def test_interactive_templates_are_validated(self) -> None:
         base = copy.deepcopy(BUNDLED["claude"])
         cases = {
@@ -1621,6 +1738,41 @@ class LifecycleBoundaryTest(Harness):
                 "session_id": "00000000-0000-4000-8000-000000000001", "model": None, "turns": []}
         agent_run.write_json(root / "meta.json", meta)
         return root, meta
+
+    def test_cancel_abandons_a_created_turn_without_a_pid_and_refuses_a_late_host(self) -> None:
+        root, meta = self.prepare()
+        meta["turns"] = [{"number": 1, "state": "created", "created_at": agent_run.now()}]
+        agent_run.write_json(root / "meta.json", meta)
+        args = argparse.Namespace(run_id=root.name, runs_dir=str(self.runs))
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with patch.object(agent_run, "stop_tree") as stop, contextlib.redirect_stdout(stdout), \
+                contextlib.redirect_stderr(stderr):
+            self.assertEqual(agent_run.cmd_cancel(args), 0)
+            stop.assert_not_called()
+        turn = self.meta(root)["turns"][0]
+        self.assertEqual(turn["state"], "abandoned")
+        self.assertTrue(turn["abandoned_at"])
+        self.assertIs(turn["launch_unconfirmed"], True)
+        self.assertEqual(json.loads(stdout.getvalue())["state"], "abandoned")
+        self.assertIn("a CLI process may still be running untracked", stderr.getvalue())
+        with patch.object(agent_run.subprocess, "Popen") as popen:
+            with self.assertRaisesRegex(agent_run.Refused, "already abandoned"):
+                agent_run.cmd_host(args)
+            popen.assert_not_called()
+        self.assertEqual(self.meta(root)["turns"][0], turn)
+        watched = self.run_script("watch", "--runs-dir", str(self.runs))
+        self.assertEqual(watched.returncode, 0)
+        self.assertIn(b"no active headless runs", watched.stdout)
+
+    def test_cancel_refuses_a_created_turn_with_a_pid_but_no_identity(self) -> None:
+        root, meta = self.prepare()
+        meta["turns"] = [{"number": 1, "state": "created", "pid": os.getpid()}]
+        agent_run.write_json(root / "meta.json", meta)
+        with patch.object(agent_run, "stop_tree") as stop:
+            with self.assertRaisesRegex(agent_run.Refused, "process identity is unknown"):
+                agent_run.cmd_cancel(argparse.Namespace(run_id=root.name, runs_dir=str(self.runs)))
+            stop.assert_not_called()
+        self.assertEqual(self.meta(root), meta)
 
     def test_cancel_waits_for_pid_publication_and_never_abandons_a_starting_child(self) -> None:
         root, meta = self.prepare()

@@ -899,10 +899,11 @@ def interactive_argv(meta: dict, session: str) -> list[str]:
     return [*executable, *(t.replace("{session}", session) for t in template)]
 
 
-def summary(run_dir: Path) -> dict:
+def summary(run_dir: Path, *, turn: dict | None = None) -> dict:
     with record_lock(run_dir):
         meta = load_meta(run_dir)
-    turn = meta["turns"][-1] if meta["turns"] else {}
+    if turn is None:
+        turn = meta["turns"][-1] if meta["turns"] else {}
     final = run_dir / "turns" / str(turn.get("number", 0)) / "final.md"
     session = meta.get("session_id")
     reason = run_disabled_reason(meta, run_dir)
@@ -915,6 +916,10 @@ def summary(run_dir: Path) -> dict:
     if turn.get("state") in RUNNING or turn.get("state") == "created":
         info["process_status"] = process_status(turn)
         info["process_alive"] = None if info["process_status"] == "unknown" else info["process_status"] == "owned"
+    if turn.get("reported_at"):
+        info.update(reported_at=turn["reported_at"], reported_marker=turn["reported_marker"])
+    if turn.get("launch_unconfirmed"):
+        info["launch_unconfirmed"] = True
     if reason:
         info["disabled_reason"] = reason
     if session and not reason and interactive_argv(meta, session):
@@ -1140,8 +1145,10 @@ def cmd_turn(args: argparse.Namespace) -> int:
     return code
 
 
-def turn_code(state: str | None) -> int:
-    return 0 if state in ("exited", "closed") else 3 if state == "timed-out" else 1
+def turn_code(state: str | None, exit_code: int | None = None) -> int:
+    if state == "exited" or (state == "closed" and exit_code in (None, 0)):
+        return 0
+    return 3 if state == "timed-out" else 1
 
 
 def select_turn(run_dir: Path, requested: int | None) -> int:
@@ -1163,9 +1170,10 @@ def select_turn(run_dir: Path, requested: int | None) -> int:
 class TurnFollower:
     """Polls one turn's record and output, passing new output bytes to `consume`."""
 
-    def __init__(self, run_dir: Path, number: int, stream: Path | None, consume=None) -> None:
+    def __init__(self, run_dir: Path, number: int, stream: Path | None, consume=None, *, until_report: bool = False) -> None:
         self.run_dir, self.number, self.stream, self.consume = run_dir, number, stream, consume
         self.offset, self.stalled_since = 0, None
+        self.until_report, self.reported_marker = until_report, None
 
     def step(self) -> tuple[dict, str | None] | None:
         """One poll: the last turn record and, for a stall, the message explaining it; None while the turn runs."""
@@ -1180,7 +1188,8 @@ class TurnFollower:
             if chunk and self.consume:
                 self.consume(chunk)
         state = turn.get("state")
-        if state in TERMINAL:
+        self.reported_marker = turn.get("reported_marker")
+        if state in TERMINAL or (self.until_report and turn.get("reported_at")):
             return turn, None
         if state == "created" and "pid" not in turn:
             problem = f"turn {self.number} was created but never launched; inspect status"
@@ -1199,9 +1208,9 @@ class TurnFollower:
         return None
 
 
-def follow_turn(run_dir: Path, number: int, stream: Path | None, consume=None) -> tuple[dict, str | None]:
-    """Poll the record until the turn ends or stalls; returns the last turn record and any stall message."""
-    follower = TurnFollower(run_dir, number, stream, consume)
+def follow_turn(run_dir: Path, number: int, stream: Path | None, consume=None, *, until_report: bool = False) -> tuple[dict, str | None]:
+    """Return the turn record at its end, a stall, or optionally report delivery."""
+    follower = TurnFollower(run_dir, number, stream, consume, until_report=until_report)
     while (result := follower.step()) is None:
         time.sleep(0.5)
     return result
@@ -1343,6 +1352,7 @@ class TurnView:
         self.pending, self.seen, self.heartbeat = b"", 0, time.monotonic()
         self.area: StatusArea | None = None
         self.latest, self.ended = "", None
+        self.report_announced = False
 
     def say(self, text: str) -> None:
         if self.area:
@@ -1404,15 +1414,16 @@ class TurnView:
         if (elapsed := turn_elapsed(turn)) is not None:
             details.append(f"用时 took {clock(elapsed)}")
         title = f"══ {self.meta['cli']} {english} · {chinese} ══"
+        code = turn_code(state, turn.get("exit_code"))
         if self.area:
-            title = f"\x1b[1;{32 if state in ('exited', 'closed') else 33 if state == 'timed-out' else 31}m{title}\x1b[0m"
+            title = f"\x1b[1;{32 if code == 0 else 33 if code == 3 else 31}m{title}\x1b[0m"
         self.say(f"{title}  {' · '.join(details)}")
         if state == "failed" and self.meta["cli"] == "grok":
             reason = grok_failure_reason(turn.get("error"), self.turn_dir / "stderr.log")
             self.say(f"error 错误: {reason}")
         self.say(f"result 结果: {final if final.is_file() else 'none'}")
         self.say("Tell the agent that started this run · 去告诉发起它的 agent")
-        return turn_code(state)
+        return code
 
 
 def active_headless_runs(root: Path) -> tuple[list[Path], list[str]]:
@@ -1465,7 +1476,13 @@ def follow_views(views: list[TurnView], area: StatusArea | None) -> list[int]:
     try:
         while len(codes) < len(views):
             for index, view in enumerate(views):
-                if index not in codes and (result := view.follower.step()) is not None:
+                if index in codes:
+                    continue
+                result = view.follower.step()
+                if view.follower.reported_marker is not None and not view.report_announced:
+                    view.say(f"report delivered: {view.follower.reported_marker}")
+                    view.report_announced = True
+                if result is not None:
                     codes[index] = view.finish(*result)
             if area:
                 area.draw([view.status() for view in views])
@@ -1503,12 +1520,14 @@ def watch_many(run_dirs: list[Path]) -> int:
 def cmd_wait(args: argparse.Namespace) -> int:
     run_dir = run_path(args)
     number = select_turn(run_dir, args.turn)
-    turn, problem = follow_turn(run_dir, number, None)
-    info = summary(run_dir)
+    turn, problem = follow_turn(run_dir, number, None, until_report=True)
+    info = summary(run_dir, turn=turn)
     if problem:
         info["problem"] = problem
     print(json.dumps(info, ensure_ascii=False, indent=2))
-    return 2 if problem else turn_code(turn["state"])
+    if turn.get("reported_at"):
+        return 0
+    return 2 if problem else turn_code(turn["state"], turn.get("exit_code"))
 
 
 def windows_desktop() -> str | None:
@@ -1624,6 +1643,16 @@ def cmd_runs(args: argparse.Namespace) -> int:
 
 
 def cmd_open(args: argparse.Namespace) -> int:
+    report_path = getattr(args, "report", None)
+    markers = getattr(args, "marker", None)
+    if markers and report_path is None:
+        raise Refused("--marker requires --report")
+    if report_path is not None and not markers:
+        raise Refused("--report requires --marker")
+    # The receiver runs in --cwd, so a relative path could name a different file for each side.
+    if report_path is not None and not Path(report_path).is_absolute():
+        raise Refused("--report must be an absolute path")
+    report_fields = {"report": str(Path(report_path).resolve()), "markers": markers} if report_path is not None else {}
     require_process_identity()
     entry = get_adapter(args.cli, args.runs_dir)
     adapter = entry["adapter"]
@@ -1656,7 +1685,7 @@ def cmd_open(args: argparse.Namespace) -> int:
         "run_id": run_id, "cli": args.cli, "adapter_path": entry["path"], "adapter": adapter, "executable": exe,
         "version": report["version"], "cwd": str(cwd), "access": args.access, "model": args.model, "effort": args.effort, "mode": "interactive",
         "session_id": session, "created_at": now(), "outcomes": [],
-        "turns": [{"number": 1, "kind": "interactive", "argv": argv, "state": "created", "created_at": now()}],
+        "turns": [{"number": 1, "kind": "interactive", "argv": argv, "state": "created", "created_at": now(), **report_fields}],
     })
     private_write(prompt_path, prompt.encode("utf-8"))
     host = [sys.executable, str(Path(__file__).resolve()), "_host", run_id, "--runs-dir", str(run_dir.parent)]
@@ -1677,7 +1706,7 @@ def cmd_open(args: argparse.Namespace) -> int:
     if state == "created":
         info["problem"] = "the window opened but its host did not start; check the window"
     print(json.dumps(info, ensure_ascii=False, indent=2))
-    return 0 if state in RUNNING else 2 if state == "created" else turn_code(state)
+    return 0 if state in RUNNING else 2 if state == "created" else turn_code(state, info["exit_code"])
 
 
 def hold_window(message: str) -> None:
@@ -1713,6 +1742,32 @@ def on_window_close(callback) -> None:
         signal.signal(signal.SIGHUP, hangup)
 
 
+def delivered_marker(path: Path, started: float, markers: list[str]) -> str | None:
+    try:
+        if not path.is_file():
+            return None
+        with path.open(encoding="utf-8") as handle:
+            if os.fstat(handle.fileno()).st_mtime <= started:
+                return None
+            last = next((line.strip() for line in reversed(handle.read().splitlines()) if line.strip()), "")
+    except (OSError, ValueError):
+        return None
+    return last if last and last in markers else None
+
+
+def record_delivery(run_dir: Path, number: int, marker: str) -> None:
+    # A failed update must not end the host: it still has to record the CLI's exit.
+    try:
+        with record_lock(run_dir):
+            current = load_meta(run_dir)
+            active = current["turns"][number - 1]
+            if active.get("state") == "interactive" and not active.get("reported_at"):
+                active.update(reported_at=datetime.now(timezone.utc).isoformat(), reported_marker=marker)
+                write_json(run_dir / "meta.json", current)
+    except (Refused, OSError):
+        pass
+
+
 def cmd_host(args: argparse.Namespace) -> int:
     run_dir = run_path(args)
     with record_lock(run_dir):
@@ -1721,7 +1776,10 @@ def cmd_host(args: argparse.Namespace) -> int:
         if turn.get("state") != "created":
             raise Refused(f"turn {turn.get('number')} is already {turn.get('state')}")
         number = turn["number"]
-        turn.update(state="interactive", pid=os.getpid(), pid_started=start_marker(os.getpid()), started_at=now())
+        report_path = Path(turn["report"]) if turn.get("report") else None
+        started = datetime.now(timezone.utc)
+        turn.update(state="interactive", pid=os.getpid(), pid_started=start_marker(os.getpid()),
+                    started_at=started.isoformat() if report_path is not None else now())
         write_json(run_dir / "meta.json", meta)
 
     def record_closed(by: str, **fields: object) -> None:
@@ -1747,7 +1805,21 @@ def cmd_host(args: argparse.Namespace) -> int:
         code = 1
     else:
         update_turn(run_dir, number, cli_pid=cli.pid)
-        exit_code = cli.wait()
+        if report_path is not None:
+            while True:
+                try:
+                    exit_code = cli.wait(timeout=1)
+                except subprocess.TimeoutExpired:
+                    exit_code = None
+                if marker := delivered_marker(report_path, started.timestamp(), turn["markers"]):
+                    record_delivery(run_dir, number, marker)
+                    if exit_code is None:
+                        exit_code = cli.wait()
+                    break
+                if exit_code is not None:
+                    break
+        else:
+            exit_code = cli.wait()
         record_closed("cli-exit", exit_code=exit_code)
         print(f"\n{meta['cli']} exited with code {exit_code}; run {meta['run_id']} is recorded as closed.", flush=True)
         code = 0
@@ -1766,7 +1838,8 @@ def cmd_cancel(args: argparse.Namespace) -> int:
                 raise Refused("cancellation has no recorded end or its owner identity is unknown; inspect before retrying")
         if last.get("state") not in RUNNING and last.get("state") != "created":
             raise Refused(f"turn {last.get('number')} already ended as {last.get('state')}; nothing to cancel")
-        status = process_status(last)
+        launch_unconfirmed = last.get("state") == "created" and last.get("pid") is None
+        status = None if launch_unconfirmed else process_status(last)
         if status == "unknown":
             raise Refused("process identity is unknown; inspect the session manually before any cancellation or recovery")
         alive = status == "owned"
@@ -1778,7 +1851,11 @@ def cmd_cancel(args: argparse.Namespace) -> int:
             last["cancel_owner"] = {"pid": os.getpid(), "pid_started": owner_marker}
         if not alive:
             last["abandoned_at"] = now()
+        if launch_unconfirmed:
+            last["launch_unconfirmed"] = True
         write_json(run_dir / "meta.json", meta)
+    if launch_unconfirmed:
+        print("Launch was unconfirmed. Check manually: a CLI process may still be running untracked.", file=sys.stderr)
     if alive:
         try:
             # Check the marker again after releasing the metadata lock.
@@ -1860,6 +1937,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--model")
     p.add_argument("--effort", help="Reasoning effort; one of the adapter's efforts.")
     p.add_argument("--executable")
+    p.add_argument("--report", help="Watch this report path for a completion marker.")
+    p.add_argument("--marker", action="append", help="An exact final line that signals report delivery. Repeat for alternatives.")
     p.add_argument("--runs-dir")
 
     p = sub.add_parser("resume", help="Send another turn to the recorded session.")
@@ -1878,7 +1957,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--hold", action="store_true", help="Wait for Enter before exiting, so a window stays open.")
     p.add_argument("--runs-dir")
 
-    p = sub.add_parser("wait", help="Wait silently for a turn to end, then print the summary; exits with the turn's code.")
+    p = sub.add_parser("wait", help="Print the summary when a turn ends or delivers its report; exits 0 on delivery.")
     p.add_argument("run_id")
     p.add_argument("--turn", type=int, help="Turn number; defaults to the latest.")
     p.add_argument("--runs-dir")

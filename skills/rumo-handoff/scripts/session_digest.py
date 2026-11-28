@@ -2,8 +2,9 @@
 """List and condense this project's recent Claude Code, Codex, and Kimi Code sessions so a new session can pick up the work.
 
 Read-only. Discovery reads session ownership metadata. Conversation content is
-parsed only for sessions in this project (the given directory or its Git root).
-`show` keeps the user's messages, each turn's final reply, and the latest
+parsed only for sessions in the given directory or worktree roots of its Git
+repository. `list` hides headless sessions by default. `show` keeps the user's
+messages, each turn's final reply (or labelled Codex commentary), and the latest
 compaction summary, and drops tool output and injected context.
 """
 
@@ -42,9 +43,18 @@ def project_roots(cwd: Path) -> set[str]:
     roots = {norm(cwd)}
     try:
         top = subprocess.run(["git", "-C", str(cwd), "rev-parse", "--show-toplevel"],
-                             capture_output=True, text=True, timeout=10)
+                             capture_output=True, encoding="utf-8", errors="surrogateescape", timeout=10)
         if top.returncode == 0 and top.stdout.strip():
             roots.add(norm(top.stdout.strip()))
+            worktrees = subprocess.run(["git", "-C", str(cwd), "worktree", "list", "--porcelain", "-z"],
+                                       capture_output=True, encoding="utf-8", errors="surrogateescape", timeout=10)
+            if worktrees.returncode == 0:
+                for entry in worktrees.stdout.split("\0\0"):
+                    path, *attributes = entry.split("\0")
+                    # A prunable entry's directory is gone, and its path may now belong to another project.
+                    if path.startswith("worktree ") and "bare" not in attributes \
+                            and not any(attribute.split(" ", 1)[0] == "prunable" for attribute in attributes):
+                        roots.add(norm(path.removeprefix("worktree ")))
     except (OSError, subprocess.TimeoutExpired):
         pass
     return roots
@@ -103,7 +113,12 @@ def claude_files(roots: set[str]) -> list[Path]:
     return files
 
 
-def codex_files(roots: set[str], prefix: str | None = None, needed: int | None = None) -> tuple[list[Path], bool]:
+def codex_headless(meta: dict) -> bool:
+    return meta.get("source") == "exec" or "exec" in str(meta.get("originator", ""))
+
+
+def codex_files(roots: set[str], prefix: str | None = None, needed: int | None = None, *,
+                include_headless: bool = True) -> tuple[list[Path], bool]:
     sessions = home("CODEX_HOME", ".codex") / "sessions"
     if not sessions.is_dir():
         return [], False
@@ -121,6 +136,8 @@ def codex_files(roots: set[str], prefix: str | None = None, needed: int | None =
             continue
         payload = first.get("payload") if first.get("type") == "session_meta" else None
         if not isinstance(payload, dict) or not payload.get("cwd") or norm(payload["cwd"]) not in roots:
+            continue
+        if not include_headless and codex_headless(payload):
             continue
         session_id = str(payload.get("id") or path.stem)
         if prefix is None or session_id.startswith(prefix):
@@ -205,30 +222,43 @@ def parse_claude(path: Path) -> dict:
 def parse_codex(path: Path) -> dict:
     session = {"client": "codex", "id": None, "title": None, "headless": False, "entries": []}
     entries = session["entries"]
-    pending: dict[str, tuple[str, str] | None] = {"final": None, "last": None}
+    pending = {"final": None, "last": None}
 
     def flush() -> None:
         reply = pending["final"] or pending["last"]
         if reply:
-            entries.append({"kind": "agent", "time": reply[0], "text": reply[1]})
+            entries.append(reply)
         pending.update(final=None, last=None)
 
     for record in read_lines(path):
         payload = record.get("payload")
-        if record.get("type") == "session_meta" and isinstance(payload, dict):
+        kind = record.get("type")
+        when = record.get("timestamp")
+        if not isinstance(payload, dict):
+            continue
+        if kind == "session_meta":
             session["id"] = payload.get("id")
             session["cwds"] = [norm(payload["cwd"])] if payload.get("cwd") else []
-            session["headless"] = payload.get("source") == "exec" or "exec" in str(payload.get("originator", ""))
+            session["headless"] = codex_headless(payload)
             continue
-        if record.get("type") != "response_item" or not isinstance(payload, dict) or payload.get("type") != "message":
+        if kind == "compacted":
+            message = payload.get("message")
+            if isinstance(message, str) and message.strip():
+                flush()
+                entries.append({"kind": "summary", "time": when, "text": message.strip()})
             continue
-        when = record.get("timestamp")
+        if kind != "response_item" or payload.get("type") != "message":
+            continue
         if payload.get("role") == "assistant":
             text = texts(payload.get("content"), ("output_text",)).strip()
             if text:
-                pending["last"] = (when, text)
-                if payload.get("phase") == "final_answer":
-                    pending["final"] = (when, text)
+                reply = {"kind": "agent", "time": when, "text": text}
+                phase = payload.get("phase")
+                if phase == "commentary":
+                    reply["label"] = "agent (commentary)"
+                pending["last"] = reply
+                if phase == "final_answer":
+                    pending["final"] = reply
         elif payload.get("role") == "user":
             parts = [clean(part.get("text", "")) for part in payload.get("content") or []
                      if isinstance(part, dict) and part.get("type") == "input_text"]
@@ -315,14 +345,17 @@ def parse_kimi(path: Path) -> dict:
     return session
 
 
-def sessions(cwd: Path, prefix: str | None = None, needed: int | None = None) -> tuple[list[dict], bool]:
+def sessions(cwd: Path, prefix: str | None = None, needed: int | None = None, *,
+             include_headless: bool = True) -> tuple[list[dict], bool]:
     roots = project_roots(cwd)
     found = []
-    codex, truncated = codex_files(roots, prefix, needed)
+    codex, truncated = codex_files(roots, prefix, needed, include_headless=include_headless)
     kimi = kimi_files(roots, prefix)
     for files, parse in ((claude_files(roots), parse_claude), (codex, parse_codex), (kimi, parse_kimi)):
         for path in files:
             session = parse(path)
+            if session["headless"] and not include_headless:
+                continue
             if session.get("cwds") and not set(session["cwds"]) & roots:
                 continue
             users = [entry for entry in session["entries"] if entry["kind"] == "user"]
@@ -370,7 +403,8 @@ def cmd_list(args: argparse.Namespace) -> int:
     filtered = pattern is not None or args.since is not None
     rows = []
     # A filter may reject the newest sessions, so stopping the scan at --limit matches would miss older ones.
-    found, truncated = sessions(Path(args.cwd), needed=None if filtered else args.limit)
+    found, truncated = sessions(Path(args.cwd), needed=None if filtered else args.limit,
+                                include_headless=args.include_headless)
     if args.since is not None:
         cutoff = datetime.now(timezone.utc) - timedelta(days=args.since)
         found = [session for session in found if datetime.fromisoformat(session["updated"]) >= cutoff]
@@ -404,7 +438,7 @@ def cmd_show(args: argparse.Namespace) -> int:
     skipped = 0
     if summaries and not args.all:
         skipped, entries = summaries[-1], entries[summaries[-1]:]
-    rendered = [f"[{entry['time'] or '?'}] {entry['kind']}: "
+    rendered = [f"[{entry['time'] or '?'}] {entry.get('label', entry['kind'])}: "
                 + short(entry["text"], args.max_chars * (4 if entry["kind"] == "summary" else 1)) for entry in entries]
     while len(rendered) > 1 and sum(len(line) for line in rendered) > args.budget:
         rendered.pop(1 if entries[0]["kind"] == "summary" else 0)
@@ -423,6 +457,7 @@ def main() -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     listing = sub.add_parser("list", help="recent sessions of this project, newest first")
     listing.add_argument("--limit", type=int, default=5)
+    listing.add_argument("--include-headless", action="store_true", help="also list headless sessions")
     listing.add_argument("--since", type=float, help="only sessions updated within this many days")
     listing.add_argument("--grep", help="case-insensitive regex matched against the user's messages, compaction summaries, and titles")
     showing = sub.add_parser("show", help="condensed timeline of one session")

@@ -9,7 +9,7 @@ A handoff document lets the next agent continue without this conversation. Fill 
 One or two sentences, plus acceptance criteria.
 
 ## Decisions
-What the user decided, with the reason when it matters. Mark anything still open.
+What was decided, with the reason when it matters, and who decided each: the user, or an agent, marked unconfirmed until the user confirms it. Mark anything still open.
 
 ## State
 Repositories, branches, commits, dirty files, processes, environments.

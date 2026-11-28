@@ -102,6 +102,9 @@ RULES = {
         "a check verified against a goal the user has since changed no longer proves the work done.",
         "When work remains open and the project has no status card, write one without asking",
         "When the project has a status card, list the handoff path under its Details.",
+        "removing a worktree or deleting a branch waits for the answer to a `starling ask`",
+        "keep it out of product source trees unless the user puts it there.",
+        "When they say nothing, ask once where it goes and keep using that place;",
     ),
     "rumo-interface": (
         "A search is discovery, not proof of absence.",
@@ -291,6 +294,7 @@ REFERENCE_RULES = {
     ),
     "rumo-handoff/references/handoff-document.md": (
         "## Tried And Dropped",
+        "or an agent, marked unconfirmed until the user confirms it.",
     ),
     "rumo-plan/references/architecture.md": (
         "Cite the source or runtime evidence for current behavior; label assumptions and proposed behavior separately.",
@@ -488,12 +492,13 @@ REFERENCE_RULES = {
         "The bundled pi adapter intentionally disables MCP and extension discovery with `--no-mcp` and `--no-extensions`.",
         "An installed subagent package does not make its tools available in that invocation.",
         "Keep the adapter's restrictions; do not remove them or add shell access to recover subagents.",
-        "Otherwise add `--detach` to `start`, or after `open` wait for the user:",
+        "Otherwise add `--detach` to `start`.",
         "`start` checks the CLI itself and runs in the background; a progress window shows it.",
         "Never promise to check on your own, and do not loop on `wait` or `status`.",
         "`open` returns once the window opens, not when the work is done.",
         "Client-specific (Claude Code):",
-        "rely on that report, not on the user;",
+        "Without report options, tell the user at launch that completion requires exiting the CLI or closing the window.",
+        "`resume` refuses while the CLI is still open.",
     ),
 }
 

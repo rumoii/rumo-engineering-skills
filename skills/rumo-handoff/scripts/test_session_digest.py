@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -177,7 +178,7 @@ class SessionDigestTest(unittest.TestCase):
         self.seed_claude()
         self.seed_codex()
         self.seed_kimi()
-        rows = self.listing()
+        rows = self.listing_with("--include-headless")
         self.assertEqual([row["id"] for row in rows], ["session_gggg7777", "dddd4444", "cccc3333", "aaaa1111"])
         self.assertNotIn("Other project", json.dumps(rows))
         by_id = {row["id"]: row for row in rows}
@@ -188,6 +189,67 @@ class SessionDigestTest(unittest.TestCase):
         self.assertEqual(by_id["session_gggg7777"]["user_turns"], 3)
         self.assertEqual(by_id["aaaa1111"]["first_user"], "Add a CSV export.")
         self.assertEqual(by_id["aaaa1111"]["last_user"], "Now write the docs.")
+
+    def test_lists_and_shows_sessions_from_sibling_worktrees_only(self) -> None:
+        sibling = self.project.with_name("sibling 工作树")
+        for argv in (("init", "-q", "-b", "main", str(self.project)),
+                     ("-C", str(self.project), "worktree", "add", "--orphan", "-b", "sibling", str(sibling)),
+                     ("init", "-q", "-b", "main", str(self.other))):
+            result = subprocess.run(["git", *argv], capture_output=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+        for session_id, cwd in (("sibling-session", sibling), ("unrelated-session", self.other)):
+            write_jsonl(self.codex_home / "sessions" / f"{session_id}.jsonl", [
+                {"type": "session_meta", "payload": {"id": session_id, "cwd": str(cwd), "source": "cli"}},
+                codex_message("user", f"Work in {session_id}.", "2026-10-21T01:00:00Z"),
+            ])
+        self.assertEqual([row["id"] for row in self.listing()], ["sibling-session"])
+        shown = self.run_digest("show", "sibling-session")
+        self.assertEqual(shown.returncode, 0, shown.stderr)
+        self.assertIn("user: Work in sibling-session.", shown.stdout)
+        self.assertEqual(self.run_digest("show", "unrelated-session").returncode, 2)
+
+    def test_a_prunable_worktree_path_is_not_a_project_root(self) -> None:
+        # A removed worktree's path may later belong to another project.
+        gone = self.project.with_name("removed-worktree")
+        for argv in (("init", "-q", "-b", "main", str(self.project)),
+                     ("-C", str(self.project), "worktree", "add", "--orphan", "-b", "gone", str(gone))):
+            result = subprocess.run(["git", *argv], capture_output=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+        shutil.rmtree(gone)
+        write_jsonl(self.codex_home / "sessions" / "reused-session.jsonl", [
+            {"type": "session_meta", "payload": {"id": "reused-session", "cwd": str(gone), "source": "cli"}},
+            codex_message("user", "Work in a reused directory.", "2026-10-21T01:00:00Z"),
+        ])
+        self.assertEqual(self.listing(), [])
+
+    def test_bare_repository_directory_is_not_a_worktree_root(self) -> None:
+        bare = self.project.with_name("bare.git")
+        for argv in (("init", "-q", "--bare", str(bare)),
+                     ("--git-dir", str(bare), "worktree", "add", "--orphan", "-b", "sibling", str(self.project))):
+            result = subprocess.run(["git", *argv], capture_output=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+        write_jsonl(self.codex_home / "sessions" / "bare-session.jsonl", [
+            {"type": "session_meta", "payload": {"id": "bare-session", "cwd": str(bare), "source": "cli"}},
+            codex_message("user", "Inspect the bare repository.", "2026-10-21T01:00:00Z"),
+        ])
+        self.assertEqual(self.listing(), [])
+
+    def test_headless_sessions_are_optional_and_do_not_consume_the_default_limit(self) -> None:
+        self.seed_codex()
+        headless_claude = claude_line("user", "Claude review lane.", "2026-10-21T03:00:00Z", str(self.project),
+                                    entrypoint="sdk-cli")
+        write_jsonl(self.claude_dir(self.project) / "headless-claude.jsonl", [headless_claude])
+        self.assertEqual([row["id"] for row in self.listing_with("--limit", "1")], ["cccc3333"])
+        self.assertEqual([row["id"] for row in self.listing()], ["cccc3333"])
+        included = self.listing_with("--include-headless")
+        self.assertEqual([(row["id"], row["headless"]) for row in included],
+                         [("headless-claude", True), ("dddd4444", True), ("cccc3333", False)])
+
+    def test_show_finds_a_headless_session_by_id(self) -> None:
+        self.seed_codex()
+        shown = self.run_digest("show", "dddd4444")
+        self.assertEqual(shown.returncode, 0, shown.stderr)
+        self.assertIn("agent: No findings.", shown.stdout)
 
     def test_claude_timeline_starts_at_the_latest_summary_and_drops_tool_output(self) -> None:
         self.seed_claude()
@@ -218,6 +280,38 @@ class SessionDigestTest(unittest.TestCase):
         self.assertIn("agent: One P2 finding.", out)
         for noise in ("Reading the diff.", "AGENTS.md", "environment_context", "TOOL NOISE"):
             self.assertNotIn(noise, out)
+
+    def test_codex_compaction_starts_the_default_timeline_and_is_searchable(self) -> None:
+        write_jsonl(self.codex_home / "sessions" / "rollout-compact.jsonl", [
+            {"type": "session_meta", "payload": {"id": "compact", "cwd": str(self.project)}},
+            codex_message("user", "Review the export.", "2026-10-21T01:00:00Z"),
+            codex_message("assistant", "Export reviewed.", "2026-10-21T01:00:01Z", "final_answer"),
+            {"type": "compacted", "timestamp": "2026-10-21T01:00:02Z",
+             "payload": {"message": "Export approved, docs pending."}},
+            codex_message("user", "Write the docs.", "2026-10-21T01:00:03Z"),
+        ])
+        shown = self.run_digest("show", "compact")
+        self.assertEqual(shown.returncode, 0, shown.stderr)
+        summary = "[2026-10-21T01:00:02Z] summary: Export approved, docs pending."
+        self.assertIn(summary, shown.stdout)
+        self.assertIn("2 earlier entries omitted", shown.stdout)
+        self.assertNotIn("Review the export.", shown.stdout)
+        self.assertNotIn("Export reviewed.", shown.stdout)
+        self.assertIn("user: Write the docs.", shown.stdout)
+        full = self.run_digest("show", "compact", "--all").stdout
+        self.assertLess(full.index("agent: Export reviewed."), full.index(summary))
+        self.assertEqual([row["id"] for row in self.listing_with("--grep", "approved")], ["compact"])
+
+    def test_codex_interrupted_turn_labels_commentary(self) -> None:
+        write_jsonl(self.codex_home / "sessions" / "rollout-interrupted.jsonl", [
+            {"type": "session_meta", "payload": {"id": "interrupted", "cwd": str(self.project)}},
+            codex_message("user", "Review the export.", "2026-10-21T01:00:00Z"),
+            codex_message("assistant", "Reading the diff.", "2026-10-21T01:00:01Z", "commentary"),
+        ])
+        shown = self.run_digest("show", "interrupted")
+        self.assertEqual(shown.returncode, 0, shown.stderr)
+        self.assertIn("agent (commentary): Reading the diff.", shown.stdout)
+        self.assertNotIn("agent: Reading the diff.", shown.stdout)
 
     def test_kimi_timeline_starts_at_the_latest_summary_and_drops_internal_records(self) -> None:
         self.seed_kimi()

@@ -26,7 +26,7 @@ New run, turn, prompt, event, error, reply, lock, and metadata files are created
 
 | State | Meaning |
 |---|---|
-| `created` | written, not yet launched |
+| `created` | turn recorded, launch unconfirmed |
 | `launched` | process started; the session is not yet confirmed |
 | `session-known` | the CLI reported or accepted the session ID |
 | `interactive` | a visible CLI window from `open` is running; its host process is the recorded PID |
@@ -38,13 +38,13 @@ New run, turn, prompt, event, error, reply, lock, and metadata files are created
 | `interrupted` | recorder caught an interruption and stopped its child |
 | `launch-failed` | no child was launched; inspect the recorded error |
 | `cancelled` | stopped by `cancel` while its process was provably ours |
-| `abandoned` | the recorded process is confirmed gone or its PID has a different strong identity; marked by `cancel` after session inspection |
+| `abandoned` | `cancel` sets `abandoned_at` when the process is gone or its PID has a different strong identity, or sets `launch_unconfirmed: true` as well for a `created` turn without a PID |
 
 Native subagent and Orca runs are tracked by their own runtimes. When you use them, put their IDs in your report or a handoff document instead of in this record, so there is one source of truth for each run.
 
-Record updates and launch/PID publication share a per-run lock. Cancel cannot slip between a visible `created` record and PID publication. Terminal states stay terminal, while late output can add diagnostics. A failed stop retains a running state and `cancel_error`, rather than claiming cancellation succeeded. Windows ownership uses a typed process handle and creation time. Linux/WSL uses `linux:<boot-id>:<start-ticks>` from the kernel boot ID and `/proc/<pid>/stat`; a system reboot changes the identity. Only Windows and Linux/WSL currently support starting or resuming a turn; other platforms refuse before launch.
+The recorder holds the per-run lock from headless launch through PID publication. The window host checks under the same lock that the turn is still `created` before it starts. Terminal states stay terminal, while late output can add diagnostics. A failed stop retains a running state and `cancel_error`, rather than claiming cancellation succeeded. Windows ownership uses a typed process handle and creation time. Linux/WSL uses `linux:<boot-id>:<start-ticks>` from the kernel boot ID and `/proc/<pid>/stat`; a system reboot changes the identity. Only Windows and Linux/WSL currently support starting or resuming a turn; other platforms refuse before launch.
 
-`status` exposes `process_status` as `owned`, `gone`, `foreign`, or `unknown` for an active turn. `process_alive` is null for unknown identity, true for owned, and false when gone or foreign. Unknown identity is not proof that a process has exited. An unreadable identity, legacy timestamp, or unknown cancellation owner blocks automatic stopping and abandonment. These checks reduce PID reuse mistakes; they do not make checking identity and sending a signal atomic or prove that a CLI has no detached descendants.
+`status` exposes `process_status` as `owned`, `gone`, `foreign`, or `unknown` for an active turn. `process_alive` is null for unknown identity, true for owned, and false when gone or foreign. Unknown identity is not proof that a process has exited. An unreadable identity for a recorded PID, legacy timestamp, or unknown cancellation owner blocks automatic stopping and abandonment. These checks reduce PID reuse mistakes; they do not make checking identity and sending a signal atomic or prove that a CLI has no detached descendants.
 
 When a cancellation recorder dies, inspect the session, then run `cancel` again to reconcile the stale `cancelling` turn. A live or unknown cancellation owner blocks a duplicate cancel. Records are not automatically migrated. A running legacy POSIX record with only a `ps` timestamp cannot prove ownership: inspect it manually, and do not cancel or resume automatically. After manually confirming the old work has stopped, use a fresh run rather than editing its identity to pass a check. New readers accept records without `access_env` or a cancellation owner. Older runners do not enforce `disabled_reason` or understand the new identity and state semantics: use this runner, not an older copy, for these records.
 
@@ -52,6 +52,6 @@ When a cancellation recorder dies, inspect the session, then run `cancel` again 
 
 1. Run `status <run-id>` and read `meta.json`, the last `final.md`, and any `outcomes`.
 2. Check the real state: the working directory's branch, HEAD, and uncommitted files, and whether the backend session still exists.
-3. When the record and reality disagree, such as files changed after the last recorded turn or a turn with no recorded end, report the gap before acting. Run `cancel` to mark a dead turn `abandoned` only after checking the session.
+3. When the record and reality disagree, such as files changed after the last recorded turn or a turn with no recorded end, report the gap before acting. Check the session before using `cancel` to mark a turn `abandoned`. For a `created` turn without a PID, `cancel` records `launch_unconfirmed: true` without signalling any process. A CLI process may still be running untracked. Check manually before resuming.
 4. Confirm who owns the task now. When the last outcome is `transferred`, the receiver owns it; do not resume it as a writer unless the user hands it back.
 5. Continue with `resume` or the recorded interactive command. A session the CLI no longer has cannot be resumed: start a new run with a fresh brief built from the record.
