@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import re
@@ -13,6 +14,7 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT = Path(__file__).resolve().parent / "session_digest.py"
@@ -207,6 +209,55 @@ class SessionDigestTest(unittest.TestCase):
         self.assertEqual(shown.returncode, 0, shown.stderr)
         self.assertIn("user: Work in sibling-session.", shown.stdout)
         self.assertEqual(self.run_digest("show", "unrelated-session").returncode, 2)
+
+    def link_project(self) -> Path:
+        alias = self.project.with_name("linked-project")
+        try:
+            alias.symlink_to(self.project, target_is_directory=True)
+        except OSError as exc:
+            # Windows refuses symlinks without Developer Mode or the privilege (ERROR_PRIVILEGE_NOT_HELD).
+            if getattr(exc, "winerror", None) != 1314:
+                raise
+            self.skipTest(f"directory symlinks are unavailable: {exc}")
+        return alias
+
+    def test_lists_sessions_recorded_through_a_directory_symlink(self) -> None:
+        project = self.project
+        alias = self.link_project()
+
+        self.project = alias
+        self.seed_claude()
+        self.seed_codex()
+        self.seed_kimi()
+        self.project = project
+
+        # Claude only discovers aliases supplied as the cwd or reported by Git.
+        self.assertEqual([row["id"] for row in self.listing()], ["session_gggg7777", "cccc3333"])
+        self.project = alias
+        self.assertEqual([row["id"] for row in self.listing()], ["session_gggg7777", "cccc3333", "aaaa1111"])
+
+    def test_lists_a_claude_session_stored_under_the_real_path_from_a_symlink(self) -> None:
+        alias = self.link_project()
+        self.project = Path(os.path.realpath(self.project))  # TEMP may be an 8.3 short path on Windows
+        self.seed_claude()
+        self.project = alias
+        self.assertEqual([row["id"] for row in self.listing()], ["aaaa1111"])
+
+    def test_a_claude_session_with_a_cwd_that_cannot_be_checked_is_not_listed(self) -> None:
+        write_jsonl(self.claude_dir(self.project) / "ffff6666.jsonl", [
+            {"type": "user", "message": {"role": "user", "content": "Malformed cwd."},
+             "timestamp": "2026-10-20T01:00:00Z", "cwd": {"path": str(self.project)}, "entrypoint": "cli"},
+        ])
+        self.assertEqual(self.listing(), [])
+
+    def test_a_path_that_cannot_be_resolved_matches_no_project(self) -> None:
+        spec = importlib.util.spec_from_file_location("session_digest_under_test", SCRIPT)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        for error in (OSError("access denied"), ValueError("embedded null character")):
+            with self.subTest(error=type(error).__name__), \
+                    mock.patch.object(module.os.path, "realpath", side_effect=error):
+                self.assertIsNone(module.norm(self.project / "link" / ".."))
 
     def test_a_prunable_worktree_path_is_not_a_project_root(self) -> None:
         # A removed worktree's path may later belong to another project.

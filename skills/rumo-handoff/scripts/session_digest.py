@@ -35,17 +35,32 @@ class DigestError(Exception):
     """The request cannot be answered from this project's sessions."""
 
 
-def norm(path: str | Path) -> str:
+def absolute_path(path: str | Path) -> str:
     return os.path.normcase(os.path.abspath(str(path))).rstrip("\\/")
 
 
+def norm(path: str | Path) -> str | None:
+    """The path as it resolves now, or None when it cannot be resolved and so matches no project.
+
+    A session recorded through a symlink or junction that has since been pointed elsewhere matches the new
+    target; plain paths already work that way when a directory is recreated. Revisit if the clients start
+    recording a stable project identity.
+    """
+    try:
+        path = os.path.realpath(str(path))
+    except (OSError, ValueError):
+        # Falling back to abspath would fold `link/..` lexically and could name another project.
+        return None
+    return os.path.normcase(path).rstrip("\\/")
+
+
 def project_roots(cwd: Path) -> set[str]:
-    roots = {norm(cwd)}
+    roots = {str(cwd)}
     try:
         top = subprocess.run(["git", "-C", str(cwd), "rev-parse", "--show-toplevel"],
                              capture_output=True, encoding="utf-8", errors="surrogateescape", timeout=10)
         if top.returncode == 0 and top.stdout.strip():
-            roots.add(norm(top.stdout.strip()))
+            roots.add(top.stdout.strip())
             worktrees = subprocess.run(["git", "-C", str(cwd), "worktree", "list", "--porcelain", "-z"],
                                        capture_output=True, encoding="utf-8", errors="surrogateescape", timeout=10)
             if worktrees.returncode == 0:
@@ -54,7 +69,7 @@ def project_roots(cwd: Path) -> set[str]:
                     # A prunable entry's directory is gone, and its path may now belong to another project.
                     if path.startswith("worktree ") and "bare" not in attributes \
                             and not any(attribute.split(" ", 1)[0] == "prunable" for attribute in attributes):
-                        roots.add(norm(path.removeprefix("worktree ")))
+                        roots.add(path.removeprefix("worktree "))
     except (OSError, subprocess.TimeoutExpired):
         pass
     return roots
@@ -108,7 +123,7 @@ def claude_files(roots: set[str]) -> list[Path]:
     wanted = {re.sub(r"[^A-Za-z0-9]", "-", root).lower() for root in roots}
     files = []
     for directory in projects.iterdir():
-        if directory.is_dir() and directory.name.lower() in wanted:
+        if directory.name.lower() in wanted and directory.is_dir():
             files += [path for path in directory.glob("*.jsonl") if path.is_file()]
     return files
 
@@ -135,15 +150,18 @@ def codex_files(roots: set[str], prefix: str | None = None, needed: int | None =
         except (OSError, json.JSONDecodeError):
             continue
         payload = first.get("payload") if first.get("type") == "session_meta" else None
-        if not isinstance(payload, dict) or not payload.get("cwd") or norm(payload["cwd"]) not in roots:
+        if not isinstance(payload, dict) or not payload.get("cwd"):
+            continue
+        # Match the id first so `show` does not resolve every unrelated session's cwd.
+        if prefix is not None and not str(payload.get("id") or path.stem).startswith(prefix):
+            continue
+        if norm(payload["cwd"]) not in roots:
             continue
         if not include_headless and codex_headless(payload):
             continue
-        session_id = str(payload.get("id") or path.stem)
-        if prefix is None or session_id.startswith(prefix):
-            files.append(path)
-            if needed is not None and len(files) >= needed:
-                break
+        files.append(path)
+        if needed is not None and len(files) >= needed:
+            break
     return files, truncated
 
 
@@ -156,15 +174,15 @@ def kimi_files(roots: set[str], prefix: str | None = None) -> list[Path]:
         work_dir = record.get("workDir")
         session_dir = record.get("sessionDir")
         session_id = record.get("sessionId")
-        if not isinstance(work_dir, str) or norm(work_dir) not in roots:
-            continue
-        if not isinstance(session_dir, str) or not isinstance(session_id, str):
+        if not isinstance(work_dir, str) or not isinstance(session_dir, str) or not isinstance(session_id, str):
             continue
         if prefix is not None and not session_id.startswith(prefix):
             continue
+        if norm(work_dir) not in roots:
+            continue
         wire = Path(session_dir) / "agents" / "main" / "wire.jsonl"
         if wire.is_file():
-            files[norm(wire)] = wire
+            files[absolute_path(wire)] = wire
     return list(files.values())
 
 
@@ -184,8 +202,10 @@ def parse_claude(path: Path) -> dict:
             session["title"] = record.get("aiTitle")
         if record.get("isSidechain") or kind not in ("user", "assistant"):
             continue
-        if record.get("cwd"):
-            cwds.add(norm(record["cwd"]))
+        cwd = record.get("cwd")
+        if cwd:
+            # None stands for a cwd that cannot be checked, so the session matches no project.
+            cwds.add(cwd if isinstance(cwd, str) else None)
         if record.get("entrypoint") == "sdk-cli":
             session["headless"] = True
         content = (record.get("message") or {}).get("content")
@@ -215,7 +235,7 @@ def parse_claude(path: Path) -> dict:
             flush()
             entries.append({"kind": "user", "time": when, "text": text})
     flush()
-    session["cwds"] = sorted(cwds)
+    session["cwds"] = sorted({norm(cwd) if cwd is not None else None for cwd in cwds}, key=str)
     return session
 
 
@@ -347,11 +367,13 @@ def parse_kimi(path: Path) -> dict:
 
 def sessions(cwd: Path, prefix: str | None = None, needed: int | None = None, *,
              include_headless: bool = True) -> tuple[list[dict], bool]:
-    roots = project_roots(cwd)
+    paths = project_roots(cwd)
+    roots = {norm(path) for path in paths} - {None}
+    claude_roots = roots | {absolute_path(path) for path in paths}
     found = []
     codex, truncated = codex_files(roots, prefix, needed, include_headless=include_headless)
     kimi = kimi_files(roots, prefix)
-    for files, parse in ((claude_files(roots), parse_claude), (codex, parse_codex), (kimi, parse_kimi)):
+    for files, parse in ((claude_files(claude_roots), parse_claude), (codex, parse_codex), (kimi, parse_kimi)):
         for path in files:
             session = parse(path)
             if session["headless"] and not include_headless:
