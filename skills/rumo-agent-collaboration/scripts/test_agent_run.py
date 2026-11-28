@@ -1261,7 +1261,9 @@ class InteractiveTest(Harness):
             self.assertIsNone(host.poll())
             self.assertEqual(delivered["process_status"], "owned")
             turn = self.meta(Path(info["run_dir"]))["turns"][0]
-            self.assertEqual((turn["report"], turn["markers"]), (environment["FAKE_REPORT"], ["DONE", "STOPPED"]))
+            # open stores the resolved path; on Windows that expands an 8.3 short temp directory.
+            self.assertEqual((turn["report"], turn["markers"]),
+                             (str(Path(environment["FAKE_REPORT"]).resolve()), ["DONE", "STOPPED"]))
             self.assertEqual(turn["reported_at"], delivered["reported_at"])
             status = self.run_script("status", info["run_id"], "--runs-dir", str(self.runs), env=environment)
             self.assertEqual(json.loads(status.stdout)["reported_at"], delivered["reported_at"])
